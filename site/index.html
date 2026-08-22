@@ -252,7 +252,10 @@
   @media (min-width: 940px) {
     .hero-grid {
       grid-template-columns: minmax(0, 1fr) minmax(0, 1.08fr);
-      gap: clamp(2rem, 4vw, 3.4rem); align-items: center;
+      /* USTTEN hizali: optik ortalama iki sutunu bir afis gibi dengeliyordu.
+         Ust cizgide bulusunca iddia ve kaniti ayni okuma taban cizgisinden
+         basliyor — sayfa bir ilan degil bir belge gibi aciliyor. */
+      gap: clamp(2rem, 4vw, 3.4rem); align-items: start;
     }
   }
   .lede { font-size: var(--step-1); color: var(--muted); max-width: 56ch; }
@@ -274,8 +277,27 @@
     background-size: 100% 2px;
   }
   @media (prefers-reduced-motion: no-preference) {
-    .kicker { animation: kickerCiz .9s cubic-bezier(.22,.68,.32,1) .5s both; }
+    .kicker { animation: kickerCiz .9s cubic-bezier(.22,.68,.32,1) .95s both; }
     @keyframes kickerCiz { from { background-size: 0% 2px; } to { background-size: 100% 2px; } }
+  }
+
+  /* ---------- Hero etiketi: buzlu pil ----------
+     Etiket nokta dokusunun (.hero-doku) UZERINDE duruyor; duz yazi olarak
+     dokunun icine karisiyordu. Yariseffaf yuzey + backdrop-blur onu dokudan
+     ayiriyor ama zeminden koparmiyor — camin arkasindan gecen izgara hala
+     gorunuyor. Blur desteklenmezse yariseffaf yuzey tek basina yeterli;
+     okunurluk backdrop-filter'a BAGLI DEGIL.
+     Kontrast olculdu (--muted uzerinde): acik temada pil zemini aciliyor,
+     yani 4.68:1'in ustune cikiyor; koyu temada 7.35 -> 6.79. Ikisi de AA. */
+  .hero-pil {
+    align-self: flex-start;
+    display: inline-flex; align-items: center;
+    padding: .36rem .82rem; border-radius: 999px;
+    border: 1px solid var(--line);
+    background: color-mix(in srgb, var(--surface) 62%, transparent);
+  }
+  @supports (backdrop-filter: blur(1px)) {
+    .hero-pil { backdrop-filter: blur(8px) saturate(130%); }
   }
 
   /* ---------- Instrument card ---------- */
@@ -303,6 +325,20 @@
     font-variant-numeric: tabular-nums;
   }
   .src b { color: var(--accent); font-weight: 500; }
+
+  /* ---------- Rozet satirinin mikro etiketi ----------
+     Uc rozetin NE oldugu yazmiyordu: ilk kez bakan icin dosya adi + uc
+     ondalik sayi, baglamsiz duruyordu. Genis harf araligi (.22em) satiri
+     bir olcum basligi gibi okutuyor, gurultu eklemeden.
+     Palomar'daki %50 opaklik ALINMADI: --muted zaten kisilmis rol, ustune
+     opaklik AA esigini kirardi. Alinan tek sey aralik ve boy. */
+  .label-mikro {
+    font-family: Archivo, "Helvetica Neue", Arial, sans-serif;
+    font-size: .655rem; font-weight: 600;
+    letter-spacing: .22em; text-transform: uppercase;
+    color: var(--muted);
+  }
+  .srcs-blok { display: flex; flex-direction: column; gap: .45rem; }
 
   /* ---------- Stats ---------- */
   /* ---------- Olcum seridi ----------
@@ -805,9 +841,23 @@
     overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
   }
 
+  /* ---------- Hero giris koreografisi ----------
+     Hero eskiden tek blok halinde beliriyordu (.rv bulanik-sonme). Simdi
+     dort oge OKUMA SIRASIYLA, 120 ms araliklarla ve 20px'lik kucuk bir
+     yer degistirmeyle suzuluyor: etiket -> baslik -> spot -> kanit karti.
+     Egri hizli basliyor, yumusak duruyor; goz once iddiaya, sonra kanita
+     gidiyor. Gecikme her ogede --gec ile veriliyor.
+     Animasyon YALNIZCA bu blogun icinde tanimli: hareket istenmiyorsa
+     hicbir sey gizlenmez, ogeler bastan yerinde durur. */
   @media (prefers-reduced-motion: no-preference) {
-    .reveal { animation: rise .6s cubic-bezier(.22,.68,.32,1) both; }
-    @keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+    .giris {
+      animation: girisYukari .8s cubic-bezier(.16, 1, .3, 1) both;
+      animation-delay: var(--gec, 0ms);
+    }
+    @keyframes girisYukari {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: none; }
+    }
   }
 </style>
 
@@ -847,16 +897,16 @@
     <div class="hero-doku" aria-hidden="true"><span></span></div>
     <div class="hero-grid">
       <div class="stack">
-        <span class="label">Tamamen çevrimdışı · Türkçe · tek dizüstü bilgisayar</span>
-        <h1>Bilmediğini <span class="kicker">bilen</span> bir otel asistanı.</h1>
-        <p class="lede">
+        <span class="label hero-pil giris" style="--gec: 0ms">Tamamen çevrimdışı · Türkçe · tek dizüstü bilgisayar</span>
+        <h1 class="giris" style="--gec: 120ms">Bilmediğini <span class="kicker">bilen</span> bir otel asistanı.</h1>
+        <p class="lede giris" style="--gec: 240ms">
           Bir tatil köyünün belgelerini okuyup misafir sorularını Türkçe yanıtlıyor —
           internet bağlantısı olmadan, kendi GPU'sunda. Her cevabın altında hangi
           belgeden geldiği yazıyor; belgelerde yoksa uydurmuyor.
         </p>
       </div>
 
-      <div class="card card-hero reveal">
+      <div class="card card-hero giris" style="--gec: 360ms">
         <div class="card-hd">
           <span class="label">Gerçek çıktı · hiçbir şey düzeltilmedi</span>
           <span class="label mono">TOP_K = 3</span>
@@ -864,10 +914,13 @@
         <div class="card-bd qa">
           <p class="qa-q">Otelde bowling salonu var mı?</p>
           <p class="qa-a">Bu konuda elimde bilgi yok, resepsiyona danışmanız önerilir.</p>
-          <div class="srcs">
-            <span class="src">politikalar.txt <b>0.823</b></span>
-            <span class="src">odalar.txt <b>0.821</b></span>
-            <span class="src">otel_genel.txt <b>0.819</b></span>
+          <div class="srcs-blok">
+            <span class="label-mikro">Kaynaklar · benzerlik</span>
+            <div class="srcs">
+              <span class="src">politikalar.txt <b>0.823</b></span>
+              <span class="src">odalar.txt <b>0.821</b></span>
+              <span class="src">otel_genel.txt <b>0.819</b></span>
+            </div>
           </div>
           <p class="note">
             Bilgi tabanında bowling yok. Sistem en yakın üç parçayı yine getirdi —
@@ -1417,7 +1470,10 @@ belirtmeniz önerilir.
             “Kahvaltıyu en geç çektiğiniz zaman yiyebilirsiniz. Otelde kahvaltı saatleri
             07:00 ile 11:00 arasında olduğu için, bu saatlerin sonunda yiyebilirsiniz.”
           </p>
-          <div class="srcs"><span class="src">yeme_icme.txt <b>0.805</b></span></div>
+          <div class="srcs-blok">
+            <span class="label-mikro">Kaynak · benzerlik</span>
+            <div class="srcs"><span class="src">yeme_icme.txt <b>0.805</b></span></div>
+          </div>
         </div>
       </div>
 
@@ -1612,7 +1668,10 @@ belirtmeniz önerilir.
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     if (!("IntersectionObserver" in window)) return;
 
-    var ogeler = document.querySelectorAll("main section > *, .tl-i");
+    /* Hero HARIC: hero kendi kademeli girisini (.giris) calistiriyor;
+       ustune bir de kaydirma-belirmesi binerse iki animasyon cakisiyor.
+       Zaten ekranin en ustunde, "kaydirinca belir" orada anlamsiz. */
+    var ogeler = document.querySelectorAll("main section:not(.hero) > *, .tl-i");
     ogeler.forEach(function (o) { o.classList.add("rv"); });
 
     var io = new IntersectionObserver(function (girisler) {
