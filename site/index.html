@@ -174,20 +174,71 @@
   }
 
   /* ---------- Hero ---------- */
-  .hero { padding-top: clamp(2.5rem, 6vw, 4.5rem); position: relative; }
-  /* Nokta dokusu: duz zemin yerine olculu bir yuzey. Radyal maske ile
-     kenarlara dogru soner, boylece bir kutu gibi degil atmosfer gibi durur. */
-  .hero::before {
-    content: ""; position: absolute; inset: -1.5rem 0 auto 0; height: 380px;
-    background-image: radial-gradient(circle at 1px 1px, var(--line) 1px, transparent 0);
-    background-size: 22px 22px; opacity: .7; pointer-events: none; z-index: 0;
-    -webkit-mask-image: radial-gradient(ellipse 75% 70% at 25% 0%, #000 35%, transparent 100%);
-    mask-image: radial-gradient(ellipse 75% 70% at 25% 0%, #000 35%, transparent 100%);
-  }
+  .hero { padding-top: clamp(2.5rem, 6vw, 4.5rem); position: relative;
+          --mx: 50%; --my: 0%; }
   .hero > * { position: relative; z-index: 1; }
+
+  /* NOKTA DOKUSU — 21st.dev "Hero Highlight" (aceternity) mekanizmasinin
+     React'siz karsiligi: ayni nokta izgarasinin AKSAN renkli bir kopyasi
+     ustte durur ve imlecin etrafinda dairesel bir maskeyle acilir.
+     Iki KATMAN kullanmamizin sebebi maske birlesimi: dis kutu atmosfer
+     maskesini (kenarlara dogru sonme) tasir, ic katman imlec maskesini.
+     Boylece mask-composite'e hic ihtiyac kalmiyor — desteklenmedigi
+     tarayicida aksan noktalar kalici gorunmez, cunku maske ic katmanda. */
+  .hero-doku {
+    position: absolute; inset: -1.5rem 0 0 0; pointer-events: none; z-index: 0;
+    background-image: radial-gradient(circle at 1px 1px, var(--line) 1px, transparent 0);
+    background-size: 22px 22px; opacity: .7;
+    -webkit-mask-image: radial-gradient(ellipse 78% 62% at 25% 0%, #000 30%, transparent 100%);
+    mask-image: radial-gradient(ellipse 78% 62% at 25% 0%, #000 30%, transparent 100%);
+  }
+  .hero-doku span {
+    position: absolute; inset: 0; display: block; opacity: 0;
+    background-image: radial-gradient(circle at 1px 1px, var(--accent) 1px, transparent 0);
+    background-size: 22px 22px;
+    transition: opacity .3s ease;
+    -webkit-mask-image: radial-gradient(180px circle at var(--mx) var(--my), #000 0%, transparent 72%);
+    mask-image: radial-gradient(180px circle at var(--mx) var(--my), #000 0%, transparent 72%);
+  }
+  /* Yalnizca gercek isaretleyici cihazi olanlarda: dokunmatikte imlec yok,
+     bosuna bir katman boyanmasin. */
+  @media (hover: hover) and (pointer: fine) {
+    .hero:hover .hero-doku span { opacity: 1; }
+  }
+  @media (prefers-reduced-motion: reduce) { .hero-doku span { transition: none; } }
+
+  /* IDDIA + KANIT yan yana: hero'nun tezi "bilmedigini biliyor" ve bunun
+     kaniti hemen yanindaki gercek cikti. Genis ekranda ikisi ayni ekranda
+     durunca hero bir vaat degil bir GOSTERI oluyor. */
+  .hero-grid { display: grid; gap: clamp(1.8rem, 4vw, 2.6rem); align-items: start; }
+  @media (min-width: 940px) {
+    .hero-grid {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1.08fr);
+      gap: clamp(2rem, 4vw, 3.4rem); align-items: center;
+    }
+  }
   .lede { font-size: var(--step-1); color: var(--muted); max-width: 56ch; }
   .hero h1 { max-width: 20ch; }
-  .kicker { color: var(--accent); }
+  /* Hero karti digerlerinden bir kademe once cikar: bolumlerdeki kartlar duz
+     kenarlikli, bu tez kartinin altinda yumusak bir yukselti var. */
+  .card-hero { box-shadow: var(--card-shadow); }
+
+  /* Tez kelimesi "bilen" — 21st "Highlight" (aceternity) mekanizmasi:
+     background-size 0% -> 100%. Marker blogu yerine ALTI CIZGI olarak
+     uyguladik; olcum aleti estetigine blok vurgu degil ince cizgi yakisiyor.
+     TEK SEFERLIK: dongu yok, yuklenince bir kez cekiliyor. Hareket
+     istenmiyorsa cizgi bastan tam boyda durur, kaybolmaz. */
+  .kicker {
+    color: var(--accent);
+    background-image: linear-gradient(var(--accent), var(--accent));
+    background-repeat: no-repeat;
+    background-position: left 0 bottom .02em;
+    background-size: 100% 2px;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .kicker { animation: kickerCiz .9s cubic-bezier(.22,.68,.32,1) .5s both; }
+    @keyframes kickerCiz { from { background-size: 0% 2px; } to { background-size: 100% 2px; } }
+  }
 
   /* ---------- Instrument card ---------- */
   .card {
@@ -526,8 +577,9 @@
 
   <!-- ============ HERO ============ -->
   <section class="hero">
-    <div class="stack-lg">
-      <div class="stack col">
+    <div class="hero-doku" aria-hidden="true"><span></span></div>
+    <div class="hero-grid">
+      <div class="stack">
         <span class="label">Tamamen çevrimdışı · Türkçe · tek dizüstü bilgisayar</span>
         <h1>Bilmediğini <span class="kicker">bilen</span> bir otel asistanı.</h1>
         <p class="lede">
@@ -537,7 +589,7 @@
         </p>
       </div>
 
-      <div class="card reveal">
+      <div class="card card-hero reveal">
         <div class="card-hd">
           <span class="label">Gerçek çıktı · hiçbir şey düzeltilmedi</span>
           <span class="label mono">TOP_K = 3</span>
@@ -1230,6 +1282,30 @@ belirtmeniz önerilir.
 
     Object.keys(esleme).forEach(function (id) {
       io.observe(document.getElementById(id));
+    });
+  })();
+
+  /* ---- Hero: imlec konumunu CSS degiskenine yaz ----
+     Nokta izgarasinin aksan kopyasi bu iki degiskenle maskeleniyor.
+     rAF ile bogulmus: mousemove saniyede yuzlerce kez tetiklenir, stil
+     yazimi kare basina bir kez yapilir. */
+  (function () {
+    var hero = document.querySelector(".hero");
+    if (!hero) return;
+    if (!window.matchMedia("(hover: hover) and (pointer: fine)").matches) return;
+
+    var x = 0, y = 0, sirada = false;
+    hero.addEventListener("mousemove", function (e) {
+      var r = hero.getBoundingClientRect();
+      x = e.clientX - r.left;
+      y = e.clientY - r.top;
+      if (sirada) return;
+      sirada = true;
+      requestAnimationFrame(function () {
+        hero.style.setProperty("--mx", x + "px");
+        hero.style.setProperty("--my", y + "px");
+        sirada = false;
+      });
     });
   })();
 
