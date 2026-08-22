@@ -267,17 +267,36 @@
   .src b { color: var(--accent); font-weight: 500; }
 
   /* ---------- Stats ---------- */
+  /* ---------- Olcum seridi ----------
+     Kutu sayisi SABIT 2 -> 4. Onceden auto-fit minmax(150px) vardi; bazi
+     genisliklerde 3+1 kirik dizilim veriyordu. Dort olcum bir SET, oyle
+     dizilmeli. */
   .stats {
     display: grid; gap: 1px; background: var(--line);
     border: 1px solid var(--line); border-radius: 3px;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-  .stat { background: var(--surface); padding: 1.1rem 1rem; display: flex; flex-direction: column; gap: .3rem; }
+  @media (min-width: 720px) { .stats { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+  .stat {
+    background: var(--surface); padding: 1.15rem 1rem;
+    display: flex; flex-direction: column; gap: .34rem;
+  }
   .stat-num {
     font-size: clamp(1.7rem, 1.3rem + 1.6vw, 2.4rem); font-weight: 700;
     letter-spacing: -.03em; font-variant-numeric: tabular-nums; line-height: 1;
   }
-  .stat-cap { font-size: var(--step--1); color: var(--muted); }
+  /* Aciklama IKI KADEME: birinci satir neyi olctugumuzu soyler (okunur,
+     murekkep rengi), ikinci satir ham kaniti verir (sessiz, mono, hizali
+     rakamlar). Onceden ikisi de ayni gri punto idi ve tek blok gibi
+     okunuyordu — sayinin altinda hiyerarsi yoktu. */
+  .stat-ad {
+    font-family: Archivo, sans-serif; font-size: .84rem; font-weight: 600;
+    line-height: 1.25; color: var(--ink); letter-spacing: -.005em;
+  }
+  .stat-alt {
+    font-size: .72rem; color: var(--muted); line-height: 1.4;
+    font-variant-numeric: tabular-nums;
+  }
 
   /* ---------- Pipeline diagram ---------- */
   .scroll-x { overflow-x: auto; padding-bottom: .4rem; }
@@ -540,8 +559,33 @@
   .spec dt { font-size: .68rem; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); font-family: Archivo, sans-serif; font-weight: 600; }
   .spec dd { margin: 0; font-family: "JetBrains Mono", monospace; font-size: .84rem; }
 
+  /* ---------- Altbilgi ----------
+     Uc parca: marka blogu, tek gercek dis baglanti (depo) ve kunye satiri.
+     21st'teki altbilgilerin bulten/sosyal/site-haritasi sutunlari bu projede
+     karsiligi olmayan seyler; yapisi alindi, icerigi uydurulmadi. */
   footer { border-top: 1px solid var(--line-soft); padding-block: 2.2rem 3rem; color: var(--muted); font-size: .9rem; }
-  .foot-row { display: flex; flex-wrap: wrap; gap: 1rem 2rem; justify-content: space-between; align-items: baseline; }
+  .foot-grid { display: grid; gap: clamp(1.6rem, 4vw, 2.4rem); align-items: start; }
+  @media (min-width: 820px) {
+    .foot-grid { grid-template-columns: minmax(0, 1fr) auto; align-items: center; }
+  }
+  .foot-ad { font-family: Archivo, sans-serif; font-weight: 700; color: var(--ink); letter-spacing: -.01em; }
+  .foot-boru { font-size: .8rem; color: var(--muted); }
+  .foot-cta { display: flex; flex-direction: column; gap: .7rem; align-items: flex-start; }
+  @media (min-width: 820px) { .foot-cta { align-items: flex-end; text-align: right; } }
+  .foot-cta p { max-width: 34ch; }
+  /* Depo baglantisi .btn kalibini kullanir; ikon + metin, ikon aria-hidden. */
+  .btn-depo { display: inline-flex; align-items: center; gap: .5rem; text-decoration: none; }
+  .btn-depo svg { width: 16px; height: 16px; flex: none; }
+  .foot-alt {
+    display: flex; flex-wrap: wrap; gap: .4rem 1.5rem; justify-content: space-between;
+    margin-top: clamp(1.6rem, 4vw, 2.2rem); padding-top: 1.1rem;
+    border-top: 1px solid var(--line-soft); font-size: .82rem;
+  }
+  /* Yalnizca ekran okuyucuya: baglantinin yeni sekmede acildigini soyler. */
+  .gorsel-gizli {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+  }
 
   @media (prefers-reduced-motion: no-preference) {
     .reveal { animation: rise .6s cubic-bezier(.22,.68,.32,1) both; }
@@ -628,19 +672,23 @@
       <div class="stats">
         <div class="stat">
           <span class="stat-num num sayac" data-to="84" data-onek="%">%84</span>
-          <span class="stat-cap">cevap doğruluğu<br>13–16 / 17 · 4 çalıştırma</span>
+          <span class="stat-ad">cevap doğruluğu</span>
+          <span class="stat-alt mono">13–16 / 17 · 4 çalıştırma</span>
         </div>
         <div class="stat">
           <span class="stat-num num sayac" data-to="94" data-onek="%">%94</span>
-          <span class="stat-cap">retrieval isabeti<br>15 / 16 · deterministik</span>
+          <span class="stat-ad">retrieval isabeti</span>
+          <span class="stat-alt mono">15 / 16 · deterministik</span>
         </div>
         <div class="stat">
           <span class="stat-num num sayac" data-to="5" data-sonek="/5">5/5</span>
-          <span class="stat-cap">uç durum testi<br>boş girdi · genel · konu dışı</span>
+          <span class="stat-ad">uç durum testi</span>
+          <span class="stat-alt mono">boş girdi · genel · konu dışı</span>
         </div>
         <div class="stat">
           <span class="stat-num num sayac" data-to="2.5" data-basamak="1" data-sonek=" sn">2,5 sn</span>
-          <span class="stat-cap">ortalama cevap<br>RTX 3060 · 6 GB VRAM</span>
+          <span class="stat-ad">ortalama cevap</span>
+          <span class="stat-alt mono">RTX 3060 · 6 GB VRAM</span>
         </div>
       </div>
 
@@ -1162,14 +1210,26 @@ belirtmeniz önerilir.
 </main>
 
 <footer class="wrap">
-  <div class="foot-row">
-    <div>
-      <strong style="font-family: Archivo, sans-serif;">Deniz Yıldızı Asistanı</strong><br>
-      Microsoft Foundry Local + RAG · Python 3.12 · yaz okulu projesi
+  <div class="foot-grid">
+    <div class="stack">
+      <strong class="foot-ad">Deniz Yıldızı Asistanı</strong>
+      <p>Microsoft Foundry Local + RAG · Python 3.12 · yaz okulu projesi</p>
+      <p class="foot-boru mono">ingest.py → db.search() → rag.answer() → assistant.py</p>
     </div>
-    <div class="mono" style="font-size: .8rem;">
-      ingest.py → db.search() → rag.answer() → assistant.py
+
+    <div class="foot-cta">
+      <p>Ölçüm betikleri, kıyas tabloları ve reddedilen denemeler dahil her şey depoda.</p>
+      <a class="btn btn-depo" href="https://github.com/mrtsekr/foundry-rag-summer"
+         target="_blank" rel="noopener noreferrer">
+        <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82a7.4 7.4 0 0 1 2-.27c.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A7.99 7.99 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
+        Kodu GitHub'da oku<span class="gorsel-gizli"> (yeni sekmede açılır)</span>
+      </a>
     </div>
+  </div>
+
+  <div class="foot-alt">
+    <span>Belgeler anonimleştirilmiş; gerçek bir tesise ait değil.</span>
+    <span class="mono">mertsekr / foundry-rag-summer</span>
   </div>
 </footer>
 
