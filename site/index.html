@@ -10,16 +10,20 @@
     --surface:   #FBFCFC;
     --surface-2: #DFE6E7;
     --ink:       #0F2630;   /* derin deniz mürekkebi */
-    /* Bu iki deger OLCULEREK secildi: onceki tonlar (#5C737C, #0D7A84) zemine
-       karsi 4.24 ve 4.31 kontrast veriyordu — WCAG AA esigi olan 4.5'in altinda.
-       Ton korunarak esigi gecen EN ACIK varyantlar alindi (4.67 ve 4.70). */
+    /* OLCULMUS degerler. --muted duz zemine karsi 4.68:1.
+       --accent ve --signal ikinci kez duzeltildi: ilk olcum yalnizca DUZ zemine
+       bakmisti, oysa .btn/.verdict/.kopyala.ok metinleri --accent-dim ve
+       --signal-dim TENTININ ustunde duruyor; tent zemini koyulastirinca
+       kontrast 3.96 / 4.41'e dusuyordu. Ton (184.8 ve 339.4 derece) ve
+       doygunluk AYNEN korunup yalnizca parlaklik dusuruldu:
+       #0C747D -> #0B6971, #B0335E -> #AB325B. Tentli zeminde 4.61 ve 4.60. */
     --muted:     #576C75;   /* aksana meyilli nötr */
     --line:      #C6D2D5;
     --line-soft: #D9E1E3;
-    --accent:    #0C747D;   /* tuzlu teal */
+    --accent:    #0B6971;   /* tuzlu teal */
     --accent-lite:#3FA8B0;  /* huzmenin parlak ucu */
     --accent-dim:#0D7A8422;
-    --signal:    #B0335E;   /* begonvil — yalnızca ıska/ret */
+    --signal:    #AB325B;   /* begonvil — yalnızca ıska/ret */
     --signal-dim:#B0335E1A;
     --card-shadow: 0 0 0 1px #0f263008, 0 2px 4px #0f26300d, 0 12px 24px #0f26300d;
     --card-shadow-hi: 0 0 0 1px #0D7A8455, 0 2px 4px #0f263014, 0 18px 34px #0f263017;
@@ -113,7 +117,14 @@
   .btn:focus-visible,
   .btn-ghost:focus-visible,
   .kopyala:focus-visible,
-  .nav-links a:focus-visible {
+  .nav-links a:focus-visible,
+  /* Yatay kaydirilabilir kutular tabindex=0 aldi (klavyeyle kaydirilabilsinler
+     diye); odaklandiklarinda da gorunur olmalilar. */
+  .scroll-x:focus-visible,
+  .tbl-wrap:focus-visible,
+  .snip-cmd:focus-visible,
+  .term pre:focus-visible,
+  .tl-i:focus-visible {
     outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 2px;
   }
 
@@ -455,12 +466,21 @@
     overflow-wrap: break-word;
   }
   .tl-i--no .tl-kanit > span { color: var(--signal); border-left-color: var(--signal); }
+  /* Kanit satiri isaretleyici cihazlarda kapali durur. Maddelerin ICINDE
+     odaklanabilir hicbir sey olmadigi icin :focus-within HIC tetiklenemiyordu:
+     fareyi kullanmayan ama hover'i olan bir masaustunde olcumler klavyeyle
+     ASLA acilamiyordu. Bu yuzden .tl-i tabindex=0 aldi ve :focus da aciyor. */
   @media (hover: hover) and (pointer: fine) {
     .tl-kanit { grid-template-rows: 0fr; opacity: 0; }
-    .tl-i:hover .tl-kanit, .tl-i:focus-within .tl-kanit { grid-template-rows: 1fr; opacity: 1; }
+    .tl-i:hover .tl-kanit,
+    .tl-i:focus .tl-kanit,
+    .tl-i:focus-within .tl-kanit { grid-template-rows: 1fr; opacity: 1; }
   }
   /* Acilis/kapanis hareketi istenmiyorsa aninda gecsin — gorunurluk mantigi ayni. */
   @media (prefers-reduced-motion: reduce) { .tl-kanit { transition: none; } }
+  /* Huzme hareketi kapaliyken "tekrar oynat" hicbir sey yapmiyor —
+     islevsiz bir kontrol birakmak yerine gizleniyor. */
+  @media (prefers-reduced-motion: reduce) { #replay { display: none; } }
 
   .tl-readout {
     font-family: "JetBrains Mono", monospace; font-variant-numeric: tabular-nums;
@@ -502,7 +522,14 @@
   }
   .kopyala:hover { color: var(--accent); border-color: var(--accent); }
   .kopyala.ok { color: var(--accent); border-color: var(--accent); background: var(--accent-dim); }
-  @media (max-width: 620px) { .snip-not { display: none; } }
+  /* 620px altinda not GIZLENMIYOR, alt satira aliniyor. Onceden display:none
+     idi: telefonda her komutun ne ise yaradigi bilgisi tamamen kayboluyordu. */
+  @media (max-width: 620px) {
+    .snippet { flex-wrap: wrap; align-items: flex-start; }
+    .snip-cmd { flex: 1 1 100%; order: 1; }
+    .snip-not { order: 2; flex: 1 1 auto; white-space: normal; padding-left: 0; }
+    .kopyala  { order: 3; }
+  }
 
   /* ---------- Terminal + açıklama rayı ---------- */
   .term-grid { display: grid; gap: 1.1rem; grid-template-columns: 1fr; align-items: start; }
@@ -714,7 +741,7 @@
         </p>
       </div>
 
-      <div class="scroll-x">
+      <div class="scroll-x" tabindex="0" role="region" aria-label="Boru hattı şeması, yatay kaydırılabilir">
         <svg class="diagram" viewBox="0 0 980 250" role="img"
              aria-label="Belgeler parçalanır, embedding'e çevrilir, SQLite'a yazılır; soru da embedding'e çevrilip kosinüs benzerliğiyle en yakın üç parça bulunur ve bunlar bağlam olarak qwen3-4b modeline verilir.">
           <!-- Hazırlık şeridi -->
@@ -844,7 +871,7 @@
            dusurdugu icin role="list" korumasi ekli. -->
       <ol class="tl" role="list" aria-label="Kararlar, araştırma sırasına göre">
 
-        <li class="tl-i">
+        <li class="tl-i" tabindex="0">
           <span class="tl-node" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
           <div class="tl-body">
             <div class="tl-meta">
@@ -864,7 +891,7 @@
           </div>
         </li>
 
-        <li class="tl-i tl-i--no">
+        <li class="tl-i tl-i--no" tabindex="0">
           <span class="tl-node" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></span>
           <div class="tl-body">
             <div class="tl-meta">
@@ -883,7 +910,7 @@
           </div>
         </li>
 
-        <li class="tl-i">
+        <li class="tl-i" tabindex="0">
           <span class="tl-node" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
           <div class="tl-body">
             <div class="tl-meta">
@@ -901,7 +928,7 @@
           </div>
         </li>
 
-        <li class="tl-i">
+        <li class="tl-i" tabindex="0">
           <span class="tl-node" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
           <div class="tl-body">
             <div class="tl-meta">
@@ -920,7 +947,7 @@
           </div>
         </li>
 
-        <li class="tl-i tl-i--no tl-i--dallanir">
+        <li class="tl-i tl-i--no tl-i--dallanir" tabindex="0">
           <span class="tl-node" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></span>
           <div class="tl-body">
             <div class="tl-meta">
@@ -939,7 +966,7 @@
           </div>
         </li>
 
-        <li class="tl-i">
+        <li class="tl-i" tabindex="0">
           <span class="tl-node" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
           <div class="tl-body">
             <div class="tl-meta">
@@ -970,7 +997,7 @@
         </p>
       </div>
 
-      <div class="tbl-wrap">
+      <div class="tbl-wrap" tabindex="0" role="region" aria-label="Embedding kıyas tablosu, yatay kaydırılabilir">
         <table>
           <thead>
             <tr>
@@ -1035,7 +1062,7 @@
           <span class="dot"></span><span class="dot"></span><span class="dot"></span>
           <span>python assistant.py</span>
         </div>
-<pre><span class="d">Deniz Yildizi Resort &amp; Casino — Asistan
+<pre tabindex="0"><span class="d">Deniz Yildizi Resort &amp; Casino — Asistan
 Model yukleniyor (ilk sefer ~10-15 sn)...</span>
 Hazir. Bilgi tabani: <span class="hl">9 belge, 9 parca</span>.
 
@@ -1102,17 +1129,17 @@ belirtmeniz önerilir.
         <span class="label">Bir kez</span>
         <div class="snip-grup">
           <div class="snippet">
-            <code class="snip-cmd">python -m venv .venv</code>
+            <code class="snip-cmd" tabindex="0">python -m venv .venv</code>
             <span class="snip-not">Python 3.12</span>
             <button class="kopyala" type="button">kopyala</button>
           </div>
           <div class="snippet">
-            <code class="snip-cmd">pip install -r requirements.txt</code>
+            <code class="snip-cmd" tabindex="0">pip install -r requirements.txt</code>
             <span class="snip-not">sentence-transformers, pypdf, foundry-local-sdk</span>
             <button class="kopyala" type="button">kopyala</button>
           </div>
           <div class="snippet">
-            <code class="snip-cmd">python ingest.py</code>
+            <code class="snip-cmd" tabindex="0">python ingest.py</code>
             <span class="snip-not">9 belge → 9 parça → SQLite</span>
             <button class="kopyala" type="button">kopyala</button>
           </div>
@@ -1123,7 +1150,7 @@ belirtmeniz önerilir.
         <span class="label">Her gün</span>
         <div class="snip-grup">
           <div class="snippet">
-            <code class="snip-cmd">python assistant.py</code>
+            <code class="snip-cmd" tabindex="0">python assistant.py</code>
             <span class="snip-not">etkileşimli asistan</span>
             <button class="kopyala" type="button">kopyala</button>
           </div>
@@ -1134,12 +1161,12 @@ belirtmeniz önerilir.
         <span class="label">Ölçmek istersen</span>
         <div class="snip-grup">
           <div class="snippet">
-            <code class="snip-cmd">python eval.py</code>
+            <code class="snip-cmd" tabindex="0">python eval.py</code>
             <span class="snip-not">cevap + retrieval + uç durumlar</span>
             <button class="kopyala" type="button">kopyala</button>
           </div>
           <div class="snippet">
-            <code class="snip-cmd">python bench_embed.py</code>
+            <code class="snip-cmd" tabindex="0">python bench_embed.py</code>
             <span class="snip-not">embedding kıyası, LLM çalışmaz</span>
             <button class="kopyala" type="button">kopyala</button>
           </div>
