@@ -185,6 +185,32 @@
     .rv.in { opacity: 1; transform: none; filter: none; }
   }
 
+
+  /* ---------- Deniz kabarisi (arka katman) ----------
+     Sayfanin kimligi denize dayali (deniz pusu, tuzlu teal, Deniz Yildizi);
+     fon da onu suruyor. Kurallar:
+     - icerigin ARKASINDA, pointer-events yok, aria-hidden
+     - yalnizca transform animasyonu -> GPU'da birlestirilir, yeniden boyama yok
+     - cok yavas (90-160 sn/tur) ve cok soluk; okumayi bolmemeli
+     - hareket istenmiyorsa DURUR ama kaybolmaz */
+  .dalga {
+    position: fixed; inset: 0; z-index: 0;
+    pointer-events: none; overflow: hidden;
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 18%, #000 82%, transparent 100%);
+    mask-image: linear-gradient(to bottom, transparent 0%, #000 18%, #000 82%, transparent 100%);
+  }
+  .dalga-svg { width: 100%; height: 100%; display: block; }
+  .dalga path { fill: none; stroke: var(--line); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+  .dg { opacity: var(--op); }
+  /* Icerik katmanlari kabarisin ustunde kalsin. */
+  main.wrap, footer.wrap { position: relative; z-index: 1; }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .dg { animation: kabaris var(--sure) linear infinite; }
+    /* Tam bir periyot kadar kayip basa donuyor: dikis gorunmuyor. */
+    @keyframes kabaris { from { transform: translateX(0); } to { transform: translateX(calc(-1 * var(--per))); } }
+  }
+
   /* ---------- Hero ---------- */
   .hero { padding-top: clamp(2.5rem, 6vw, 4.5rem); position: relative;
           --mx: 50%; --my: 0%; }
@@ -315,12 +341,6 @@
   .diagram { min-width: 720px; width: 100%; height: auto; display: block; }
   .d-node   { fill: var(--surface); stroke: var(--line); stroke-width: 1.2; }
   .d-node-a { fill: var(--accent-dim); stroke: var(--accent); stroke-width: 1.4; }
-  .d-title  { font-family: Archivo, sans-serif; font-size: 12.5px; font-weight: 600; fill: var(--ink); }
-  .d-sub    { font-family: "JetBrains Mono", monospace; font-size: 10px; fill: var(--muted); }
-  .d-edge   { stroke: var(--muted); stroke-width: 1.2; fill: none; }
-  .d-edge-lbl { font-family: "JetBrains Mono", monospace; font-size: 9.5px; fill: var(--muted); }
-  .d-step   { font-family: "JetBrains Mono", monospace; font-size: 9.5px; fill: var(--accent); font-weight: 700; }
-
   /* ---------- Tables ---------- */
   .tbl-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 3px; background: var(--surface); }
   table { border-collapse: collapse; width: 100%; min-width: 460px; }
@@ -336,33 +356,49 @@
   td .win { color: var(--accent); font-weight: 700; }
   td .lose { color: var(--signal); }
 
-  /* ---------- Beam (akış darbesi) ----------
-     Iki katman: (1) yol boyunca sabit duran soluk taban cizgisi,
-     (2) uzerinde ilerleyen gradyanli + parildayan darbe. Tek katmanli
-     kesikli cizgi "isik" gibi degil "kesik cizgi" gibi gorunuyordu. */
-  /* stop-color'i CSS'ten veriyoruz: sunum niteligi olarak yazilan var() bazi
-     tarayicilarda sessizce dusuyor, CSS kurali ise niteligi ezip garantiliyor. */
-  #beamGrad .s-bas { stop-color: var(--accent); }
-  #beamGrad .s-uc  { stop-color: var(--accent-lite); }
+  /* ---------- Boru hatti diyagrami ----------
+     21st.dev "AI Agent Pipeline" (#20802) gorsel dilinden port. ALINAN:
+     animateMotion ile yol boyunca akan nokta kuyruklari (boyut ve opaklik
+     geriye dogru azaliyor, boylece yon renk kullanmadan okunuyor), kesikli
+     baglanti + kucuk ok isareti, dugum icinde etiket/baslik/mono istifi,
+     uretim dugumunun vurgulanmasi ve icindeki nabiz noktalari.
+     ALINMAYAN: kaynaktaki uydurma istatistik altbilgisi (WORKFLOWS 1247,
+     TOKENS 4.2M) ve sahte canli log akisi. Bu sayfada zaten GERCEK bir
+     terminal dokumu var; yanina uydurma telemetri konulamaz. Onlarin yerine
+     asagidaki .spec seridi duruyor ve icindeki her deger gercek.
+     Renkler token'lardan; kaynaktaki #0052FF/#090909 sabitleri kullanilmadi. */
+  .dg-kutu   { fill: var(--surface); stroke: var(--line); stroke-width: 1; }
+  .dg-vurgu  { fill: var(--accent-dim); stroke: var(--accent); stroke-width: 1.4; }
+  .dg-et     { font-family: Archivo, sans-serif; font-size: 9px; font-weight: 600;
+               letter-spacing: .11em; fill: var(--muted); }
+  .dg-bas    { font-family: Archivo, sans-serif; font-size: 13px; font-weight: 600; fill: var(--ink); }
+  .dg-bas-v  { fill: var(--accent); }
+  .dg-alt    { font-family: "JetBrains Mono", monospace; font-size: 9.5px; fill: var(--muted); }
+  .dg-satir  { font-family: "JetBrains Mono", monospace; font-size: 10px; font-weight: 700;
+               letter-spacing: .06em; fill: var(--accent); }
+  .dg-mini   { font-family: "JetBrains Mono", monospace; font-size: 9.5px; fill: var(--muted); }
+  .dg-yol    { stroke: var(--accent); stroke-width: 1.4; opacity: .45; stroke-dasharray: 3 5; fill: none; }
+  .dg-besle  { stroke: var(--line); stroke-width: 1.4; stroke-dasharray: 3 5; fill: none; }
+  .dg-okiz   { fill: none; stroke: var(--accent); stroke-width: 1.6; opacity: .6;
+               stroke-linecap: round; stroke-linejoin: round; }
+  .dg-okiz-a { opacity: 1; }
+  .dg-cikti  { stroke: var(--accent); stroke-width: 1.6; fill: none; }
+  .dg-cikti-yz { font-family: Archivo, sans-serif; font-size: 12px; font-weight: 600; fill: var(--ink); }
+  .dg-nokta  { fill: var(--accent); }
 
-  /* Taban yolu: her zaman gorunur, huzmenin izleyecegi rotayi gosterir. */
-  .beam-base {
-    fill: none; stroke: var(--accent); stroke-width: 2; opacity: .2;
-    stroke-linecap: round; transition: opacity .7s ease .9s;
-  }
-  .diagram.run .beam-base { opacity: .42; }
-
-  /* Huzme: yolun TAMAMI boyanir; hareketi gradyanin kendisi saglar (asagida
-     SMIL ile x1/x2 kaydirilir). Onceki surum kesikli cizgi kaydiriyordu —
-     "isik" degil "kesik cizgi" gibi gorunuyordu.
-     Varsayilan (hareket azaltma) hali: duz, sabit, gorunur bir cizgi. */
-  .beam {
-    fill: none; stroke: var(--accent); opacity: .55;
-    stroke-width: 2.6; stroke-linecap: round;
-  }
+  /* Akan noktalar ve nabiz YALNIZCA hareket istendiginde gorunur. SMIL bir
+     medya sorgusuyla kapatilamadigi icin animasyonlar begin="indefinite" ile
+     bekliyor ve JS yalnizca hareket serbestse beginElement() cagiriyor.
+     Hareket azaltmada diyagram tamamen okunur bir DURAGAN sema olarak kalir —
+     hicbir bilgi kaybolmaz, sadece akis durur. */
+  .dg-akis { opacity: 0; }
+  .diagram.akiyor .dg-akis { opacity: 1; }
+  .dg-nabiz { fill: var(--accent); opacity: .25; }
   @media (prefers-reduced-motion: no-preference) {
-    .beam { stroke: url(#beamGrad); opacity: 1; filter: url(#beamGlow); }
+    .diagram.akiyor .dg-nabiz { animation: dgNabiz 1.2s ease-in-out infinite; animation-delay: var(--g); }
+    @keyframes dgNabiz { 0%, 100% { opacity: .2; } 50% { opacity: 1; } }
   }
+
   .beam-ctl {
     display: flex; flex-wrap: wrap; gap: .6rem 1rem; align-items: center;
     justify-content: space-between; margin-top: .5rem;
@@ -476,9 +512,6 @@
      ortadan kaldiriyor. */
   /* Acilis/kapanis hareketi istenmiyorsa aninda gecsin — gorunurluk mantigi ayni. */
   @media (prefers-reduced-motion: reduce) { .tl-kanit { transition: none; } }
-  /* Huzme hareketi kapaliyken "tekrar oynat" hicbir sey yapmiyor —
-     islevsiz bir kontrol birakmak yerine gizleniyor. */
-  @media (prefers-reduced-motion: reduce) { #replay { display: none; } }
 
   .tl-readout {
     font-family: "JetBrains Mono", monospace; font-variant-numeric: tabular-nums;
@@ -778,6 +811,10 @@
   }
 </style>
 
+<!-- Deniz kabarisi: icerigin ARKASINDA duran dekoratif katman.
+     Yapiya, akisa ve mevcut animasyonlara dokunmaz; pointer-events yok,
+     aria-hidden. prefers-reduced-motion'da tamamen durur (kaybolmaz). -->
+<div class="dalga" aria-hidden="true"><svg class="dalga-svg" viewBox="0 0 1200 800" preserveAspectRatio="none" aria-hidden="true" focusable="false"><g class="dg dg1" style="--per:420px;--sure:90s;--op:0.30"><path d="M 0 170.0 c 75.6 14.0 134.4 14.0 210.0 0 c 75.6 -14.0 134.4 -14.0 210.0 0 c 75.6 14.0 134.4 14.0 210.0 0 c 75.6 -14.0 134.4 -14.0 210.0 0 c 75.6 14.0 134.4 14.0 210.0 0 c 75.6 -14.0 134.4 -14.0 210.0 0 c 75.6 14.0 134.4 14.0 210.0 0 c 75.6 -14.0 134.4 -14.0 210.0 0 c 75.6 14.0 134.4 14.0 210.0 0 c 75.6 -14.0 134.4 -14.0 210.0 0"/></g><g class="dg dg2" style="--per:560px;--sure:130s;--op:0.24"><path d="M 0 330.0 c 100.8 20.0 179.2 20.0 280.0 0 c 100.8 -20.0 179.2 -20.0 280.0 0 c 100.8 20.0 179.2 20.0 280.0 0 c 100.8 -20.0 179.2 -20.0 280.0 0 c 100.8 20.0 179.2 20.0 280.0 0 c 100.8 -20.0 179.2 -20.0 280.0 0 c 100.8 20.0 179.2 20.0 280.0 0 c 100.8 -20.0 179.2 -20.0 280.0 0 c 100.8 20.0 179.2 20.0 280.0 0"/></g><g class="dg dg3" style="--per:360px;--sure:110s;--op:0.20"><path d="M 0 520.0 c 64.8 16.0 115.2 16.0 180.0 0 c 64.8 -16.0 115.2 -16.0 180.0 0 c 64.8 16.0 115.2 16.0 180.0 0 c 64.8 -16.0 115.2 -16.0 180.0 0 c 64.8 16.0 115.2 16.0 180.0 0 c 64.8 -16.0 115.2 -16.0 180.0 0 c 64.8 16.0 115.2 16.0 180.0 0 c 64.8 -16.0 115.2 -16.0 180.0 0 c 64.8 16.0 115.2 16.0 180.0 0 c 64.8 -16.0 115.2 -16.0 180.0 0 c 64.8 16.0 115.2 16.0 180.0 0"/></g><g class="dg dg4" style="--per:680px;--sure:160s;--op:0.16"><path d="M 0 690.0 c 122.4 24.0 217.6 24.0 340.0 0 c 122.4 -24.0 217.6 -24.0 340.0 0 c 122.4 24.0 217.6 24.0 340.0 0 c 122.4 -24.0 217.6 -24.0 340.0 0 c 122.4 24.0 217.6 24.0 340.0 0 c 122.4 -24.0 217.6 -24.0 340.0 0 c 122.4 24.0 217.6 24.0 340.0 0 c 122.4 -24.0 217.6 -24.0 340.0 0"/></g></svg></div>
 <header class="site-nav" id="ustCubuk">
   <div class="wrap nav-inner">
     <div class="mark">
@@ -944,114 +981,19 @@
       </div>
 
       <div class="scroll-x" tabindex="0" role="region" aria-label="Boru hattı şeması, yatay kaydırılabilir">
-        <svg class="diagram" viewBox="0 0 980 250" role="img"
-             aria-label="Belgeler parçalanır, embedding'e çevrilir, SQLite'a yazılır; soru da embedding'e çevrilip kosinüs benzerliğiyle en yakın üç parça bulunur ve bunlar bağlam olarak qwen3-4b modeline verilir.">
-          <!-- Hazırlık şeridi -->
-          <text x="8" y="20" class="d-step">HAZIRLIK · ingest.py (bir kez)</text>
-          <g>
-            <rect x="8"   y="32" width="150" height="52" rx="3" class="d-node"/>
-            <text x="20"  y="53" class="d-title">docs/ — 9 belge</text>
-            <text x="20"  y="70" class="d-sub">.txt · .md · .pdf</text>
-
-            <rect x="208" y="32" width="150" height="52" rx="3" class="d-node"/>
-            <text x="220" y="53" class="d-title">9 parça</text>
-            <text x="220" y="70" class="d-sub">≤1000 krk, toparlayıcı</text>
-
-            <rect x="408" y="32" width="170" height="52" rx="3" class="d-node"/>
-            <text x="420" y="53" class="d-title">embedding</text>
-            <text x="420" y="70" class="d-sub">e5-small · 384 boyut</text>
-
-            <rect x="628" y="32" width="170" height="52" rx="3" class="d-node"/>
-            <text x="640" y="53" class="d-title">SQLite</text>
-            <text x="640" y="70" class="d-sub">float32 BLOB</text>
-
-            <path d="M158 58 H208" class="d-edge" marker-end="url(#ar)"/>
-            <path d="M358 58 H408" class="d-edge" marker-end="url(#ar)"/>
-            <path d="M578 58 H628" class="d-edge" marker-end="url(#ar)"/>
-          </g>
-
-          <!-- Sorgu şeridi -->
-          <text x="8" y="132" class="d-step">SORGU · her soruda</text>
-          <g>
-            <rect x="8"   y="144" width="150" height="52" rx="3" class="d-node-a"/>
-            <text x="20"  y="165" class="d-title">Misafir sorusu</text>
-            <text x="20"  y="182" class="d-sub">Türkçe, serbest</text>
-
-            <rect x="208" y="144" width="150" height="52" rx="3" class="d-node"/>
-            <text x="220" y="165" class="d-title">kosinüs</text>
-            <text x="220" y="182" class="d-sub">tüm parçalarla</text>
-
-            <rect x="408" y="144" width="170" height="52" rx="3" class="d-node"/>
-            <text x="420" y="165" class="d-title">en yakın 3 parça</text>
-            <text x="420" y="182" class="d-sub">TOP_K = 3 → BAĞLAM</text>
-
-            <rect x="628" y="144" width="170" height="52" rx="3" class="d-node-a"/>
-            <text x="640" y="165" class="d-title">qwen3-4b</text>
-            <text x="640" y="182" class="d-sub">Foundry Local · CUDA</text>
-
-            <path d="M158 170 H208" class="d-edge" marker-end="url(#ar)"/>
-            <path d="M358 170 H408" class="d-edge" marker-end="url(#ar)"/>
-            <path d="M578 170 H628" class="d-edge" marker-end="url(#ar)"/>
-
-            <!-- DB'den sorguya besleme -->
-            <path d="M713 84 V116 H295 V144" class="d-edge" stroke-dasharray="4 3" marker-end="url(#ar)"/>
-            <text x="330" y="112" class="d-edge-lbl">kayıtlı vektörler</text>
-
-            <!-- Cevap -->
-            <path d="M713 196 V222 H500" class="d-edge" marker-end="url(#ar)"/>
-            <text x="510" y="226" class="d-title">Cevap + kaynak belge adı</text>
-          </g>
-
-          <!-- Akış darbesi: soru -> cevap yolunu gercek cevap suresinde kat eder -->
-          <path class="beam-base" d="M158 170 H208 M358 170 H408 M578 170 H628 M713 196 V222 H520"/>
-          <path class="beam"      d="M158 170 H208 M358 170 H408 M578 170 H628 M713 196 V222 H520"/>
-
-          <defs>
-            <!-- Huzmenin mekanizmasi: gradyan yalnizca ~98px genisliginde bir
-                 "pencere" (x1..x2). Pencere soldan saga kaydirilinca yolun uzerinde
-                 ilerleyen bir isik olusur. Kesikli cizgi kaydirmaktan farki: yolun
-                 tamami boyali kalir, sadece parlaklik gezer.
-                 easeOutExpo (0.16 1 0.3 1): hizli baslar, sonda yumusakca durur. -->
-            <linearGradient id="beamGrad" gradientUnits="userSpaceOnUse"
-                            x1="98" y1="0" x2="0" y2="0">
-              <stop offset="0"     class="s-bas" stop-opacity="0"/>
-              <stop offset="0"     class="s-bas" stop-opacity="1"/>
-              <stop offset="32.5%" class="s-uc"  stop-opacity="1"/>
-              <stop offset="100%"  class="s-uc"  stop-opacity="0"/>
-              <animate attributeName="x1" begin="indefinite" dur="2.5s" fill="freeze"
-                       calcMode="spline" keyTimes="0;1" keySplines="0.16 1 0.3 1"
-                       values="98;1078"/>
-              <animate attributeName="x2" begin="indefinite" dur="2.5s" fill="freeze"
-                       calcMode="spline" keyTimes="0;1" keySplines="0.16 1 0.3 1"
-                       values="0;980"/>
-            </linearGradient>
-            <filter id="beamGlow" x="-40%" y="-400%" width="180%" height="900%">
-              <feGaussianBlur stdDeviation="2.4" result="bulanik"/>
-              <feMerge>
-                <feMergeNode in="bulanik"/>
-                <feMergeNode in="SourceGraphic"/>
-              </feMerge>
-            </filter>
-
-            <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5"
-                    markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-              <path d="M0 0 L10 5 L0 10 z" fill="currentColor" style="color: var(--muted)"/>
-            </marker>
-          </defs>
-        </svg>
+        <svg class="diagram" viewBox="0 0 980 262" role="img" aria-label="Boru hattı: hazırlık satırında docs klasöründeki 9 belge 9 parçaya bölünüp e5-small ile embedlenip SQLite'a yazılıyor. Sorgu satırında misafir sorusu kosinüs benzerliğiyle en yakın 3 parçayı buluyor, bunlar bağlam olarak qwen3-4b'ye veriliyor ve cevap kaynak belge adıyla dönüyor."><defs><marker id="dgOk" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path class="dg-okiz" d="M2 1.5 L7.5 5 L2 8.5"/></marker><marker id="dgOkA" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5.5" markerHeight="5.5" orient="auto"><path class="dg-okiz dg-okiz-a" d="M2 1.5 L7.5 5 L2 8.5"/></marker></defs><line class="dg-yol" x1="194" y1="75" x2="220" y2="75" marker-end="url(#dgOk)"/><line class="dg-yol" x1="194" y1="191" x2="220" y2="191" marker-end="url(#dgOk)"/><line class="dg-yol" x1="406" y1="75" x2="432" y2="75" marker-end="url(#dgOk)"/><line class="dg-yol" x1="406" y1="191" x2="432" y2="191" marker-end="url(#dgOk)"/><line class="dg-yol" x1="618" y1="75" x2="644" y2="75" marker-end="url(#dgOk)"/><line class="dg-yol" x1="618" y1="191" x2="644" y2="191" marker-end="url(#dgOk)"/><path class="dg-besle" d="M 740 106 L 740 133 L 316 133" marker-end="url(#dgOk)"/><path class="dg-besle" d="M 316 133 L 316 154" marker-end="url(#dgOk)"/><text class="dg-mini" x="528" y="125" text-anchor="middle">kayıtlı vektörler</text><g class="dg-akis dg-akis-haz"><circle class="dg-nokta" r="2.4" opacity="0.55"><animateMotion dur="6.00s" begin="indefinite" repeatCount="indefinite" path="M 192 75 L 652 75" keyPoints="0;1" keyTimes="0;1" calcMode="linear" additive="sum" /><animate attributeName="opacity" dur="6.00s" begin="indefinite" repeatCount="indefinite" values="0;0.55;0.55;0" keyTimes="0;0.08;0.9;1"/></circle><circle class="dg-nokta" r="1.7" opacity="0.34"><animateMotion dur="6.00s" begin="indefinite" repeatCount="indefinite" path="M 192 75 L 652 75" keyPoints="0;1" keyTimes="0;1" calcMode="linear" additive="sum" /><animate attributeName="opacity" dur="6.00s" begin="indefinite" repeatCount="indefinite" values="0;0.34;0.34;0" keyTimes="0;0.08;0.9;1"/></circle><circle class="dg-nokta" r="1.2" opacity="0.18"><animateMotion dur="6.00s" begin="indefinite" repeatCount="indefinite" path="M 192 75 L 652 75" keyPoints="0;1" keyTimes="0;1" calcMode="linear" additive="sum" /><animate attributeName="opacity" dur="6.00s" begin="indefinite" repeatCount="indefinite" values="0;0.18;0.18;0" keyTimes="0;0.08;0.9;1"/></circle></g><g class="dg-akis dg-akis-sor"><circle class="dg-nokta" r="2.8" opacity="1.00"><animateMotion dur="2.50s" begin="indefinite" repeatCount="indefinite" path="M 192 191 L 652 191" keyPoints="0;1" keyTimes="0;1" calcMode="linear" additive="sum" /><animate attributeName="opacity" dur="2.50s" begin="indefinite" repeatCount="indefinite" values="0;1.00;1.00;0" keyTimes="0;0.08;0.9;1"/></circle><circle class="dg-nokta" r="2.0" opacity="0.60"><animateMotion dur="2.50s" begin="indefinite" repeatCount="indefinite" path="M 192 191 L 652 191" keyPoints="0;1" keyTimes="0;1" calcMode="linear" additive="sum" /><animate attributeName="opacity" dur="2.50s" begin="indefinite" repeatCount="indefinite" values="0;0.60;0.60;0" keyTimes="0;0.08;0.9;1"/></circle><circle class="dg-nokta" r="1.4" opacity="0.32"><animateMotion dur="2.50s" begin="indefinite" repeatCount="indefinite" path="M 192 191 L 652 191" keyPoints="0;1" keyTimes="0;1" calcMode="linear" additive="sum" /><animate attributeName="opacity" dur="2.50s" begin="indefinite" repeatCount="indefinite" values="0;0.32;0.32;0" keyTimes="0;0.08;0.9;1"/></circle></g><text class="dg-satir" x="16" y="34">HAZIRLIK · ingest.py (bir kez)</text><rect class="dg-kutu" x="16" y="46" width="176" height="58" rx="8"/><text class="dg-et" x="30" y="64">KAYNAK</text><text class="dg-bas" x="30" y="83">docs/ — 9 belge</text><text class="dg-alt" x="30" y="97">.txt · .md · .pdf</text><rect class="dg-kutu" x="228" y="46" width="176" height="58" rx="8"/><text class="dg-et" x="242" y="64">PARÇALAMA</text><text class="dg-bas" x="242" y="83">9 parça</text><text class="dg-alt" x="242" y="97">≤1000 krk, toparlayıcı</text><rect class="dg-kutu" x="440" y="46" width="176" height="58" rx="8"/><text class="dg-et" x="454" y="64">EMBEDDING</text><text class="dg-bas" x="454" y="83">e5-small</text><text class="dg-alt" x="454" y="97">384 boyut</text><rect class="dg-kutu" x="652" y="46" width="176" height="58" rx="8"/><text class="dg-et" x="666" y="64">DEPO</text><text class="dg-bas" x="666" y="83">SQLite</text><text class="dg-alt" x="666" y="97">float32 BLOB</text><text class="dg-satir" x="16" y="150">SORGU · her soruda</text><rect class="dg-kutu" x="16" y="162" width="176" height="58" rx="8"/><text class="dg-et" x="30" y="180">GİRDİ</text><text class="dg-bas" x="30" y="199">Misafir sorusu</text><text class="dg-alt" x="30" y="213">Türkçe, serbest</text><rect class="dg-kutu" x="228" y="162" width="176" height="58" rx="8"/><text class="dg-et" x="242" y="180">ARAMA</text><text class="dg-bas" x="242" y="199">kosinüs</text><text class="dg-alt" x="242" y="213">tüm parçalarla</text><rect class="dg-kutu" x="440" y="162" width="176" height="58" rx="8"/><text class="dg-et" x="454" y="180">SEÇİM</text><text class="dg-bas" x="454" y="199">en yakın 3 parça</text><text class="dg-alt" x="454" y="213">TOP_K = 3 → BAĞLAM</text><rect class="dg-kutu dg-vurgu" x="652" y="162" width="176" height="58" rx="8"/><text class="dg-et" x="666" y="180">ÜRETİM</text><text class="dg-bas dg-bas-v" x="666" y="199">qwen3-4b</text><text class="dg-alt" x="666" y="213">Foundry Local · CUDA</text><circle class="dg-nabiz" cx="788" cy="176" r="2.6" style="--g:0.0s"/><circle class="dg-nabiz" cx="799" cy="176" r="2.6" style="--g:0.4s"/><circle class="dg-nabiz" cx="810" cy="176" r="2.6" style="--g:0.8s"/><path class="dg-cikti" d="M 740 222 L 740 246 L 480 246" marker-end="url(#dgOkA)"/><text class="dg-cikti-yz" x="466" y="250" text-anchor="end">Cevap + kaynak belge adı</text></svg>
       </div>
 
       <div class="beam-ctl">
-        <p class="label">Işık huzmesi soru→cevap yolunu <span class="mono">2,5 sn</span>'de kat ediyor — sistemin ölçülen ortalama cevap süresi.</p>
-        <button class="btn" type="button" id="replay">Akışı tekrar oynat</button>
+        <p class="label">Sorgu satırındaki her tur <span class="mono">2,5 sn</span> sürüyor — sistemin ölçülen ortalama cevap süresi. Hazırlık satırı daha yavaş akıyor çünkü o adım yalnızca bir kez çalışıyor.</p>
       </div>
 
-      <div class="spec">
+      <dl class="spec">
         <div><dt>Üretim</dt><dd>qwen3-4b · Foundry Local</dd></div>
         <div><dt>Retrieval</dt><dd>multilingual-e5-small</dd></div>
         <div><dt>Depolama</dt><dd>SQLite · float32 BLOB</dd></div>
         <div><dt>Donanım</dt><dd>RTX 3060 Laptop · 6 GB</dd></div>
-      </div>
+      </dl>
     </div>
   </section>
 
@@ -1534,35 +1476,32 @@ belirtmeniz önerilir.
 <script>
   (function () {
     var diagram = document.querySelector(".diagram");
-    var replay  = document.getElementById("replay");
     if (!diagram) return;
 
     var azHareket = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    var animler   = diagram.querySelectorAll("#beamGrad animate");
+    var animler = diagram.querySelectorAll(".dg-akis animateMotion, .dg-akis animate");
 
-    // Darbeyi bir kez, sema gercekten goruntuye girdiginde calistir.
-    // SMIL begin="indefinite" ile bekliyor; beginElement() bastan tetikler.
-    function run() {
-      diagram.classList.add("run");
-      if (azHareket) return;                 // hareket azaltma: huzme sabit kalir
+    // Hareket azaltmada HIC baslatilmiyor: diyagram duragan bir sema olarak
+    // kaliyor, icindeki bilgi aynen okunuyor.
+    function calistir() {
+      if (azHareket) return;
+      diagram.classList.add("akiyor");
       animler.forEach(function (a) {
-        try { a.beginElement(); } catch (e) { /* SMIL yoksa sabit huzme kalir */ }
+        try { a.beginElement(); } catch (e) { /* SMIL yoksa duragan kalir */ }
       });
     }
 
     if ("IntersectionObserver" in window) {
-      var seen = false;
-      var io = new IntersectionObserver(function (entries) {
-        entries.forEach(function (e) {
-          if (e.isIntersecting && !seen) { seen = true; run(); io.disconnect(); }
+      var gorundu = false;
+      var io = new IntersectionObserver(function (girisler) {
+        girisler.forEach(function (g) {
+          if (g.isIntersecting && !gorundu) { gorundu = true; calistir(); io.disconnect(); }
         });
-      }, { threshold: 0.4 });
+      }, { threshold: 0.3 });
       io.observe(diagram);
     } else {
-      run();   // eski tarayici: dogrudan oynat
+      calistir();
     }
-
-    if (replay) replay.addEventListener("click", run);
   })();
 
   /* ---- Tema anahtari ----------------------------------------------------
