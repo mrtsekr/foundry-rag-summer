@@ -184,8 +184,56 @@
   td .win { color: var(--accent); font-weight: 700; }
   td .lose { color: var(--signal); }
 
-  /* ---------- Decisions ---------- */
-  .decisions { display: grid; gap: 1.1rem; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); }
+  /* ---------- Beam (akış darbesi) ---------- */
+  .beam {
+    fill: none; stroke: var(--accent); stroke-width: 2.4; stroke-linecap: round;
+    stroke-dasharray: 60 480; stroke-dashoffset: 60; opacity: 0;
+  }
+  .beam-head { fill: var(--accent); opacity: 0; }
+  @media (prefers-reduced-motion: no-preference) {
+    .diagram.run .beam { opacity: 1; animation: beam 2.5s cubic-bezier(.32,.06,.28,1) forwards; }
+    @keyframes beam { to { stroke-dashoffset: -430; } }
+  }
+  .beam-ctl {
+    display: flex; flex-wrap: wrap; gap: .6rem 1rem; align-items: center;
+    justify-content: space-between; margin-top: .5rem;
+  }
+  .btn {
+    font-size: .74rem; font-weight: 600; letter-spacing: .04em;
+    padding: .35rem .75rem; border-radius: 2px; cursor: pointer;
+    color: var(--accent); background: var(--accent-dim);
+    border: 1px solid var(--accent);
+  }
+  .btn:hover { background: var(--accent); color: var(--surface); }
+
+  /* ---------- Decisions: bento — kutu boyutu = kararın ağırlığı ---------- */
+  .decisions { display: grid; gap: 1.1rem; grid-template-columns: 1fr; }
+  @media (min-width: 900px) {
+    .decisions { grid-template-columns: repeat(6, 1fr); }
+    .dec--lg   { grid-column: span 4; }
+    .dec--md   { grid-column: span 2; }
+    .dec--wide { grid-column: span 6; flex-direction: row; flex-wrap: wrap;
+                 align-items: center; gap: 1rem 2rem; }
+    .dec--wide .dec-txt { flex: 1 1 320px; }
+  }
+  .dec-readout {
+    font-family: "JetBrains Mono", monospace; font-variant-numeric: tabular-nums;
+    font-size: clamp(1.5rem, 1.2rem + 1.2vw, 2.1rem); font-weight: 700;
+    letter-spacing: -.02em; color: var(--accent); line-height: 1.1;
+  }
+  .dec-readout s { color: var(--signal); text-decoration-thickness: 1px; opacity: .8; }
+
+  /* ---------- Terminal + açıklama rayı ---------- */
+  .term-grid { display: grid; gap: 1.1rem; grid-template-columns: 1fr; align-items: start; }
+  @media (min-width: 900px) { .term-grid { grid-template-columns: minmax(0,1.9fr) minmax(0,1fr); } }
+  .rail { display: flex; flex-direction: column; gap: 1rem; }
+  .rail-item {
+    background: var(--surface); border: 1px solid var(--line);
+    border-left: 2px solid var(--accent); border-radius: 3px;
+    padding: .85rem .95rem; display: flex; flex-direction: column; gap: .3rem;
+  }
+  .rail-item.warn { border-left-color: var(--signal); }
+  .rail-item p { font-size: .88rem; color: var(--muted); }
   .dec { background: var(--surface); border: 1px solid var(--line); border-radius: 3px; padding: 1.15rem 1.1rem; display: flex; flex-direction: column; gap: .7rem; }
   .dec h3 { font-size: 1.06rem; }
   .dec p { font-size: .95rem; }
@@ -398,6 +446,9 @@
             <text x="510" y="226" class="d-title">Cevap + kaynak belge adı</text>
           </g>
 
+          <!-- Akış darbesi: soru -> cevap yolunu gercek cevap suresinde kat eder -->
+          <path class="beam" d="M158 170 H208 M358 170 H408 M578 170 H628 M713 196 V222 H520"/>
+
           <defs>
             <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5"
                     markerWidth="6" markerHeight="6" orient="auto-start-reverse">
@@ -405,6 +456,11 @@
             </marker>
           </defs>
         </svg>
+      </div>
+
+      <div class="beam-ctl">
+        <p class="label">Işık huzmesi soru→cevap yolunu <span class="mono">2,5 sn</span>'de kat ediyor — sistemin ölçülen ortalama cevap süresi.</p>
+        <button class="btn" type="button" id="replay">Akışı tekrar oynat</button>
       </div>
 
       <div class="spec">
@@ -429,7 +485,7 @@
       </div>
 
       <div class="decisions">
-        <article class="dec">
+        <article class="dec dec--lg">
           <span class="verdict no">reddedildi</span>
           <h3>Daha büyük embedding modeli</h3>
           <p>
@@ -440,7 +496,7 @@
           </p>
         </article>
 
-        <article class="dec">
+        <article class="dec dec--md">
           <span class="verdict">uygulandı</span>
           <h3>Parçaları bölmemek</h3>
           <p>
@@ -450,7 +506,7 @@
           </p>
         </article>
 
-        <article class="dec">
+        <article class="dec dec--md">
           <span class="verdict">uygulandı</span>
           <h3>Sıcaklığı <em>yükseltmek</em></h3>
           <p>
@@ -461,7 +517,7 @@
           </p>
         </article>
 
-        <article class="dec">
+        <article class="dec dec--md">
           <span class="verdict no">reddedildi</span>
           <h3>Tekrar cezası (<span class="mono">frequency_penalty</span>)</h3>
           <p>
@@ -471,7 +527,7 @@
           </p>
         </article>
 
-        <article class="dec">
+        <article class="dec dec--md">
           <span class="verdict">uygulandı</span>
           <h3>Örnekten olguyu çıkarmak</h3>
           <p>
@@ -481,14 +537,19 @@
           </p>
         </article>
 
-        <article class="dec">
-          <span class="verdict">uygulandı</span>
-          <h3>GPU'yu açıkça seçmek</h3>
-          <p>
-            Foundry SDK, çalışma sağlayıcıları bu sürece kayıtlı değilken sessizce CPU
-            varyantını seçiyor: model doğru çalışır ama sürünür. Açıkça
-            <span class="mono">cuda-gpu</span> seçilince cevap süresi 21,6 sn'den 2,5 sn'ye indi.
-          </p>
+        <article class="dec dec--wide">
+          <div class="dec-txt stack">
+            <span class="verdict">uygulandı</span>
+            <h3>GPU'yu açıkça seçmek</h3>
+            <p>
+              Foundry SDK, çalışma sağlayıcıları bu sürece kayıtlı değilken sessizce CPU
+              varyantını seçiyor: model doğru çalışır ama sürünür. Sorun bir hata mesajı
+              vermiyor — yalnızca yavaşlık olarak görünüyor. Açıkça
+              <span class="mono">cuda-gpu</span> varyantı seçilince aynı soru, aynı model,
+              aynı bilgisayarda 8 kat hızlandı.
+            </p>
+          </div>
+          <p class="dec-readout"><s>21,6 sn</s> → 2,5 sn</p>
         </article>
       </div>
 
@@ -560,6 +621,7 @@
         </p>
       </div>
 
+      <div class="term-grid">
       <div class="term">
         <div class="term-bar">
           <span class="dot"></span><span class="dot"></span><span class="dot"></span>
@@ -586,6 +648,31 @@ belirtmeniz önerilir.
 
 <span class="p">Soru&gt;</span> q
 <span class="d">Gorusuruz!</span></pre>
+      </div>
+
+      <aside class="rail">
+        <div class="rail-item">
+          <span class="label">1 · Politika sorusu</span>
+          <p>
+            Cevap <span class="mono">politikalar.txt</span>'teki cümleye dayanıyor. Model
+            kendi bilgisinden değil, getirilen parçadan konuşuyor — kaynak satırı bunun kanıtı.
+          </p>
+        </div>
+        <div class="rail-item">
+          <span class="label">2 · Dolaylı soru</span>
+          <p>
+            "Uçaktan indim" cümlesinde ne "transfer" ne "havalimanı" geçiyor. Anlamsal arama
+            yine de doğru belgeyi buluyor; kelime eşleşmesi bunu yapamazdı.
+          </p>
+        </div>
+        <div class="rail-item warn">
+          <span class="label">3 · Bilgi tabanında yok</span>
+          <p>
+            Bowling hiçbir belgede geçmiyor. Sistem yine de üç parça getiriyor ama model
+            uydurmuyor: "bilgim yok" deyip resepsiyona yönlendiriyor. Aranan davranış bu.
+          </p>
+        </div>
+      </aside>
       </div>
     </div>
   </section>
@@ -662,3 +749,32 @@ belirtmeniz önerilir.
     </div>
   </div>
 </footer>
+
+<script>
+  (function () {
+    var diagram = document.querySelector(".diagram");
+    var replay  = document.getElementById("replay");
+    if (!diagram) return;
+
+    // Darbeyi bir kez, sema gercekten goruntuye girdiginde calistir.
+    function run() {
+      diagram.classList.remove("run");
+      void diagram.getBoundingClientRect();   // reflow -> animasyon bastan baslar
+      diagram.classList.add("run");
+    }
+
+    if ("IntersectionObserver" in window) {
+      var seen = false;
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) {
+          if (e.isIntersecting && !seen) { seen = true; run(); io.disconnect(); }
+        });
+      }, { threshold: 0.4 });
+      io.observe(diagram);
+    } else {
+      run();   // eski tarayici: dogrudan oynat
+    }
+
+    if (replay) replay.addEventListener("click", run);
+  })();
+</script>
