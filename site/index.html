@@ -621,6 +621,21 @@
     .dny-bar { grid-column: 1 / -1; order: 3; }
   }
 
+  /* Canli mod: yerel sunucu (site/sunucu.py) ayaktayken. Rozet renk DEGISTIRIR
+     ama asil ayrimi YAZI tasir — "canli" / "kayitli" kelimesi. */
+  .dny-rozet.canli { border-style: dashed; }
+  .dny-bekle {
+    display: flex; align-items: center; gap: .5rem;
+    font-family: "JetBrains Mono", monospace; font-size: .82rem; color: var(--muted);
+    background: var(--surface); border: 1px dashed var(--line);
+    border-radius: 3px; padding: 1rem 1.1rem;
+  }
+  .dny-hata {
+    background: var(--surface); border: 1px solid var(--signal);
+    border-radius: 3px; padding: 1.05rem 1.1rem; font-size: .92rem;
+  }
+  .dny-hata strong { color: var(--signal); }
+
   /* Havuzda yoksa: sayfa da asistan gibi guvenli basarisiz olur. */
   .dny-bos {
     display: flex; flex-direction: column; gap: .8rem; align-items: flex-start;
@@ -1221,14 +1236,14 @@ belirtmeniz önerilir.
       <div class="stack col">
         <div class="dny-ust">
           <span class="label">Deneyin</span>
-          <span class="dny-rozet">kayıtlı gerçek çalıştırma</span>
+          <span class="dny-rozet" id="dnyRozet">kayıtlı gerçek çalıştırma</span>
         </div>
         <h2>Sorun — ama yalnızca gerçekten sorulmuş olanı.</h2>
         <p>
           Aşağıdaki 21 soru bu bilgisayarda gerçekten çalıştırıldı; cevaplar, kaynak
           dosyalar, benzerlik skorları ve süreler o çalıştırmalardan olduğu gibi alındı.
-          Bu sayfada <em>canlı model çalışmıyor</em> — kayıtta olmayan bir soruyu
-          uyduramaz, uydurmaz. Tam da asistanın kendisi gibi.
+          <span id="dnyModNot">Bu sayfada <em>canlı model çalışmıyor</em> — kayıtta olmayan bir soruyu
+          uyduramaz, uydurmaz. Tam da asistanın kendisi gibi.</span>
         </p>
       </div>
 
@@ -1563,10 +1578,13 @@ belirtmeniz önerilir.
   })();
 
 
-  /* ---- Deneyin: kayitli calistirma araligi -------------------------------
-     Veri sayfaya gomulu (script#dnyVeri). AG ISTEGI YOK, MODEL CAGRISI YOK.
-     ARIA combobox kalibi: giris role=combobox, liste role=listbox, etkin oge
-     aria-activedescendant ile bildirilir (odak giriste kalir). */
+  /* ---- Deneyin: kayitli havuz + (varsa) canli mod ----------------------
+     IKI MOD:
+     - KAYITLI (varsayilan, her yerde): veri sayfaya gomulu (script#dnyVeri),
+       ag istegi yok, model yok. Yayimlanan Artifact HEP bu modda calisir.
+     - CANLI (yalnizca yerelde): site/sunucu.py ayaktaysa acilista /saglik
+       yoklamasi tutar ve her soru GERCEKTEN calistirilir.
+     Yoklama basarisiz olursa hicbir sey degismez; kayitli mod aynen kalir. */
   (function () {
     var kutu    = document.getElementById("dnyVeri");
     var giris   = document.getElementById("dnyGiris");
@@ -1574,6 +1592,8 @@ belirtmeniz önerilir.
     var sonuc   = document.getElementById("dnySonuc");
     var sayac   = document.getElementById("dnySayac");
     var temizle = document.getElementById("dnyTemizle");
+    var rozet   = document.getElementById("dnyRozet");
+    var modNot  = document.getElementById("dnyModNot");
     if (!kutu || !giris || !liste || !sonuc) return;
 
     var veri;
@@ -1581,8 +1601,8 @@ belirtmeniz önerilir.
     var kayitlar = (veri && veri.kayitlar) || [];
     if (!kayitlar.length) return;
 
-    /* Turkce duyarli sadelestirme: once tr yerel kucultme (I -> i sorunu icin),
-       sonra aksanlari duzlestir ki "kahvalti" yazan da "Kahvalti"yi bulsun. */
+    var canli = false;   // /saglik tutarsa true olur
+
     function sadelestir(t) {
       return String(t).toLocaleLowerCase("tr")
         .replace(/\u0131/g, "i").replace(/\u011f/g, "g").replace(/\u00fc/g, "u")
@@ -1591,22 +1611,17 @@ belirtmeniz önerilir.
     }
     kayitlar.forEach(function (k) { k._n = sadelestir(k.soru); });
 
-    /* Gomulu veri bizim, ama yine de once HTML kacisi yapilir; denetimli
-       donusum ancak ondan SONRA uygulanir. */
     function kacir(t) {
       return String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
     }
-    /* Cevaplarda **kalin** markdown geciyor: kacistan sonra YALNIZCA bu kalip
-       <strong>'a cevriliyor. Baska hicbir markdown yorumlanmiyor. */
+    /* **kalin** disinda hicbir markdown yorumlanmaz; once tam kacis yapilir. */
     function kalin(t) {
       return kacir(t).replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
     }
-    /* Eslesen harfleri <mark> ile sarar. Kacis harf harf yapiliyor. */
     function vurgula(soru, sorgu) {
       if (!sorgu) return kacir(soru);
       var kelimeler = sadelestir(sorgu).split(/\s+/).filter(Boolean);
-      var d = sadelestir(soru);
-      var isaret = [], i, j, y;
+      var d = sadelestir(soru), isaret = [], i, j, y;
       for (i = 0; i < soru.length; i++) isaret.push(false);
       for (i = 0; i < kelimeler.length; i++) {
         if (!kelimeler[i]) continue;
@@ -1652,12 +1667,13 @@ belirtmeniz önerilir.
         li.setAttribute("role", "option");
         li.setAttribute("aria-selected", "false");
         li.innerHTML = vurgula(k.soru, sorgu);
-        li.addEventListener("mousedown", function (e) { e.preventDefault(); sec(k); });
+        li.addEventListener("mousedown", function (e) { e.preventDefault(); calistir(k); });
         liste.appendChild(li);
       });
       sayac.textContent = gosterilen.length
-        ? gosterilen.length + " / " + kayitlar.length + " kay\u0131tl\u0131 soru"
-        : "e\u015fle\u015fen kay\u0131t yok";
+        ? gosterilen.length + " / " + kayitlar.length + (canli ? " \u00f6rnek soru" : " kay\u0131tl\u0131 soru")
+        : (canli ? "\u00f6rneklerde e\u015fle\u015fme yok \u2014 yine de sorabilirsin"
+                 : "e\u015fle\u015fen kay\u0131t yok");
       etkin = -1;
       ac(gosterilen.length > 0);
     }
@@ -1673,37 +1689,39 @@ belirtmeniz önerilir.
       if (o.scrollIntoView) o.scrollIntoView({ block: "nearest" });
     }
 
-    function sec(k) {
-      giris.value = k.soru;
-      temizle.hidden = false;
-      ac(false);
-      /* Cubuklar 0-1 MUTLAK olcekte. Bilerek gerdirilmiyor: skorlarin
-         birbirine yakinligi bilginin kendisi. */
-      var satirlar = k.kaynaklar.map(function (kay) {
+    /* Tek kart cizici. "etiket" cevabin NEREDEN geldigini soyler; kayitli ile
+       canli cikti hicbir zaman ayni etiketi tasimaz. */
+    function kartCiz(etiket, soru, cevap, kaynaklar, sure) {
+      var satirlar = (kaynaklar || []).map(function (kay) {
         var yuzde = Math.max(0, Math.min(100, kay.skor * 100));
         return '<div class="dny-kaynak">' +
                  '<span class="dny-dosya mono">' + kacir(kay.dosya) + '</span>' +
                  '<span class="dny-bar"><i style="width:' + yuzde.toFixed(1) + '%"></i></span>' +
-                 '<span class="dny-skor mono">' + kay.skor.toFixed(3) + '</span>' +
+                 '<span class="dny-skor mono">' + Number(kay.skor).toFixed(3) + '</span>' +
                '</div>';
       }).join("");
-      var tk = (veri.uretim && veri.uretim.top_k) || k.kaynaklar.length;
+      var tk = (veri.uretim && veri.uretim.top_k) || (kaynaklar || []).length;
       sonuc.innerHTML =
         '<div class="card">' +
           '<div class="card-hd">' +
-            '<span class="label">Kay\u0131tl\u0131 \u00e7al\u0131\u015ft\u0131rma \u00b7 TOP_K = ' + kacir(String(tk)) + '</span>' +
-            '<span class="label mono">' + k.sure.toFixed(2).replace(".", ",") + ' sn</span>' +
+            '<span class="label">' + kacir(etiket) + ' \u00b7 TOP_K = ' + kacir(String(tk)) + '</span>' +
+            '<span class="label mono">' + Number(sure).toFixed(2).replace(".", ",") + ' sn</span>' +
           '</div>' +
           '<div class="card-bd qa">' +
-            '<p class="qa-q">' + kacir(k.soru) + '</p>' +
-            '<p class="qa-a">' + kalin(k.cevap) + '</p>' +
-            '<div class="dny-kaynaklar">' + satirlar + '</div>' +
+            '<p class="qa-q">' + kacir(soru) + '</p>' +
+            '<p class="qa-a">' + kalin(cevap) + '</p>' +
+            (satirlar ? '<div class="dny-kaynaklar">' + satirlar + '</div>' : '') +
           '</div>' +
         '</div>';
     }
 
-    /* Havuzda yoksa sayfa da asistan gibi guvenli basarisiz olur:
-       uydurmaz, bilmedigini soyler, kuruluma yonlendirir. */
+    function sec(k) {
+      giris.value = k.soru;
+      temizle.hidden = false;
+      ac(false);
+      kartCiz("Kay\u0131tl\u0131 \u00e7al\u0131\u015ft\u0131rma", k.soru, k.cevap, k.kaynaklar, k.sure);
+    }
+
     function bosGoster() {
       ac(false);
       sonuc.innerHTML =
@@ -1716,10 +1734,44 @@ belirtmeniz önerilir.
         '</div>';
     }
 
+    /* ---- canli mod ---- */
+    function canliSor(soru) {
+      giris.value = soru;
+      temizle.hidden = false;
+      ac(false);
+      sonuc.innerHTML = '<div class="dny-bekle">model \u00e7al\u0131\u015f\u0131yor\u2026 ' +
+                        '<span class="mono">' + kacir(soru) + '</span></div>';
+      fetch("/sor", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ soru: soru })
+      }).then(function (y) {
+        if (!y.ok) throw new Error("sunucu " + y.status);
+        return y.json();
+      }).then(function (d) {
+        if (d.hata) throw new Error(d.hata);
+        kartCiz("Canl\u0131 \u00e7al\u0131\u015ft\u0131rma", d.soru || soru, d.cevap, d.kaynaklar, d.sure);
+      }).catch(function (e) {
+        /* Hata yutulmaz ve cevap UYDURULMAZ: ne oldugu yazilir. */
+        sonuc.innerHTML =
+          '<div class="dny-hata">' +
+            '<p><strong>Cevap al\u0131namad\u0131.</strong></p>' +
+            '<p class="mono">' + kacir(String(e.message || e)) + '</p>' +
+            '<p>Yerel sunucu durmu\u015f olabilir. Terminalde ' +
+              '<span class="mono">python site/sunucu.py</span> h\u00e2l\u00e2 \u00e7al\u0131\u015f\u0131yor mu?</p>' +
+          '</div>';
+      });
+    }
+
+    /* Kayitli modda kayittan okur, canli modda GERCEKTEN calistirir. */
+    function calistir(k) {
+      if (canli) canliSor(k.soru); else sec(k);
+    }
+
     giris.addEventListener("input", function () {
       temizle.hidden = !giris.value;
       listeyiCiz(giris.value);
-      if (giris.value && !gosterilen.length) bosGoster();
+      if (!canli && giris.value && !gosterilen.length) bosGoster();
     });
     giris.addEventListener("focus", function () { listeyiCiz(giris.value); });
     giris.addEventListener("blur", function () { window.setTimeout(function () { ac(false); }, 120); });
@@ -1730,12 +1782,12 @@ belirtmeniz önerilir.
       else if (e.key === "Home" && acik) { e.preventDefault(); etkinYap(0); }
       else if (e.key === "End" && acik) { e.preventDefault(); etkinYap(liste.children.length - 1); }
       else if (e.key === "Enter") {
-        if (acik && etkin >= 0 && gosterilen[etkin]) { e.preventDefault(); sec(gosterilen[etkin]); }
-        else if (giris.value) {
-          e.preventDefault();
-          var t = suz(giris.value);
-          if (t.length) sec(t[0]); else bosGoster();
-        }
+        e.preventDefault();
+        if (acik && etkin >= 0 && gosterilen[etkin]) { calistir(gosterilen[etkin]); return; }
+        if (!giris.value) return;
+        if (canli) { canliSor(giris.value); return; }
+        var t = suz(giris.value);
+        if (t.length) sec(t[0]); else bosGoster();
       }
       else if (e.key === "Escape") { ac(false); }
     });
@@ -1745,8 +1797,36 @@ belirtmeniz önerilir.
       ac(false); giris.focus();
     });
 
-    /* Acilista bicimi gostermek icin ilk kayit secili gelir. */
-    sec(kayitlar[0]);
+    sec(kayitlar[0]);   // acilista bicimi goster
+
+    /* /saglik yoklamasi. Ayni koken oldugu icin Artifact'te de guvenli:
+       orada 404 doner, yoklama duser, kayitli mod aynen kalir. */
+    (function yokla() {
+      if (!/^https?:$/.test(location.protocol)) return;
+      if (typeof fetch !== "function") return;
+      var iptal = null, zaman = null;
+      try {
+        iptal = new AbortController();
+        zaman = window.setTimeout(function () { iptal.abort(); }, 1500);
+      } catch (e) { iptal = null; }
+      fetch("/saglik", iptal ? { signal: iptal.signal } : undefined)
+        .then(function (y) { return y.ok ? y.json() : null; })
+        .then(function (d) {
+          if (zaman) window.clearTimeout(zaman);
+          if (!d || d.canli !== true) return;
+          canli = true;
+          if (rozet) { rozet.textContent = "canl\u0131 \u2014 bu bilgisayarda \u00e7al\u0131\u015f\u0131yor"; rozet.className = "dny-rozet canli"; }
+          if (modNot) {
+            modNot.innerHTML = "Yerel sunucu ayakta, yani <em>canl\u0131 moddas\u0131n</em>: istedi\u011fin soruyu " +
+              "yazabilirsin, cevap " + kacir(String(d.chat_modeli || "")) + " taraf\u0131ndan bu bilgisayarda " +
+              "\u00fcretilir. A\u015fa\u011f\u0131daki kay\u0131tlar art\u0131k yaln\u0131zca \u00f6rnek listesi.";
+          }
+          giris.placeholder = "istedi\u011fin soruyu yaz, Enter'a bas";
+          listeyiCiz("");
+          ac(false);
+        })
+        .catch(function () { if (zaman) window.clearTimeout(zaman); });
+    })();
   })();
 
   /* ---- Komut kopyalama ----
