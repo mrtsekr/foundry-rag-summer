@@ -14,6 +14,10 @@ __pycache__/
 # --- Calistirma loglari (yerel, gecici) ---
 *.log
 
+# --- Arac klasoru (Claude Code oturum ayarlari ve gecici worktree'ler) ---
+# Projeyle ilgisi yok, makineye ozeldir.
+.claude/
+
 # --- Isletim sistemi / editor ---
 .DS_Store
 Thumbs.db
