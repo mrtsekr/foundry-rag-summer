@@ -184,12 +184,19 @@
   td .win { color: var(--accent); font-weight: 700; }
   td .lose { color: var(--signal); }
 
-  /* ---------- Beam (akış darbesi) ---------- */
+  /* ---------- Beam (akış darbesi) ----------
+     Iki katman: (1) yol boyunca sabit duran soluk taban cizgisi,
+     (2) uzerinde ilerleyen gradyanli + parildayan darbe. Tek katmanli
+     kesikli cizgi "isik" gibi degil "kesik cizgi" gibi gorunuyordu. */
+  /* stop-color'i CSS'ten veriyoruz: sunum niteligi olarak yazilan var() bazi
+     tarayicilarda sessizce dusuyor, CSS kurali ise niteligi ezip garantiliyor. */
+  #beamGrad stop { stop-color: var(--accent); }
+  .beam-base { fill: none; stroke: var(--accent); stroke-width: 1.4; opacity: .18; }
   .beam {
-    fill: none; stroke: var(--accent); stroke-width: 2.4; stroke-linecap: round;
-    stroke-dasharray: 60 480; stroke-dashoffset: 60; opacity: 0;
+    fill: none; stroke: url(#beamGrad); stroke-width: 2.8; stroke-linecap: round;
+    stroke-dasharray: 54 480; stroke-dashoffset: 54; opacity: 0;
+    filter: url(#beamGlow);
   }
-  .beam-head { fill: var(--accent); opacity: 0; }
   @media (prefers-reduced-motion: no-preference) {
     .diagram.run .beam { opacity: 1; animation: beam 2.5s cubic-bezier(.32,.06,.28,1) forwards; }
     @keyframes beam { to { stroke-dashoffset: -430; } }
@@ -234,7 +241,27 @@
   }
   .rail-item.warn { border-left-color: var(--signal); }
   .rail-item p { font-size: .88rem; color: var(--muted); }
-  .dec { background: var(--surface); border: 1px solid var(--line); border-radius: 3px; padding: 1.15rem 1.1rem; display: flex; flex-direction: column; gap: .7rem; }
+  .dec {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 3px;
+    padding: 1.15rem 1.1rem; display: flex; flex-direction: column; gap: .7rem;
+    position: relative; overflow: hidden;
+    transition: border-color .25s ease, box-shadow .25s ease, transform .25s ease;
+  }
+  /* Hover'da ust kenarda beliren aksan cizgisi: kartin "aktif" oldugunu
+     soyler, kutunun icindeki hicbir bilgiyi ortmez. */
+  .dec::after {
+    content: ""; position: absolute; inset: 0 0 auto 0; height: 2px;
+    background: linear-gradient(90deg, var(--accent), transparent 72%);
+    opacity: 0; transition: opacity .25s ease;
+  }
+  .dec:hover::after, .dec:focus-within::after { opacity: 1; }
+  .dec:hover, .dec:focus-within { border-color: var(--accent); box-shadow: 0 10px 30px -24px var(--ink); }
+  /* Reddedilen kararlar begonvil rengiyle vurgulanir — rozetle ayni dil. */
+  .dec:has(.verdict.no)::after { background: linear-gradient(90deg, var(--signal), transparent 72%); }
+  .dec:has(.verdict.no):hover, .dec:has(.verdict.no):focus-within { border-color: var(--signal); }
+  @media (prefers-reduced-motion: no-preference) {
+    .dec:hover, .dec:focus-within { transform: translateY(-2px); }
+  }
   .dec h3 { font-size: 1.06rem; }
   .dec p { font-size: .95rem; }
   .verdict {
@@ -255,7 +282,12 @@
     padding: .55rem .85rem; border-bottom: 1px solid #ffffff1a;
     font-family: "JetBrains Mono", monospace; font-size: .72rem; color: var(--term-dim);
   }
+  /* Terminal gostergeleri: doygunlugu dusurulmus kanonik uclu — videoda
+     "bu bir terminal" bilgisini tek karede veriyor. */
   .dot { width: 9px; height: 9px; border-radius: 50%; background: #ffffff26; }
+  .term-bar .dot:nth-of-type(1) { background: #C86B60; }
+  .term-bar .dot:nth-of-type(2) { background: #C79A48; }
+  .term-bar .dot:nth-of-type(3) { background: #6BA778; }
   .term pre {
     margin: 0; padding: 1rem .95rem; overflow-x: auto;
     font-family: "JetBrains Mono", monospace; font-size: .8rem; line-height: 1.72;
@@ -447,9 +479,26 @@
           </g>
 
           <!-- Akış darbesi: soru -> cevap yolunu gercek cevap suresinde kat eder -->
-          <path class="beam" d="M158 170 H208 M358 170 H408 M578 170 H628 M713 196 V222 H520"/>
+          <path class="beam-base" d="M158 170 H208 M358 170 H408 M578 170 H628 M713 196 V222 H520"/>
+          <path class="beam"      d="M158 170 H208 M358 170 H408 M578 170 H628 M713 196 V222 H520"/>
 
           <defs>
+            <!-- Darbenin basi parlak, kuyrugu sonuk: "ilerleyen isik" hissi buradan geliyor.
+                 userSpaceOnUse: gradyan semanin genisligine sabitlenir, darbe ilerledikce
+                 farkli bolgelerini orneklerken renk hafifce degisir. -->
+            <linearGradient id="beamGrad" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="980" y2="0">
+              <stop offset="0"   stop-color="var(--accent)" stop-opacity=".25"/>
+              <stop offset=".55" stop-color="var(--accent)" stop-opacity="1"/>
+              <stop offset="1"   stop-color="var(--accent)" stop-opacity=".9"/>
+            </linearGradient>
+            <filter id="beamGlow" x="-40%" y="-400%" width="180%" height="900%">
+              <feGaussianBlur stdDeviation="2.4" result="bulanik"/>
+              <feMerge>
+                <feMergeNode in="bulanik"/>
+                <feMergeNode in="SourceGraphic"/>
+              </feMerge>
+            </filter>
+
             <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5"
                     markerWidth="6" markerHeight="6" orient="auto-start-reverse">
               <path d="M0 0 L10 5 L0 10 z" fill="currentColor" style="color: var(--muted)"/>
