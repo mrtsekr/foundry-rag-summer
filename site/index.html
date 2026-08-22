@@ -900,9 +900,9 @@
         <span class="label hero-pil giris" style="--gec: 0ms">Tamamen çevrimdışı · Türkçe · tek dizüstü bilgisayar</span>
         <h1 class="giris" style="--gec: 120ms">Bilmediğini <span class="kicker">bilen</span> bir otel asistanı.</h1>
         <p class="lede giris" style="--gec: 240ms">
-          Bir tatil köyünün belgelerini okuyup misafir sorularını Türkçe yanıtlıyor —
-          internet bağlantısı olmadan, kendi GPU'sunda. Her cevabın altında hangi
-          belgeden geldiği yazıyor; belgelerde yoksa uydurmuyor.
+          Bir tatil köyünün belgelerini okuyup misafir sorularını Türkçe yanıtlıyor.
+          İnternet bağlantısı yok, hesap kendi GPU'sunda dönüyor. Her cevabın altında
+          hangi belgeden geldiği yazıyor; belgelerde yoksa uydurmuyor.
         </p>
       </div>
 
@@ -923,9 +923,9 @@
             </div>
           </div>
           <p class="note">
-            Bilgi tabanında bowling yok. Sistem en yakın üç parçayı yine getirdi —
-            skorlar birbirine çok yakın, yani hiçbiri gerçekten ilgili değil — ve model
-            uydurmak yerine bilmediğini söyledi. Projenin en önemsediği davranış bu.
+            Bilgi tabanında bowling yok. Sistem en yakın üç parçayı yine getirdi.
+            Skorlar birbirine çok yakın: hiçbiri gerçekten ilgili değil. Model bunu
+            uydurmayla kapatmadı, bilmediğini söyledi. Proje en çok bu davranışı önemsiyor.
           </p>
         </div>
       </div>
@@ -937,11 +937,11 @@
     <div class="stack-lg">
       <div class="stack col">
         <span class="label">Ölçüm</span>
-        <h2>Sayılar iyimser değil, dürüst.</h2>
+        <h2>Ölçümün söylediği.</h2>
         <p>
           17 soruluk bir değerlendirme seti iki metriği <em>ayrı</em> ölçüyor: cevap
-          doğruluğu ve retrieval isabeti. Ayırmak, bir hatanın nerede olduğunu söylüyor —
-          yanlış parça mı geldi, yoksa doğru parça gelip model mi yanlış cevapladı.
+          doğruluğu ve retrieval isabeti. Ayırmak, bir hatanın nerede olduğunu söylüyor.
+          Yanlış parça mı geldi, yoksa doğru parça gelip model mi yanlış cevapladı?
         </p>
       </div>
 
@@ -1014,8 +1014,8 @@
       <p class="note col">
         Cevap doğruluğu bir <em>aralık</em> olarak veriliyor çünkü üretim örneklemeli
         (<span class="mono">temperature = 0.7</span>): aynı soru çalıştırmalar arasında farklı
-        cevaplanabiliyor. En iyi turu seçip raporlamak yerine gözlenen aralık yazılıyor.
-        Retrieval ise deterministik olduğu için hiç oynamıyor.
+        cevaplanabiliyor. En iyi tur seçilmedi; yazılan sayı dört çalıştırmanın
+        kapsadığı aralık. Retrieval ise deterministik olduğu için hiç oynamıyor.
       </p>
     </div>
   </section>
@@ -1038,7 +1038,7 @@
       </div>
 
       <div class="beam-ctl">
-        <p class="label">Sorgu satırındaki her tur <span class="mono">2,5 sn</span> sürüyor — sistemin ölçülen ortalama cevap süresi. Hazırlık satırı daha yavaş akıyor çünkü o adım yalnızca bir kez çalışıyor.</p>
+        <p class="label">Sorgu satırındaki her tur <span class="mono">2,5 sn</span> sürüyor, sistemin ölçülen ortalama cevap süresi. Hazırlık satırı daha yavaş akıyor çünkü o adım yalnızca bir kez çalışıyor.</p>
       </div>
 
       <dl class="spec">
@@ -1055,11 +1055,11 @@
     <div class="stack-lg">
       <div class="stack col">
         <span class="label">Kararlar</span>
-        <h2>Her ayar bir ölçümün sonucu.</h2>
+        <h2>Altı karar, ikisi ret.</h2>
         <p>
           Bu projede hiçbir sayı "iyi görünüyor" diye seçilmedi. Aşağıdakilerin hepsi
-          önce denendi, ölçüldü, bir kısmı da <em>reddedildi</em>. Sıralama takvime
-          değil <em>araştırmaya</em> ait: her madde, bir öncekinin açtığı soruyu kapatıyor.
+          önce denendi, ölçüldü, bir kısmı da reddedildi. Sıralama araştırmanın kendi
+          sırası; takvimle ilgisi yok. Her madde, bir öncekinin açtığı soruyu kapatıyor.
         </p>
       </div>
 
@@ -1079,7 +1079,7 @@
             <p>
               İlk iş ölçmeyi mümkün kılmaktı. Foundry SDK, çalışma sağlayıcıları bu
               sürece kayıtlı değilken sessizce CPU varyantını seçiyor: model doğru
-              çalışır ama sürünür. Sorun bir hata mesajı vermiyor — yalnızca yavaşlık
+              çalışır ama sürünür. Sorun bir hata mesajı vermiyor, yalnızca yavaşlık
               olarak görünüyor. Açıkça <span class="mono">cuda-gpu</span> varyantı
               seçilince aynı soru, aynı model, aynı bilgisayarda 8 kat hızlandı ve
               bundan sonraki her deneme uygulanabilir hale geldi.
@@ -1099,7 +1099,7 @@
             <p>
               Model aynı cümleyi 20 kez tekrarlıyordu ve ilk şüpheli belliydi: tekrarı
               doğrudan cezalandırmak. Bu yüzden tekrar cezası daha en baştan açık
-              çalıştırıldı — ama döngüyü kırmadı, üstelik işi kötüleştirdi: cevapları
+              çalıştırıldı. Döngüyü kırmadı, üstelik işi kötüleştirdi: cevapları
               boşalttı, hatta bir soruda "kumarhane <em>yok</em>"u "<em>var</em>"a
               çevirerek tehlikeli bir halüsinasyon üretti.
             </p>
@@ -1114,7 +1114,7 @@
               <span class="tl-ord num" aria-hidden="true"></span>
               <span class="verdict">uygulandı</span>
             </div>
-            <h3>Sıcaklığı <em>yükseltmek</em></h3>
+            <h3>Sıcaklığı yükseltmek</h3>
             <p>
               Ceza yanlış araç çıkınca suçlu başka yerde arandı. Suçlu sanılan sıcaklık
               aslında çözümdü: düşük sıcaklıkta (0.3) üretim aynı token dizisine
@@ -1136,8 +1136,8 @@
             <p>
               Üretim düzelince sıra istemin kendisine geldi. Modele biçim öğreten
               few-shot örneğine somut bir sayı ("200 oda") konduğunda, model doğru
-              parçayı getiremediği bir soruda o sayıyı cevaba <em>sızdırdı</em> — yani
-              örneğin kendisi bir halüsinasyon kaynağına dönüşmüştü. Örnek, veri
+              parçayı getiremediği bir soruda o sayıyı cevaba sızdırdı: örneğin
+              kendisi bir halüsinasyon kaynağına dönüşmüştü. Örnek, veri
               taşımayan tek bir güvenlik örneğine indirildi.
             </p>
             <div class="tl-kanit"><span>"200 oda" örneği cevaba sızdı · doğruluk aynı, sızıntı sıfır</span></div>
@@ -1156,7 +1156,7 @@
               Üretim tarafı oturunca soru retrieval'a döndü. Planın önerdiği
               <span class="mono">qwen3-embedding-0.6b</span> gerçekten kuruldu ve üretim
               ayarında ölçüldü. Sıralamanın tepesinde iyiydi ama havalimanı transferi
-              sorusunda doğru parçayı 2. sıradan 5.'ye düşürdü — yani ilk 3'ün dışına.
+              sorusunda doğru parçayı 2. sıradan 5.'ye düşürdü, yani ilk 3'ün dışına.
               Üstelik sorgu başına ~0,73 sn ekliyordu.
             </p>
             <div class="tl-kanit"><span>kanıt ilk 3'te · e5 15/16 — qwen 14/16 · +0,73 sn/sorgu</span></div>
@@ -1173,9 +1173,9 @@
             </div>
             <h3>Parçaları bölmemek</h3>
             <p>
-              Aynı kıyasın asıl bulgusu embedding modeli değildi: her iki model de en
-              iyi sonucu parçalama <em>yokken</em> veriyordu. Sezgi "küçük parça =
-              keskin embedding" diyordu, ölçüm çürüttü — her paragrafı ayrı parçaya
+              Aynı kıyas asıl bulgusunu başka yerde verdi: her iki model de en iyi
+              sonucu parçalama <em>yokken</em> veriyordu. Sezgi "küçük parça = keskin
+              embedding" diyordu; ölçüm bunu çürüttü. Her paragrafı ayrı parçaya
               bölmek cevabı komşu bağlamdan koparıyordu. Parçaları 1000 karaktere kadar
               toparlayınca 31 parça 9'a indi ve doğruluk belirgin biçimde arttı.
             </p>
@@ -1190,7 +1190,7 @@
         <p>
           Retrieval deterministik olduğu için model seçimi burada yapıldı, LLM'in
           gürültüsüne bırakılmadan. <span class="mono">TOP_K = 3</span> olduğundan
-          <em>kanıt ilk 3'te mi</em> satırı karar satırıdır: modelin gerçekten gördüğü bilgi budur.
+          <em>kanıt ilk 3'te mi</em> satırı karar satırıdır: modelin gerçekten gördüğü bilgi bu satırda.
         </p>
       </div>
 
@@ -1234,8 +1234,8 @@
       </div>
 
       <p class="note col">
-        Yaz okulu planı büyük modeli öneriyordu. Ölçüm aksini söyleyince plana değil ölçüme
-        uyuldu — ama Foundry yolu silinmedi: tek satır ayarla geri açılabiliyor ve bilgi tabanı
+        Yaz okulu planı büyük modeli öneriyordu. Ölçüm aksini söyledi ve ölçüme uyuldu.
+        Foundry yolu yine de silinmedi: tek satır ayarla geri açılabiliyor, bilgi tabanı
         büyüdüğünde aynı kıyas tekrarlanabiliyor.
       </p>
     </div>
@@ -1286,8 +1286,8 @@ belirtmeniz önerilir.
         <div class="rail-item">
           <span class="label">1 · Politika sorusu</span>
           <p>
-            Cevap <span class="mono">politikalar.txt</span>'teki cümleye dayanıyor. Model
-            kendi bilgisinden değil, getirilen parçadan konuşuyor — kaynak satırı bunun kanıtı.
+            Cevap <span class="mono">politikalar.txt</span>'teki cümleye dayanıyor.
+            Kaynak satırı da bunu gösteriyor: model getirilen parçadan konuşuyor.
           </p>
         </div>
         <div class="rail-item">
@@ -1301,7 +1301,7 @@ belirtmeniz önerilir.
           <span class="label">3 · Bilgi tabanında yok</span>
           <p>
             Bowling hiçbir belgede geçmiyor. Sistem yine de üç parça getiriyor ama model
-            uydurmuyor: "bilgim yok" deyip resepsiyona yönlendiriyor. Aranan davranış bu.
+            uydurmuyor: "bilgim yok" deyip resepsiyona yönlendiriyor.
           </p>
         </div>
       </aside>
@@ -1320,12 +1320,12 @@ belirtmeniz önerilir.
           <span class="label">Deneyin</span>
           <span class="dny-rozet" id="dnyRozet">kayıtlı gerçek çalıştırma</span>
         </div>
-        <h2>Sorun — ama yalnızca gerçekten sorulmuş olanı.</h2>
+        <h2>Kayıttan sorun.</h2>
         <p>
           Aşağıdaki 21 soru bu bilgisayarda gerçekten çalıştırıldı; cevaplar, kaynak
           dosyalar, benzerlik skorları ve süreler o çalıştırmalardan olduğu gibi alındı.
-          <span id="dnyModNot">Bu sayfada <em>canlı model çalışmıyor</em> — kayıtta olmayan bir soruyu
-          uyduramaz, uydurmaz. Tam da asistanın kendisi gibi.</span>
+          <span id="dnyModNot">Bu sayfada <em>canlı model çalışmıyor</em>: kayıtta olmayan
+          bir soruyu uyduramaz, uydurmaz.</span>
         </p>
       </div>
 
@@ -1448,14 +1448,14 @@ belirtmeniz önerilir.
         <span class="label">Sınırlar</span>
         <h2>Neyi yapamadığı da burada yazıyor.</h2>
         <p>
-          Kalan hatalar bilerek <em>güvenli</em> tarafta bırakıldı: sistem bilmediğinde
+          Kalan hatalar bilerek güvenli tarafta bırakıldı: sistem bilmediğinde
           uydurmuyor, "bilgim yok" diyor ya da bağlama sadık kalıp eksik cevaplıyor.
           Bedeli birkaç puanlık doğruluk, karşılığı misafire yanlış bilgi vermemek.
         </p>
         <p>
           Asıl tavan üretim tarafında: 4 milyarlık bir model, 6 GB'lık bir kartta, Türkçe
-          günlük dilde zorlanabiliyor. Gerçek bir örnek — retrieval doğru parçayı getirdi,
-          saatler doğru, ama cümle bozuk:
+          günlük dilde zorlanabiliyor. Aşağıda gerçek bir örnek var: retrieval doğru
+          parçayı getirdi, saatler doğru, ama cümle bozuk.
         </p>
       </div>
 
@@ -1484,7 +1484,7 @@ belirtmeniz önerilir.
           ardından bir kod incelemesi, "…restoran <em>var mı</em>?" sorusunda aynı kusurun
           kaldığını gösterdi. Buradan çıkan kural artık koda yazılı:
           <strong>sorunun içinde geçen bir kelime kabul anahtarı olamaz.</strong>
-          Headline doğruluk %88'den %84'e indi — sistem kötüleşmedi, ölçüm dürüstleşti.
+          Headline doğruluk %88'den %84'e indi: sistem kötüleşmedi, ölçüm dürüstleşti.
         </p>
       </div>
     </div>
