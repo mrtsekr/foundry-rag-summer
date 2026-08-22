@@ -318,6 +318,12 @@
   }
   .tl-i:last-child::before { display: none; }
 
+  /* 05 -> 06 arasindaki bag SIRA degil TUREME: parcalama bulgusu embedding
+     kiyasinin ICINDEN cikti (her iki model de en iyi sonucu parcalama yokken
+     verdi). Bu yuzden o ray parcasi notr cizgi olmaktan cikip aksana geciyor
+     ve kalinlasiyor; bagi metin degil duzenin kendisi soyluyor. */
+  .tl-i--dallanir::before { background: var(--accent); width: 2px; margin-left: -1px; }
+
   .tl-node {
     grid-column: 1; grid-row: 1;
     width: var(--tl-node); height: var(--tl-node);
@@ -345,18 +351,46 @@
     font-size: .72rem; font-weight: 500; letter-spacing: .06em; color: var(--muted);
   }
   .tl-ord::before { content: counter(kx, decimal-leading-zero); }
-  .tl-body h3 { font-size: 1.06rem; }
+  /* .verdict, bento kartinda sutun akisinda tam genislige yayilmasin diye
+     align-self:flex-start tasiyor. Burada satir akisindayiz: o deger rozeti
+     sira numarasina gore yukari kaydiriyordu, satir icinde ortala. */
+  .tl-meta .verdict { align-self: center; }
+  /* Turemis maddenin geriye referansi. Rozet gibi cerceveli degil — karar
+     isareti one cikmali, bu yalnizca kokeni soyluyor. */
+  .tl-koken {
+    display: inline-flex; align-items: center; gap: .3rem;
+    font-family: "JetBrains Mono", monospace; font-size: .69rem; color: var(--accent);
+  }
+  /* "Tekrar cezasi (frequency_penalty)" ve "qwen3-embedding-0.6b" gibi tek
+     parca mono jetonlar 375px'te satira sigmiyor; yalnizca sigmadiklarinda
+     kirilsinlar (break-word), Turkce kelimeler bolunmesin. */
+  .tl-body h3 { font-size: 1.06rem; overflow-wrap: break-word; }
   .tl-body p  { font-size: .95rem; max-width: 64ch; }
 
-  /* KANIT SATIRI — karari dogrulayan olcum. Bento kartlarinda hover'da
-     aciliyordu; timeline'da yer oldugu icin HER ZAMAN acik. Boylece olcum
-     dokunmatik cihazda da, yazdirmada da gorunur. */
+  /* KANIT SATIRI — karari dogrulayan olcum. Kart surumundeki davranis AYNEN
+     korunuyor: VARSAYILAN acik, yalnizca gercek isaretleyici cihazi olanlarda
+     kapali durup hover/odakla aciliyor. Boylece hover'i olmayan (dokunmatik,
+     klavye, yazdirma) hicbir baglamda kanit kaybolmuyor.
+     grid-template-rows 0fr -> 1fr: yuksekligi bilinmeyen icerigi max-height
+     tahmini gerektirmeden animasyonlamanin duzgun yolu. */
   .tl-kanit {
+    display: grid; grid-template-rows: 1fr; opacity: 1;
+    transition: grid-template-rows .3s ease, opacity .3s ease;
+  }
+  .tl-kanit > span {
+    overflow: hidden; min-height: 0;
     font-family: "JetBrains Mono", monospace; font-size: .74rem; line-height: 1.55;
     color: var(--accent); font-variant-numeric: tabular-nums;
     border-left: 2px solid var(--accent); padding-left: .65rem;
+    overflow-wrap: break-word;
   }
-  .tl-i--no .tl-kanit { color: var(--signal); border-left-color: var(--signal); }
+  .tl-i--no .tl-kanit > span { color: var(--signal); border-left-color: var(--signal); }
+  @media (hover: hover) and (pointer: fine) {
+    .tl-kanit { grid-template-rows: 0fr; opacity: 0; }
+    .tl-i:hover .tl-kanit, .tl-i:focus-within .tl-kanit { grid-template-rows: 1fr; opacity: 1; }
+  }
+  /* Acilis/kapanis hareketi istenmiyorsa aninda gecsin — gorunurluk mantigi ayni. */
+  @media (prefers-reduced-motion: reduce) { .tl-kanit { transition: none; } }
 
   .tl-readout {
     font-family: "JetBrains Mono", monospace; font-variant-numeric: tabular-nums;
@@ -745,7 +779,7 @@
               boşalttı, hatta bir soruda "kumarhane <em>yok</em>"u "<em>var</em>"a
               çevirerek tehlikeli bir halüsinasyon üretti.
             </p>
-            <div class="tl-kanit">0.3 ve 0.6'da denendi · boş cevap + "yok" → "var" hatası</div>
+            <div class="tl-kanit"><span>0.3 ve 0.6'da denendi · boş cevap + "yok" → "var" hatası</span></div>
           </div>
         </li>
 
@@ -763,7 +797,7 @@
               saplanıyordu. <span class="mono">0.7</span> döngüyü kırdı, cevap bağlama
               dayalı olduğu için kalite bozulmadı.
             </p>
-            <div class="tl-kanit">0.3 → tekrar döngüsü · 0.7 → sıfır döngü, 7/7 soru doğru</div>
+            <div class="tl-kanit"><span>0.3 → tekrar döngüsü · 0.7 → sıfır döngü, 7/7 soru doğru</span></div>
           </div>
         </li>
 
@@ -782,11 +816,11 @@
               örneğin kendisi bir halüsinasyon kaynağına dönüşmüştü. Örnek, veri
               taşımayan tek bir güvenlik örneğine indirildi.
             </p>
-            <div class="tl-kanit">"200 oda" örneği cevaba sızdı · doğruluk aynı, sızıntı sıfır</div>
+            <div class="tl-kanit"><span>"200 oda" örneği cevaba sızdı · doğruluk aynı, sızıntı sıfır</span></div>
           </div>
         </li>
 
-        <li class="tl-i tl-i--no">
+        <li class="tl-i tl-i--no tl-i--dallanir">
           <span class="tl-node" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></span>
           <div class="tl-body">
             <div class="tl-meta">
@@ -801,7 +835,7 @@
               sorusunda doğru parçayı 2. sıradan 5.'ye düşürdü — yani ilk 3'ün dışına.
               Üstelik sorgu başına ~0,73 sn ekliyordu.
             </p>
-            <div class="tl-kanit">kanıt ilk 3'te · e5 15/16 — qwen 14/16 · +0,73 sn/sorgu</div>
+            <div class="tl-kanit"><span>kanıt ilk 3'te · e5 15/16 — qwen 14/16 · +0,73 sn/sorgu</span></div>
           </div>
         </li>
 
@@ -811,6 +845,7 @@
             <div class="tl-meta">
               <span class="tl-ord num" aria-hidden="true"></span>
               <span class="verdict">uygulandı</span>
+              <span class="tl-koken"><span aria-hidden="true">↳</span> 05'in ölçümünden</span>
             </div>
             <h3>Parçaları bölmemek</h3>
             <p>
@@ -820,7 +855,7 @@
               bölmek cevabı komşu bağlamdan koparıyordu. Parçaları 1000 karaktere kadar
               toparlayınca 31 parça 9'a indi ve doğruluk belirgin biçimde arttı.
             </p>
-            <div class="tl-kanit">31 parça → 9 parça · doğruluk %80 → %88 (5'er tur)</div>
+            <div class="tl-kanit"><span>31 parça → 9 parça · doğruluk %80 → %88 (5'er tur)</span></div>
           </div>
         </li>
 
