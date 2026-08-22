@@ -30,6 +30,7 @@ SITE_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SITE_DIR.parent))  # proje kokundeki modulleri gor
 
 import config  # noqa: E402
+import db  # noqa: E402
 import rag  # noqa: E402
 from llm import load_chat  # noqa: E402
 
@@ -154,6 +155,18 @@ def main() -> int:
         print("Model yuklenemedi: %s" % e)
         print("Foundry Local kurulu ve calisir durumda mi?")
         return 1
+
+    # Embedding modeli sentence-transformers tarafinda TEMBEL yukleniyor: ilk
+    # arama onu da indirip kurdugu icin ilk canli soru 11,7 sn suruyordu
+    # (sonrakiler 2,5 sn). Bir kez bosa arama yapip o bedeli baslangica
+    # tasiyoruz; boylece sayfadan gelen ILK soru da normal hizda cevaplaniyor.
+    print("Embedding isindiriliyor...")
+    try:
+        conn = db.connect()
+        db.search(conn, "isinma", 1)
+        conn.close()
+    except Exception as e:
+        print("  (isindirma atlandi: %s)" % e)
 
     sunucu = ThreadingHTTPServer((ADRES, PORT), Islem)
     print()
