@@ -636,6 +636,20 @@
   }
   .dny-hata strong { color: var(--signal); }
 
+  /* Model "bilgim yok" dediginde beliren kucuk tani notu. Iki hali var ve
+     ikisi de OLCULMUS bir gercege dayaniyor (bkz. commit notu):
+     - sorgu aksansizsa: aksan bazen retrieval'i degistiriyor, denemeye deger
+     - sorgu aksanliysa: sistem gercekten bilmiyor, ki bu TASARIM. */
+  .dny-ipucu {
+    display: flex; gap: .55rem; align-items: flex-start;
+    margin-top: .75rem; padding: .7rem .8rem;
+    border-left: 2px solid var(--accent); background: var(--accent-dim);
+    border-radius: 0 2px 2px 0; font-size: .86rem; line-height: 1.5;
+  }
+  .dny-ipucu.kesin { border-left-color: var(--muted); background: transparent; padding-left: .8rem; }
+  .dny-ipucu svg { width: 15px; height: 15px; flex: none; margin-top: .2rem; color: var(--accent); }
+  .dny-ipucu.kesin svg { color: var(--muted); }
+
   /* Havuzda yoksa: sayfa da asistan gibi guvenli basarisiz olur. */
   .dny-bos {
     display: flex; flex-direction: column; gap: .8rem; align-items: flex-start;
@@ -1641,6 +1655,13 @@ belirtmeniz önerilir.
       return cikti;
     }
 
+    /* Turkce'ye ozgu harf iceriyor mu? Aksansiz yazilmis bir sorgu, retrieval'i
+       bazen degistiriyor — 21 kayitli soruda olculdu: aksanlar silinince en
+       ustteki kaynak 20 sorunun 3'unde degisti (ortalama skor dususu 0,009,
+       en buyugu 0,045). Yani nadir ama gercek. */
+    function aksanVar(t) { return /[\u0131\u0130\u011f\u011e\u00fc\u00dc\u015f\u015e\u00f6\u00d6\u00e7\u00c7\u00e2\u00ee\u00fb]/.test(t); }
+    function bilmiyor(cevap) { return /bilgi\s*yok/i.test(String(cevap || "")); }
+
     function suz(sorgu) {
       var kelimeler = sadelestir(sorgu).split(/\s+/).filter(Boolean);
       if (!kelimeler.length) return kayitlar.slice();
@@ -1692,6 +1713,7 @@ belirtmeniz önerilir.
     /* Tek kart cizici. "etiket" cevabin NEREDEN geldigini soyler; kayitli ile
        canli cikti hicbir zaman ayni etiketi tasimaz. */
     function kartCiz(etiket, soru, cevap, kaynaklar, sure) {
+      var ipucu = ipucuKur(soru, cevap, kaynaklar);
       var satirlar = (kaynaklar || []).map(function (kay) {
         var yuzde = Math.max(0, Math.min(100, kay.skor * 100));
         return '<div class="dny-kaynak">' +
@@ -1712,7 +1734,45 @@ belirtmeniz önerilir.
             '<p class="qa-a">' + kalin(cevap) + '</p>' +
             (satirlar ? '<div class="dny-kaynaklar">' + satirlar + '</div>' : '') +
           '</div>' +
-        '</div>';
+        '</div>' + ipucu;
+    }
+
+    /* Yalnizca CANLI modda ve yalnizca model "bilgim yok" dediginde cikar.
+       Cevap gelmisken uyari basmak gurultu olurdu; bilgi gelmediginde ise
+       kullanicinin elinde denenecek bir sey olmasi ise yarar. */
+    /* Esik OLCULDU: 21 kayitli sorunun en dusuk ust skoru 0,791. Bunun alti,
+       kayit setindeki hicbir sorudan zayif retrieval demek. Ikinci tetikleyici
+       olarak duruyor cunku temperature=0.7 ile model her zaman duzgun
+       "bilgi yok" demiyor; bazen bos laf uretiyor ve o durumda metne
+       bakarak anlayamiyoruz, skora bakarak anliyoruz. */
+    var ZAYIF_ESIK = 0.79;
+    function zayif(kaynaklar) {
+      return !!(kaynaklar && kaynaklar.length && Number(kaynaklar[0].skor) < ZAYIF_ESIK);
+    }
+    function ipucuKur(soru, cevap, kaynaklar) {
+      if (!canli) return "";
+      if (!bilmiyor(cevap) && !zayif(kaynaklar)) return "";
+      var simge = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" ' +
+                  'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+                  '<circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/></svg>';
+      if (!aksanVar(soru)) {
+        return '<div class="dny-ipucu">' + simge +
+          '<span>Sorunuzu <strong>T\u00fcrk\u00e7e karakterlerle</strong> yazmay\u0131 deneyin ' +
+          '(\u0131, \u011f, \u00fc, \u015f, \u00f6, \u00e7). Aramada anlam kar\u015f\u0131la\u015ft\u0131rmas\u0131 ' +
+          'harflere duyarl\u0131: 21 kay\u0131tl\u0131 soruda \u00f6l\u00e7t\u00fck, aksanlar silinince en uygun belge ' +
+          '3 soruda de\u011fi\u015fti.</span></div>';
+      }
+      if (zayif(kaynaklar)) {
+        return '<div class="dny-ipucu">' + simge +
+          '<span>Getirilen parçaların benzerlik skoru düşük ' +
+          '(<span class="mono">' + Number(kaynaklar[0].skor).toFixed(3) + '</span> &lt; ' +
+          '<span class="mono">0.790</span>) — kayıtlı 21 sorunun hepsinden zayıf. ' +
+          'Bilgi tabanında bu konu geçmiyor olabilir.</span></div>';
+      }
+      return '<div class="dny-ipucu kesin">' + simge +
+        '<span>Bu bir hata de\u011fil: bilgi taban\u0131nda kar\u015f\u0131l\u0131\u011f\u0131 yok ve sistem ' +
+        '<strong>uydurmak yerine bilmedi\u011fini s\u00f6yl\u00fcyor</strong>. Projenin en \u00f6nemsedi\u011fi ' +
+        'davran\u0131\u015f bu.</span></div>';
     }
 
     function sec(k) {
