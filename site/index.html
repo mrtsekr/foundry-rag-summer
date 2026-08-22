@@ -191,13 +191,25 @@
   /* stop-color'i CSS'ten veriyoruz: sunum niteligi olarak yazilan var() bazi
      tarayicilarda sessizce dusuyor, CSS kurali ise niteligi ezip garantiliyor. */
   #beamGrad stop { stop-color: var(--accent); }
-  .beam-base { fill: none; stroke: var(--accent); stroke-width: 1.4; opacity: .18; }
+  .beam-base {
+    fill: none; stroke: var(--accent); stroke-width: 1.4; opacity: .18;
+    transition: opacity .7s ease .9s;
+  }
+  /* Darbe gectikten sonra yol "yanik" kalir: animasyon bittiginde sema
+     bos gorunmesin, hattin calistigi izlensin. */
+  .diagram.run .beam-base { opacity: .5; }
+  /* DINLENME HALI: huzme her zaman gorunur — yolun tamami boyanmis durur.
+     Onceden baslangic opakligi 0'di ve 1'e cikaran kural yalnizca
+     no-preference icindeydi; "hareketi azalt" acik olan kullanicida huzme
+     HIC cizilmiyordu. Artik hareket kapaliyken de yol gorunur, sadece
+     ilerleme animasyonu calismaz. */
   .beam {
     fill: none; stroke: url(#beamGrad); stroke-width: 2.8; stroke-linecap: round;
-    stroke-dasharray: 54 480; stroke-dashoffset: 54; opacity: 0;
     filter: url(#beamGlow);
   }
   @media (prefers-reduced-motion: no-preference) {
+    /* Hareket serbestse: once gizle, sema goruntuye girince darbe olarak gec. */
+    .beam { stroke-dasharray: 54 480; stroke-dashoffset: 54; opacity: 0; }
     .diagram.run .beam { opacity: 1; animation: beam 2.5s cubic-bezier(.32,.06,.28,1) forwards; }
     @keyframes beam { to { stroke-dashoffset: -430; } }
   }
@@ -215,7 +227,14 @@
 
   /* ---------- Decisions: bento — kutu boyutu = kararın ağırlığı ---------- */
   .decisions { display: grid; gap: 1.1rem; grid-template-columns: 1fr; }
-  @media (min-width: 900px) {
+  /* Ara genislik: iki sutun — dar onizleme panelinde de bento hissi kaybolmasin.
+     Onceden tek esik (900px) vardi ve bundan dar her panelde tum kutular tek
+     sutuna diziliyordu, yani bento hic gorunmuyordu. */
+  @media (min-width: 620px) {
+    .decisions { grid-template-columns: repeat(2, 1fr); }
+    .dec--wide { grid-column: span 2; }
+  }
+  @media (min-width: 860px) {
     .decisions { grid-template-columns: repeat(6, 1fr); }
     .dec--lg   { grid-column: span 4; }
     .dec--md   { grid-column: span 2; }
@@ -232,7 +251,7 @@
 
   /* ---------- Terminal + açıklama rayı ---------- */
   .term-grid { display: grid; gap: 1.1rem; grid-template-columns: 1fr; align-items: start; }
-  @media (min-width: 900px) { .term-grid { grid-template-columns: minmax(0,1.9fr) minmax(0,1fr); } }
+  @media (min-width: 860px) { .term-grid { grid-template-columns: minmax(0,1.9fr) minmax(0,1fr); } }
   .rail { display: flex; flex-direction: column; gap: 1rem; }
   .rail-item {
     background: var(--surface); border: 1px solid var(--line);
