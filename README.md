@@ -412,4 +412,7 @@ Kod [MIT lisansı](LICENSE) altındadır.
 
 Bu lisans `docs/` klasörünü kapsamaz. Oradaki belgeler üçüncü bir tarafın herkese
 açık içeriğinden uyarlanmış ve anonimleştirilmiş örnek verilerdir; yalnızca
-gösterim amacıyla bulunuyorlar.
+gösterim amacıyla bulunuyorlar. Ayrıntısı [`docs/NOTICE.md`](docs/NOTICE.md)
+dosyasında, yani verinin yanında duruyor. (`ingest.py` bu dosyayı bilgi tabanına
+almaz; `docs/` altındaki NOTICE, README, LICENSE ve CHANGELOG adlı dosyalar
+içerik değil açıklama sayılır.)

@@ -15,6 +15,11 @@ import db
 # Desteklenen belge turleri. .txt/.md duz metin okunur; .pdf pypdf ile cozulur.
 SUPPORTED = {".txt", ".md", ".pdf"}
 
+# docs/ hem bilgi tabani hem de bir klasor; icine konan her .md sessizce 10.
+# belge oluyordu. Asagidakiler ICERIK degil ACIKLAMA dosyalari, bilgi tabanina
+# girmemeleri gerekiyor.
+META_ADLAR = {"notice", "readme", "license", "changelog"}
+
 
 def read_document(path) -> str:
     """Bir belgeyi uzantisina gore metne cevirir (.txt, .md, .pdf)."""
@@ -90,7 +95,8 @@ def ingest() -> None:
         raise SystemExit(f"Belge klasoru yok: {config.DOCS_DIR}")
 
     dosyalar = sorted(p for p in config.DOCS_DIR.iterdir()
-                      if p.suffix.lower() in SUPPORTED)
+                      if p.suffix.lower() in SUPPORTED
+                      and p.stem.lower() not in META_ADLAR)
     if not dosyalar:
         raise SystemExit(
             f"{config.DOCS_DIR} icinde desteklenen belge (.txt/.md/.pdf) bulunamadi.")
