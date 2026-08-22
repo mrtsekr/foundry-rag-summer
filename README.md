@@ -272,7 +272,7 @@ metriği **ayrı** ölçer:
 | Metrik | Sonuç |
 |---|---|
 | **Cevap doğruluğu** | 13–16 / 17 · ortalama **%84** (4 çalıştırma) |
-| **Retrieval isabeti** | 14 / 16 · **%88** (çalıştırmalar arası sabit) |
+| **Retrieval isabeti** | 15 / 16 · **%94** (çalıştırmalar arası sabit) |
 | **Uç durumlar** | 5 / 5 (ayrı ölçülür, aşağıda) |
 
 İki metriği ayırmak, bir hatanın nerede olduğunu söyler: cevap yanlış ama
@@ -300,6 +300,18 @@ dahi — geçiyordu. Aynı kusurun ikinci örneği "aktivite" anahtarıydı; o d
 sorunun içinde geçen bir kelimeydi. Buradan çıkan genel kural `eval.py`'ye
 yazıldı: **sorunun içinde geçen bir kelime kabul anahtarı olamaz.** Anahtar,
 cevabın doğru olduğunu ayırt eden terim olmalı.
+
+Üçüncü bir düzeltme metriği bu kez **gevşetti** ve sayıyı yükseltti — ama
+gerekçesi öncekilerle aynı: ölçülen şey gerçeğe yaklaşsın. Retrieval isabeti
+soru başına **tek** bir doğru belge bekliyordu. Oysa bazı bilgiler birden fazla
+belgede geçiyor: "Otelde casino var mı?" sorusunun cevabı hem `otel_genel.txt`'te
+("Otel bünyesinde geniş bir casino … bulunur") hem `aktiviteler.txt`'te
+("Tesiste ayrıca büyük bir casino (kumarhane) bulunur") yazılı. Asistan doğru
+cevabı doğru belgeye dayanarak veriyordu, ama beklenen dosya diğeriyse metrik
+**ISKA** sayıyordu. Ölçülen şey retrieval değil, iki doğru belgeden hangisinin
+geldiğiydi — yani şanstı. Artık `kaynak` alanı liste kabul ediyor ve kesişim
+varsa isabet sayılıyor: **%88 → %94**. Kalan tek ıska ("sahil barı") gerçek bir
+ıska; doğru parça 9. sırada kalıyor.
 
 Bu bölümün başındaki sonuç tablosu sıkı metrikle ölçülmüştür. Buna karşılık
 *Önemli teknik kararlar* altındaki parçalama A/B tablosu (31 parça vs 9 parça)
@@ -383,11 +395,21 @@ sızıntı ortadan kalktı.
 
 ## Sonraki adımlar
 
-- **`eval.py`'da soru başına birden çok kabul edilebilir kaynak** tanımlamak —
-  yukarıdaki casino örneğindeki yanlış ISKA'yı ortadan kaldırır.
+Aşağıdakiler bilinçli olarak **yapılmadı**; her birinin ne zaman anlamlı hale
+geleceği yazılı. Bir şeyi "sonraki adım" diye listelemek kolay, ne zaman
+gerçekten işe yarayacağını söylemek daha dürüst.
+
 - **Foundry embedding'i daha büyük bir bilgi tabanında yeniden ölçmek.** Bugünkü
   9 parçalık korpusta e5-small önde çıktı, ama `bench_chunking.py` Qwen'in parça
-  sayısı arttıkça güçlendiğini gösteriyor. Arka uç zaten kurulu: tek satır
-  değiştirip `bench_embed.py`'yi çalıştırmak yeterli.
-- **Yeniden-sıralama (reranker)** ve basit bir web arayüzü (aynı `rag.answer()`
-  üzerine) — ikisi de doğal sonraki adımlar.
+  sayısı arttıkça güçlendiğini gösteriyor. Eksik olan kod değil **veri**: arka uç
+  zaten kurulu, tek satır (`config.EMBED_BACKEND`) değiştirip `bench_embed.py`
+  çalıştırmak yeterli. Yeni belgeler *gerçek* olduğunda anlamlı olur; sırf ölçüm
+  yapmak için sentetik belge üretmek sonucu da anlatıyı da bozar.
+- **Yeniden-sıralama (reranker).** Bu ölçekte işe yaramaz: toplam 9 parça var ve
+  `TOP_K=3`. Reranker'ın işi çok sayıda aday arasından iyi olanı yukarı çekmek;
+  9 adayın olduğu yerde yeniden sıralanacak bir şey yok. Üstelik ikinci bir model
+  (cross-encoder) cevap süresine eklenir. Parça sayısı birkaç yüze çıktığında
+  gündeme gelir.
+- **Basit bir web arayüzü** (aynı `rag.answer()` üzerine). Teknik engel yok;
+  retrieval, üretim ve kaynak gösterimi zaten bir fonksiyonun arkasında. Bu bir
+  kapsam kararı: proje şu an bir CLI asistanı ve ölçüm takımı.

@@ -26,7 +26,15 @@ from llm import load_chat
 # Test seti: her madde bir soru, beklenen anahtar kelimeler ve dogru kaynak dosya.
 #   - "anahtar": bu kelimelerden EN AZ BIRI cevapta (alt-dizi olarak) gecerse cevap
 #     dogru sayilir. Bir sorunun birden fazla gecerli anahtari olabilir.
-#   - "kaynak": dogru bilginin bulundugu belge. None ise bilgi tabaninda YOKTUR
+#   - "kaynak": dogru bilginin bulundugu belge. Bir dize ya da LISTE olabilir;
+#     liste verilince getirilen parcalardan HERHANGI BIRI listede varsa isabet
+#     sayilir. Sebep: bazi bilgiler birden fazla belgede gecer ve hangisinin
+#     geldigi onemli degildir. Ornek: "Otelde casino var mi?" sorusunun cevabi
+#     hem otel_genel.txt'te ("Otel bunyesinde genis bir casino ... bulunur")
+#     hem aktiviteler.txt'te ("Tesiste ayrica buyuk bir casino (kumarhane)
+#     bulunur") yazili. Tek kaynak beklerken asistan DOGRU cevap verdigi halde
+#     metrik ISKA sayiyordu — olculen sey retrieval degil, sansti.
+#     None ise bilgi tabaninda YOKTUR
 #     (asistan uydurmayip "bilgi yok"/"bulunmamaktadir" demeli).
 #
 # DIKKAT — bazi anahtarlar bilerek KÖK'tur, tam kelime degil (or. "bulunm",
@@ -56,13 +64,15 @@ TESTLER = [
     {"soru": "Spa merkezinde Turk hamami var mi?", "anahtar": ["hamam"], "kaynak": "spa.md"},
     {"soru": "Otelde aquapark var mi?", "anahtar": ["aquapark", "su parkı"], "kaynak": "havuz_plaj.txt"},
     {"soru": "Odaya evcil hayvan getirebilir miyim?", "anahtar": ["kabul edilm", "hayır", "yok"], "kaynak": "politikalar.txt"},
-    {"soru": "Otelde casino var mi?", "anahtar": ["casino", "kumarhane"], "kaynak": "aktiviteler.txt"},
+    {"soru": "Otelde casino var mi?", "anahtar": ["casino", "kumarhane"],
+     "kaynak": ["aktiviteler.txt", "otel_genel.txt"]},
     {"soru": "Otel toplam kac havuzu var?", "anahtar": ["10"], "kaynak": "havuz_plaj.txt"},
     {"soru": "Otel hangi yil hizmete acildi?", "anahtar": ["2018"], "kaynak": "otel_genel.txt"},
     # --- dolayli / parafraz sorular (retrieval'i zorlar) ---
     {"soru": "Denize karsi bir seyler icebilecegim sahil bari var mi?", "anahtar": ["sahil bar"], "kaynak": "yeme_icme.txt"},
     {"soru": "Cocugumla yapabilecegim aktiviteler neler?", "anahtar": ["çocuk", "oyun", "mini kulüp"], "kaynak": "aktiviteler.txt"},
-    {"soru": "Balayi ayricaligindan yararlanmak icin ne gerekiyor?", "anahtar": ["evlilik", "cüzdan", "6 ay"], "kaynak": "balayi.pdf"},
+    {"soru": "Balayi ayricaligindan yararlanmak icin ne gerekiyor?", "anahtar": ["evlilik", "cüzdan", "6 ay"],
+     "kaynak": ["balayi.pdf", "politikalar.txt"]},   # kural iki belgede de yazili
     {"soru": "Ucaktan indim, otele nasil ulasabilirim?", "anahtar": ["transfer", "Ercan", "56"], "kaynak": "ulasim.txt"},
     {"soru": "Aksam et yemek istiyorum, uygun bir restoran var mi?", "anahtar": ["steak", "et restoran"], "kaynak": "yeme_icme.txt"},
     # --- bilgi tabaninda OLMAYAN (uydurmamali) ---
@@ -160,7 +170,9 @@ def main() -> None:
         # 2) Retrieval isabeti (sadece bilgi tabaninda OLAN sorular icin)
         if t["kaynak"] is not None:
             retrieval_olculen += 1
-            ret_ok = t["kaynak"] in kaynaklar
+            # Dize de liste de kabul edilir; listede kesisim varsa isabet sayilir.
+            beklenen = {t["kaynak"]} if isinstance(t["kaynak"], str) else set(t["kaynak"])
+            ret_ok = bool(beklenen & kaynaklar)
             isabetli_retrieval += ret_ok
             ret_str = "OK" if ret_ok else "ISKA"
         else:
