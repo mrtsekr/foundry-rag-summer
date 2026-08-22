@@ -16,6 +16,12 @@ verilecegi icin olcum de dagitilan ayarda yapilmalidir.
 Calistirma:  python bench_embed.py
 """
 
+import sys
+from pathlib import Path
+
+# Bu dosya bench/ altinda; proje modulleri (config, db, ...) kokte duruyor.
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
 import time
 import unicodedata
 

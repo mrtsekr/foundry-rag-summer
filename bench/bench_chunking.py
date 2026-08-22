@@ -21,6 +21,16 @@ degildir. Bu yuzden iki metrik birden raporlanir:
 Calistirma:  python bench_chunking.py
 """
 
+import sys
+from pathlib import Path
+
+# Bu dosya bench/ altinda; proje modulleri (config, db, ...) kokte duruyor.
+# Kardes modul (bench_embed) icin kendi klasoru de ekleniyor: script olarak
+# calistirilinca Python bunu zaten yapar, ama import edilerek kullanilinca yapmaz.
+_bu = Path(__file__).resolve()
+sys.path.insert(0, str(_bu.parent.parent))
+sys.path.insert(0, str(_bu.parent))
+
 import numpy as np
 
 import config

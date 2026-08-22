@@ -10,6 +10,12 @@ Once:  python ingest.py
 Sonra: python tune_topk.py
 """
 
+import sys
+from pathlib import Path
+
+# Bu dosya bench/ altinda; proje modulleri (config, db, ...) kokte duruyor.
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
 import config
 import db
 from eval import TESTLER  # ayni test setini kullan
