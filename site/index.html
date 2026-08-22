@@ -307,6 +307,36 @@
   }
   .dec-readout s { color: var(--signal); text-decoration-thickness: 1px; opacity: .8; }
 
+  /* ---------- Komut satiri parcaciklari (Geist "Snippet" kalibi) ----------
+     Her komut kendi kutusunda, basinda soluk bir $ istemi ve saginda kopyala
+     dugmesi. Tek blok halinde vermek yerine satir satir vermenin sebebi:
+     kullanici tek bir komutu kopyalamak istiyor, hepsini degil. */
+  .snip-grup { display: flex; flex-direction: column; gap: .5rem; }
+  .snippet {
+    display: flex; align-items: center; gap: .5rem;
+    background: var(--surface); border: 1px solid var(--line); border-radius: 3px;
+    padding: .5rem .5rem .5rem .8rem;
+    transition: border-color .2s ease, box-shadow .2s ease;
+  }
+  .snippet:hover, .snippet:focus-within { border-color: var(--accent); box-shadow: var(--card-shadow-hi); }
+  .snip-cmd {
+    flex: 1 1 auto; min-width: 0; overflow-x: auto; white-space: nowrap;
+    font-family: "JetBrains Mono", monospace; font-size: .84rem;
+    scrollbar-width: thin;
+  }
+  .snip-cmd::before { content: "$"; color: var(--accent); margin-right: .6rem; opacity: .8; }
+  .snip-not { color: var(--muted); font-size: .78rem; padding-left: .4rem; white-space: nowrap; }
+  .kopyala {
+    flex: 0 0 auto; cursor: pointer; border-radius: 2px;
+    background: transparent; border: 1px solid var(--line); color: var(--muted);
+    font-family: Archivo, sans-serif; font-size: .68rem; font-weight: 600;
+    letter-spacing: .04em; padding: .28rem .55rem;
+    transition: color .2s ease, border-color .2s ease, background .2s ease;
+  }
+  .kopyala:hover { color: var(--accent); border-color: var(--accent); }
+  .kopyala.ok { color: var(--accent); border-color: var(--accent); background: var(--accent-dim); }
+  @media (max-width: 620px) { .snip-not { display: none; } }
+
   /* ---------- Terminal + açıklama rayı ---------- */
   .term-grid { display: grid; gap: 1.1rem; grid-template-columns: 1fr; align-items: start; }
   @media (min-width: 860px) { .term-grid { grid-template-columns: minmax(0,1.9fr) minmax(0,1fr); } }
@@ -430,6 +460,7 @@
         <li><a href="#mekanizma">Mekanizma</a></li>
         <li><a href="#kararlar">Kararlar</a></li>
         <li><a href="#calisirken">Çalışırken</a></li>
+        <li><a href="#kurulum">Kurulum</a></li>
         <li><a href="#sinirlar">Sınırlar</a></li>
       </ul>
     </nav>
@@ -854,6 +885,69 @@ belirtmeniz önerilir.
     </div>
   </section>
 
+  <!-- ============ KURULUM ============ -->
+  <section id="kurulum">
+    <div class="stack-lg">
+      <div class="stack col">
+        <span class="label">Kurulum</span>
+        <h2>Kendi bilgisayarında çalıştır.</h2>
+        <p>
+          Dört komut yeterli. Model ağırlıkları ilk çalıştırmada iner; ondan sonra
+          internet bağlantısı gerekmiyor — bilgi tabanı, embedding ve üretim tamamen
+          yerelde.
+        </p>
+      </div>
+
+      <div class="stack">
+        <span class="label">Bir kez</span>
+        <div class="snip-grup">
+          <div class="snippet">
+            <code class="snip-cmd">python -m venv .venv</code>
+            <span class="snip-not">Python 3.12</span>
+            <button class="kopyala" type="button">kopyala</button>
+          </div>
+          <div class="snippet">
+            <code class="snip-cmd">pip install -r requirements.txt</code>
+            <span class="snip-not">sentence-transformers, pypdf, foundry-local-sdk</span>
+            <button class="kopyala" type="button">kopyala</button>
+          </div>
+          <div class="snippet">
+            <code class="snip-cmd">python ingest.py</code>
+            <span class="snip-not">9 belge → 9 parça → SQLite</span>
+            <button class="kopyala" type="button">kopyala</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="stack">
+        <span class="label">Her gün</span>
+        <div class="snip-grup">
+          <div class="snippet">
+            <code class="snip-cmd">python assistant.py</code>
+            <span class="snip-not">etkileşimli asistan</span>
+            <button class="kopyala" type="button">kopyala</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="stack">
+        <span class="label">Ölçmek istersen</span>
+        <div class="snip-grup">
+          <div class="snippet">
+            <code class="snip-cmd">python eval.py</code>
+            <span class="snip-not">cevap + retrieval + uç durumlar</span>
+            <button class="kopyala" type="button">kopyala</button>
+          </div>
+          <div class="snippet">
+            <code class="snip-cmd">python bench_embed.py</code>
+            <span class="snip-not">embedding kıyası, LLM çalışmaz</span>
+            <button class="kopyala" type="button">kopyala</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- ============ DÜRÜSTLÜK ============ -->
   <section id="sinirlar">
     <div class="stack-lg">
@@ -1057,6 +1151,57 @@ belirtmeniz önerilir.
     }, { threshold: 0.12, rootMargin: "0px 0px -8% 0px" });
 
     ogeler.forEach(function (o) { io.observe(o); });
+  })();
+
+  /* ---- Komut kopyalama ----
+     Clipboard API her baglamda calismayabilir (izin, eski tarayici, gomulu
+     cerceve). Uc kademeli: modern API -> gecici textarea + execCommand ->
+     ikisi de olmazsa metni SEC, kullanici Ctrl+C yapabilsin. Sessiz basarisizlik
+     yok; dugme her durumda ne oldugunu soyluyor. */
+  (function () {
+    function geriBildir(btn, metin, basarili) {
+      var eski = btn.textContent;
+      btn.textContent = metin;
+      btn.classList.toggle("ok", basarili);
+      setTimeout(function () {
+        btn.textContent = eski;
+        btn.classList.remove("ok");
+      }, 1600);
+    }
+
+    function eskiYontem(kod, btn) {
+      var alan = document.createElement("textarea");
+      alan.value = kod.textContent;
+      alan.setAttribute("readonly", "");
+      alan.style.cssText = "position:fixed;top:0;left:-9999px;";
+      document.body.appendChild(alan);
+      alan.select();
+      var oldu = false;
+      try { oldu = document.execCommand("copy"); } catch (e) { oldu = false; }
+      document.body.removeChild(alan);
+
+      if (oldu) { geriBildir(btn, "kopyalandı", true); return; }
+      // Son care: komutu sec, kullanici kendi kopyalasin.
+      var s = window.getSelection(), r = document.createRange();
+      r.selectNodeContents(kod); s.removeAllRanges(); s.addRange(r);
+      geriBildir(btn, "Ctrl+C", false);
+    }
+
+    document.querySelectorAll(".snippet").forEach(function (kutu) {
+      var btn = kutu.querySelector(".kopyala");
+      var kod = kutu.querySelector(".snip-cmd");
+      if (!btn || !kod) return;
+
+      btn.addEventListener("click", function () {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(kod.textContent).then(function () {
+            geriBildir(btn, "kopyalandı", true);
+          }, function () { eskiYontem(kod, btn); });
+        } else {
+          eskiYontem(kod, btn);
+        }
+      });
+    });
   })();
 
   /* ---- Sayilarin sayarak gelmesi ----
