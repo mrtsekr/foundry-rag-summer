@@ -1,0 +1,21 @@
+# --- Sanal ortam (her gelistirici kendi makinesinde kurar) ---
+# Kurulum:  python -m venv .venv  &&  pip install -r requirements.txt
+.venv/
+
+# --- Python ara ciktilari ---
+__pycache__/
+*.py[cod]
+
+# --- Uretilen veritabani ---
+# rag_store.db her zaman "python ingest.py" ile yeniden uretilebilir; embedding'ler
+# ikili (BLOB) olarak durdugu icin depoda tutmak anlamsiz buyuklukte ve gurultulu.
+*.db
+
+# --- Calistirma loglari (yerel, gecici) ---
+*.log
+
+# --- Isletim sistemi / editor ---
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

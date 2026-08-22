@@ -1,0 +1,12 @@
+# Foundry Local RAG - Yaz Okulu Projesi
+# Chat/uretim modeli Foundry Local uzerinde calisir.
+foundry-local-sdk-winml   # Windows ML hizlandirmali Foundry Local SDK
+openai                    # OpenAI-uyumlu istemci (Foundry Local SDK ile kullanilir)
+
+# Retrieval icin embedding (Python tarafinda; chat/uretim Foundry Local'da kalir)
+sentence-transformers     # HuggingFace embedding modelleri (kullanilan: intfloat/multilingual-e5-small)
+
+# Belge okuma: PDF metni cikarmak icin (ingest.py .txt/.md/.pdf destekler)
+pypdf                     # saf-Python PDF metin cozucu
+
+# Not: SQLite icin ekstra paket gerekmez; Python'in yerlesik "sqlite3" modulu kullanilir.

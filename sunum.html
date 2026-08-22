@@ -1,0 +1,364 @@
+<title>Deniz Yıldızı Resort — Offline Türkçe RAG Asistanı</title>
+<style>
+  :root {
+    --bg: #eef3f2;
+    --surface: #ffffff;
+    --surface-2: #e5edeb;
+    --ink: #0d1f22;
+    --muted: #566a69;
+    --faint: #7d908f;
+    --primary: #0f7573;
+    --primary-soft: #dcebe9;
+    --accent: #cf5c34;
+    --accent-soft: #f6e2d8;
+    --line: #d2ddda;
+    --good: #2f8f6b;
+    --bad: #c0553a;
+
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, system-ui, sans-serif;
+    --mono: "Cascadia Code", "SF Mono", ui-monospace, Consolas, "Liberation Mono", monospace;
+
+    --maxw: 74ch;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #081416;
+      --surface: #0f2124;
+      --surface-2: #132a2d;
+      --ink: #e7efec;
+      --muted: #93a9a7;
+      --faint: #6f8583;
+      --primary: #3fb9b2;
+      --primary-soft: #12312f;
+      --accent: #ef8a5c;
+      --accent-soft: #2c1c16;
+      --line: #1c3639;
+      --good: #4bbd8e;
+      --bad: #e6795a;
+    }
+  }
+  :root[data-theme="light"] {
+    --bg: #eef3f2; --surface: #ffffff; --surface-2: #e5edeb; --ink: #0d1f22;
+    --muted: #566a69; --faint: #7d908f; --primary: #0f7573; --primary-soft: #dcebe9;
+    --accent: #cf5c34; --accent-soft: #f6e2d8; --line: #d2ddda; --good: #2f8f6b; --bad: #c0553a;
+  }
+  :root[data-theme="dark"] {
+    --bg: #081416; --surface: #0f2124; --surface-2: #132a2d; --ink: #e7efec;
+    --muted: #93a9a7; --faint: #6f8583; --primary: #3fb9b2; --primary-soft: #12312f;
+    --accent: #ef8a5c; --accent-soft: #2c1c16; --line: #1c3639; --good: #4bbd8e; --bad: #e6795a;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: var(--sans); font-size: 17px; line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 0 24px; }
+  section { padding: 60px 0; border-top: 1px solid var(--line); }
+  section:first-of-type { border-top: none; }
+
+  h1, h2, h3 { font-family: var(--serif); font-weight: 600; text-wrap: balance; line-height: 1.12; margin: 0; }
+  h2 { font-size: 30px; letter-spacing: -.01em; }
+  h3 { font-size: 20px; }
+  p { margin: 0; max-width: var(--maxw); color: var(--ink); }
+  .lead { color: var(--muted); }
+  code { font-family: var(--mono); font-size: .92em; }
+
+  .eyebrow {
+    font-family: var(--mono); font-size: 12px; letter-spacing: .18em; text-transform: uppercase;
+    color: var(--primary); margin: 0 0 14px;
+  }
+  .stack { display: flex; flex-direction: column; gap: 18px; }
+  .stack-sm { display: flex; flex-direction: column; gap: 10px; }
+
+  /* HERO */
+  .hero { padding: 76px 0 56px; }
+  .hero h1 { font-size: clamp(36px, 6vw, 60px); letter-spacing: -.02em; }
+  .hero .tagline { font-size: clamp(19px, 2.4vw, 23px); color: var(--muted); max-width: 60ch; margin-top: 20px; font-family: var(--serif); font-style: italic; }
+  .badge-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 28px; }
+  .badge {
+    font-family: var(--mono); font-size: 12.5px; padding: 6px 12px; border-radius: 999px;
+    background: var(--surface); border: 1px solid var(--line); color: var(--muted);
+  }
+  .badge b { color: var(--ink); font-weight: 600; }
+
+  /* STAT GRID */
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--line);
+    border: 1px solid var(--line); border-radius: 14px; overflow: hidden; margin-top: 8px; }
+  .stat { background: var(--surface); padding: 22px 20px; }
+  .stat .n { font-family: var(--serif); font-size: 34px; font-weight: 600; color: var(--primary);
+    font-variant-numeric: tabular-nums; line-height: 1; }
+  .stat .n .u { font-size: 16px; color: var(--faint); font-family: var(--mono); margin-left: 4px; }
+  .stat .k { font-family: var(--mono); font-size: 12px; letter-spacing: .04em; color: var(--muted);
+    text-transform: uppercase; margin-top: 10px; }
+
+  /* NOTE / CALLOUT */
+  .note { background: var(--surface); border: 1px solid var(--line); border-left: 3px solid var(--accent);
+    border-radius: 0 12px 12px 0; padding: 18px 22px; margin-top: 8px; }
+  .note p { font-size: 15px; color: var(--muted); max-width: none; }
+  .note p + p { margin-top: 10px; }
+  .note .lab { font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: .1em;
+    color: var(--accent); display: block; margin-bottom: 8px; }
+
+  /* PIPELINE */
+  .pipe { display: flex; flex-wrap: wrap; align-items: stretch; gap: 10px; margin-top: 6px; }
+  .node { flex: 1 1 120px; background: var(--surface); border: 1px solid var(--line);
+    border-radius: 12px; padding: 16px 14px; min-width: 0; }
+  .node .t { font-family: var(--mono); font-size: 13px; color: var(--ink); font-weight: 600; }
+  .node .d { font-size: 13px; color: var(--muted); margin-top: 6px; line-height: 1.4; }
+  .node.hi { border-color: var(--primary); background: var(--primary-soft); }
+  .arrow { align-self: center; color: var(--accent); font-family: var(--mono); font-size: 20px; font-weight: 700; }
+  @media (max-width: 720px) { .arrow { transform: rotate(90deg); } .stats { grid-template-columns: 1fr 1fr; } }
+
+  /* JOURNEY */
+  .log { display: flex; flex-direction: column; gap: 0; margin-top: 8px; }
+  .entry { display: grid; grid-template-columns: 54px 1fr; gap: 20px; padding: 26px 0; border-top: 1px solid var(--line); }
+  .entry:first-child { border-top: none; }
+  .entry .idx { font-family: var(--mono); font-size: 13px; color: var(--accent); font-weight: 700;
+    padding-top: 4px; letter-spacing: .05em; }
+  .entry h3 { margin-bottom: 8px; }
+  .entry p { color: var(--muted); font-size: 15.5px; }
+  .fix { font-family: var(--mono); font-size: 13px; margin-top: 12px; color: var(--ink);
+    background: var(--surface-2); border-left: 3px solid var(--primary); padding: 9px 14px; border-radius: 0 8px 8px 0; }
+  .metric-swap { display: inline-flex; align-items: center; gap: 10px; margin-top: 12px; font-family: var(--mono); font-size: 14px; }
+  .metric-swap .was { color: var(--bad); text-decoration: line-through; text-decoration-thickness: 1px; opacity: .8; }
+  .metric-swap .now { color: var(--good); font-weight: 600; }
+  .metric-swap .ar { color: var(--faint); }
+
+  /* EVAL TABLE */
+  .tablewrap { overflow-x: auto; margin-top: 8px; border: 1px solid var(--line); border-radius: 12px; }
+  table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+  th, td { text-align: left; padding: 12px 16px; border-bottom: 1px solid var(--line); }
+  th { font-family: var(--mono); font-size: 11.5px; letter-spacing: .08em; text-transform: uppercase;
+    color: var(--muted); background: var(--surface-2); font-weight: 600; }
+  tbody tr:last-child td { border-bottom: none; }
+  td.num { font-family: var(--mono); font-variant-numeric: tabular-nums; color: var(--ink); }
+  td .why { display: block; font-size: 12.5px; color: var(--faint); margin-top: 3px; }
+  .pill { font-family: var(--mono); font-size: 11px; padding: 3px 9px; border-radius: 999px; font-weight: 600; }
+  .pill.ok { background: color-mix(in srgb, var(--good) 16%, transparent); color: var(--good); }
+  .pill.miss { background: color-mix(in srgb, var(--bad) 16%, transparent); color: var(--bad); }
+
+  /* RUN / CODE */
+  .term { font-family: var(--mono); font-size: 14px; background: var(--surface); border: 1px solid var(--line);
+    border-radius: 12px; padding: 20px 22px; overflow-x: auto; margin-top: 8px; }
+  .term .c { color: var(--faint); }
+  .term .p { color: var(--accent); }
+  .term .l { display: block; white-space: pre; color: var(--ink); }
+  .term .l + .l { margin-top: 4px; }
+
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 8px; }
+  @media (max-width: 720px) { .two { grid-template-columns: 1fr; } }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 20px; }
+  .card h3 { font-size: 17px; margin-bottom: 8px; }
+  .card p { font-size: 14.5px; color: var(--muted); }
+  .card .lab { font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: .1em; color: var(--accent); }
+
+  footer { padding: 40px 0 64px; color: var(--faint); font-family: var(--mono); font-size: 12.5px; }
+  footer p { color: var(--faint); max-width: none; }
+  footer p + p { margin-top: 8px; }
+  b, strong { color: var(--ink); font-weight: 600; }
+</style>
+
+<div class="wrap">
+
+  <header class="hero">
+    <p class="eyebrow">Offline RAG · Microsoft Foundry Local</p>
+    <h1>Deniz Yıldızı Resort Asistanı</h1>
+    <p class="tagline">Tamamen yerel çalışan, Türkçe bir soru-cevap asistanı — otel belgelerini okuyup misafir sorularını yalnızca o belgelere dayanarak yanıtlar. Bulut yok, API anahtarı yok, veri cihazdan çıkmaz.</p>
+    <div class="badge-row">
+      <span class="badge"><b>%100</b> offline</span>
+      <span class="badge">Foundry Local · <b>qwen3-4b</b></span>
+      <span class="badge">GPU · <b>RTX 3060</b> 6 GB</span>
+      <span class="badge">e5-small embedding</span>
+      <span class="badge">Python <b>3.12</b> · SQLite</span>
+    </div>
+  </header>
+
+  <section>
+    <p class="eyebrow">Bir bakışta</p>
+    <div class="stats">
+      <div class="stat"><div class="n">2.5<span class="u">sn</span></div><div class="k">GPU'da cevap süresi</div></div>
+      <div class="stat"><div class="n">%88</div><div class="k">Cevap doğruluğu · 17 soru · 5 tur</div></div>
+      <div class="stat"><div class="n">%88</div><div class="k">Retrieval isabeti · 14/16</div></div>
+      <div class="stat"><div class="n">9<span class="u">belge</span></div><div class="k">.txt · .md · .pdf</div></div>
+      <div class="stat"><div class="n">9<span class="u">parça</span></div><div class="k">Embedding'lenmiş chunk</div></div>
+      <div class="stat"><div class="n">384<span class="u">boyut</span></div><div class="k">Çok-dilli embedding</div></div>
+    </div>
+    <div class="note">
+      <span class="lab">Veri hakkında</span>
+      <p>Bilgi tabanı, Kuzey Kıbrıs'ta faaliyet gösteren gerçek bir resort otelin <b>herkese açık</b> web sitesindeki bilgilerden uyarlanmıştır. Otelin ve alt markalarının adları <b>anonimleştirilmiştir</b> — tesis burada "Deniz Yıldızı Resort &amp; Casino" olarak geçer, restoran ve bar adları tür adlarına çevrilmiştir. Oda sayısı, mesafe ve saat gibi olgusal veriler korunmuştur ki sistem gerçekçi bir veri üzerinde ölçülebilsin.</p>
+      <p>Proje eğitim ve gösterim amaçlıdır; herhangi bir otelle ticari bağı yoktur ve otel adına bilgi vermez.</p>
+    </div>
+  </section>
+
+  <section>
+    <p class="eyebrow">Mimari</p>
+    <h2>RAG hattı: önce getir, sonra üret</h2>
+    <p class="lead" style="margin-top:14px">Model ezberinden değil, getirilen belgeden cevaplar; belgede yoksa "bilgim yok" der. Retrieval Python'da (embedding + kosinüs benzerliği), üretim <b>Microsoft Foundry Local</b> üzerinde yerel GPU'da. Aradaki tek depo, Python'un yerleşik SQLite'ı — ayrı bir vektör veritabanı sunucusu yok.</p>
+    <div class="pipe">
+      <div class="node"><div class="t">docs/</div><div class="d">9 belge · .txt · .md · .pdf</div></div>
+      <div class="arrow">→</div>
+      <div class="node"><div class="t">ingest.py</div><div class="d">Paragrafları toparlayan parçalama + embedding</div></div>
+      <div class="arrow">→</div>
+      <div class="node"><div class="t">rag_store.db</div><div class="d">SQLite · metin + vektör (BLOB)</div></div>
+      <div class="arrow">→</div>
+      <div class="node"><div class="t">db.search()</div><div class="d">En benzer 3 parça</div></div>
+      <div class="arrow">→</div>
+      <div class="node hi"><div class="t">qwen3-4b</div><div class="d">Foundry Local · GPU · Türkçe cevap</div></div>
+    </div>
+  </section>
+
+  <section>
+    <p class="eyebrow">Geliştirme günlüğü</p>
+    <h2>Ölçümle verilen sekiz karar</h2>
+    <p class="lead" style="margin-top:14px">Proje düz bir çizgide ilerlemedi. Her karar bir ölçümle verildi — karşılaşıldıkları sırayla:</p>
+    <div class="log">
+
+      <div class="entry">
+        <div class="idx">01</div>
+        <div>
+          <h3>GPU boşta duruyordu</h3>
+          <p>Foundry SDK, çalışma sağlayıcıları (EP) sürece kayıtlı olmadığında sessizce <b>CPU varyantını</b> seçiyordu. Model doğru çalışıyor ama sürünüyordu — ve hiçbir yerde uyarı yoktu.</p>
+          <div class="fix">Düzeltme: EP kaydı (<code>download_and_register_eps</code>) + <code>cuda-gpu</code> varyantını elle seç.</div>
+          <div class="metric-swap"><span class="was">21.6 sn</span><span class="ar">→</span><span class="now">2.5 sn / cevap</span></div>
+        </div>
+      </div>
+
+      <div class="entry">
+        <div class="idx">02</div>
+        <div>
+          <h3>Daha büyük model VRAM'e sığmadı</h3>
+          <p>Aday <code>qwen3.5-4b</code> (5.36 GB) 6 GB'lık karta tıka basa oturdu; paylaşımlı belleğe taşınca kullanılamaz hale geldi.</p>
+          <div class="fix">Karar: donanım karar verdi → <b>qwen3-4b</b>. Sığar, hızlıdır, Türkçesi RAG için yeterlidir.</div>
+          <div class="metric-swap"><span class="was">5903/6144 MiB · 115 sn</span><span class="ar">→</span><span class="now">4516 MiB · 2.5 sn</span></div>
+        </div>
+      </div>
+
+      <div class="entry">
+        <div class="idx">03</div>
+        <div>
+          <h3>İngilizce embedding Türkçe'yi ıskaladı</h3>
+          <p><code>all-MiniLM-L6-v2</code> İngilizce merkezliydi; "havuz kaçta kapanıyor" ve "evcil hayvan" sorularında yanlış parçayı getirdi, model de üzerine uydurdu. Çok-dilli bir modele geçmek bunu düzeltti; retrieval için özel eğitilmiş <code>multilingual-e5-small</code> ise dolaylı sorularda daha da iyi oldu.</p>
+          <div class="fix">Düzeltme: <code>multilingual-e5-small</code> — yine 384 boyut, yani veritabanı şeması hiç değişmedi.</div>
+          <div class="metric-swap"><span class="was">%88 retrieval</span><span class="ar">→</span><span class="now">%94 retrieval</span></div>
+        </div>
+      </div>
+
+      <div class="entry">
+        <div class="idx">04</div>
+        <div>
+          <h3>Model tekrara giriyordu</h3>
+          <p>Doğru bağlam gelmişken bile aynı cümleyi 20 kez tekrarlıyordu. Sezgiye ters ama gerçek sebep düşük sıcaklıktı: greedy üretim modeli aynı token dizisine saplıyordu.</p>
+          <div class="fix">Düzeltme: <code>temperature 0.3 → 0.7</code>. Döngü kırıldı; cevap bağlama dayalı olduğu için kalite bozulmadı.</div>
+        </div>
+      </div>
+
+      <div class="entry">
+        <div class="idx">05</div>
+        <div>
+          <h3>"Bariz" çözüm işi kötüleştirdi</h3>
+          <p>Tekrar sorununa doğal görünen çare <code>frequency_penalty</code> idi. Cevapları boşalttı ve daha kötüsü, "kumarhane <b>yok</b>"u "<b>var</b>"a çevirerek tehlikeli bir halüsinasyon üretti.</p>
+          <div class="fix">Karar: penalty tamamen kaldırıldı. Doğru araç sıcaklıktı, ceza değil.</div>
+        </div>
+      </div>
+
+      <div class="entry">
+        <div class="idx">06</div>
+        <div>
+          <h3>Few-shot örneğinin kendisi halüsinasyon kaynağı oldu</h3>
+          <p>Cevap biçimini öğretmek için prompt'a örnek eklendi. Örnekteki somut sayı ("200 oda"), modelin doğru parçayı getiremediği bir soruda <b>cevaba sızdı</b> — yani sistemi düzeltmek için eklenen şey yeni bir uydurma kaynağı yarattı.</p>
+          <div class="fix">Düzeltme: örnek, veri taşımayan tek bir "bilgi yok de" güvenlik örneğine indirildi. Doğruluk aynı kaldı, sızıntı bitti.</div>
+        </div>
+      </div>
+
+      <div class="entry">
+        <div class="idx">07</div>
+        <div>
+          <h3>Kıyasın kendisi taraflı çıktı</h3>
+          <p>Katalog proje sürerken değişti: Foundry Local'a embedding modelleri eklendi. <code>qwen3-embedding-0.6b</code> kullandığımızın 20 katı büyüklükte — geçmek cazipti, önce ölçtük. İlk sonuç berabereydi: 16 sorunun 13'ü her iki modelde de ilk üç parçada.</p>
+          <p style="margin-top:12px">Ama o kıyas, parçaları <code>350 karakter</code> ile kurulmuş bir bilgi tabanı üzerinde yapıldı — <b>ve o ayar e5-small için optimize edilmişti.</b> Qwen uzun bağlam için eğitilmiş bir model; test onun güçlü olduğu yeri hiç kullanmıyordu. Parçalamayı da değişken yapıp tekrar ölçtük:</p>
+          <div class="fix">MRR · e5-small → qwen3-emb<br>350 krk (mevcut): <b>0.729</b> → 0.728 · 700 krk: 0.699 → <b>0.746</b> · 1200 krk: 0.776 → <b>0.812</b> · parçalama yok: 0.840 → <b>0.854</b></div>
+          <p style="margin-top:12px">e5-small <b>yalnızca kendi ayarında</b> önde. Karar değişmedi (fark 16 soruda 1–2 soruluk, dağıtılan ayarda berabere, e5 20 kat küçük) ama gerekçe değişti: "büyük model kazanamadı" değil, "bu ölçekte fark maliyeti haklı çıkarmıyor". Asıl bulgu ise başka yerde: her iki model de <b>parçalama yokken</b> en iyi sonucu veriyor — bu belgeler zaten kısa, bölmek retrieval'a zarar veriyor.</p>
+        </div>
+      </div>
+
+      <div class="entry">
+        <div class="idx">08</div>
+        <div>
+          <h3>Parçalamak, düzeltmeye çalıştığı şeyi bozuyordu</h3>
+          <p>Sezgi şuydu: küçük parça = keskin embedding. Başlangıçta her paragraf kendi parçasıydı (31 parça). Bir önceki ölçüm bunun tersini gösterince parçalayıcı değiştirildi: paragraflar 1000 karaktere kadar <b>toparlanıyor</b>. Bu belgeler ortalama 718 karakter olduğu için her biri tek parça kalıyor — bir konunun cevabı artık kendi bağlamından kopmuyor.</p>
+          <div class="fix">Aynı sıkılaştırılmış değerlendirme, 5'er tur: <b>31 parça → %80</b> · <b>9 parça → %88</b></div>
+          <p style="margin-top:12px">1000 sınırı keyfi değil: kısa belgeleri bölmeyecek kadar büyük, uzun bir belgeyi pasajlara bölecek kadar küçük — aynı kod sayfalarca belgede de doğru davranır. Değerlendirmenin kendisi de bu turda sıkılaştırıldı: bazı sorularda tek başına "var" kabul anahtarıydı ve yanlış cevaplar bile geçebiliyordu.</p>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <section>
+    <p class="eyebrow">Değerlendirme</p>
+    <h2>Ölçüm, tahmin değil</h2>
+    <p class="lead" style="margin-top:14px"><code>eval.py</code> iki metriği <b>ayrı</b> ölçer — böylece bir hata çıktığında sorunun retrieval'da mı yoksa üretimde mi olduğu anlaşılır. 17 soruluk set doğrudan soruları, dolaylı/parafraz soruları ve bilerek <b>bilgi tabanında olmayan</b> bir soruyu içerir.</p>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Soru</th><th>Cevap</th><th>Retrieval</th><th>Kaynak</th></tr></thead>
+        <tbody>
+          <tr><td>Otelde casino var mı? <span class="why">cevap doğru ama beklenen belge yerine otel_genel.txt geldi — metrik fazla katı</span></td><td><span class="pill ok">OK</span></td><td><span class="pill miss">ISKA</span></td><td class="num">otel_genel.txt</td></tr>
+          <tr><td>Çocuğumla yapabileceğim aktiviteler neler? <span class="why">dolaylı soru</span></td><td><span class="pill ok">OK</span></td><td><span class="pill ok">OK</span></td><td class="num">aktiviteler.txt</td></tr>
+          <tr><td>Balayı ayrıcalığından yararlanmak için ne gerekiyor? <span class="why">PDF'ten</span></td><td><span class="pill ok">OK</span></td><td><span class="pill ok">OK</span></td><td class="num">balayi.pdf</td></tr>
+          <tr><td>Otelde bowling salonu var mı? <span class="why">bilgi tabanında yok → doğru şekilde reddetti</span></td><td><span class="pill ok">OK</span></td><td class="num">—</td><td class="num">uydurmadı</td></tr>
+          <tr><td>Otelde toplam kaç oda var? <span class="why">eski parçalamada ıskalıyordu, artık doğru</span></td><td><span class="pill ok">OK</span></td><td><span class="pill ok">OK</span></td><td class="num">otel_genel.txt</td></tr>
+          <tr><td>Kahvaltı kaçta başlar ve biter? <span class="why">doğru belge geliyor, model saatleri cümleye dökemiyor — üretim hatası</span></td><td><span class="pill miss">YANLIŞ</span></td><td><span class="pill ok">OK</span></td><td class="num">yeme_icme.txt</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="two">
+      <div class="card"><div class="lab">Cevap doğruluğu</div><h3>14–16 / 17 · ort. %88</h3><p>Aralık olarak veriliyor çünkü <code>temperature=0.7</code> üretimi örneklemeli yapar. En iyi çalıştırmayı seçmek yerine beş çalıştırmanın tamamı raporlanıyor.</p></div>
+      <div class="card"><div class="lab">Retrieval isabeti</div><h3>14 / 16 · %88</h3><p>Çalıştırmalar arasında hiç oynamıyor — retrieval deterministik. Bu sayı <b>olduğundan kötümser</b>: metrik soru başına tek bir doğru belge bekliyor, oysa bilgi birden çok belgede geçebiliyor.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <p class="eyebrow">Tasarım kararı</p>
+    <h2>Güvenli başarısızlık</h2>
+    <p class="lead" style="margin-top:14px">Kalan hatalar bilerek <b>güvenli</b> tarafta bırakıldı: sistem bilmediğinde uydurmuyor, "Bu konuda elimde bilgi yok, resepsiyona danışabilirsiniz." diyor ya da bağlama sadık kalıp eksik cevaplıyor. Bunun bedeli birkaç puan doğruluk; karşılığı misafire yanlış bilgi vermemek.</p>
+    <p class="lead" style="margin-top:16px">Bir otel asistanı için bu doğru takas: "kahvaltı saatini bilmiyorum, resepsiyona sorun" bir zahmet, uydurulmuş bir kahvaltı saati ise şikâyettir.</p>
+  </section>
+
+  <section>
+    <p class="eyebrow">Kullanım</p>
+    <h2>Üç komut</h2>
+    <div class="term">
+      <span class="l"><span class="c"># 1) Bilgi tabanını kur (docs/ → parça → embedding → SQLite)</span></span>
+      <span class="l"><span class="p">$</span> python ingest.py</span>
+      <span class="l"> </span>
+      <span class="l"><span class="c"># 2) Etkileşimli asistan (sürekli soru-cevap, her cevapta kaynak belge)</span></span>
+      <span class="l"><span class="p">$</span> python assistant.py</span>
+      <span class="l"> </span>
+      <span class="l"><span class="c"># 3) Kaliteyi ölç</span></span>
+      <span class="l"><span class="p">$</span> python eval.py</span>
+    </div>
+    <p class="lead" style="margin-top:18px">Embedding modeli ilk çalıştırmada bir kez inen ~120 MB'lık dosyadan ibaret; sonrasında sistem tamamen offline çalışır — <code>HF_HUB_OFFLINE=1</code> ile doğrulandı.</p>
+  </section>
+
+  <section>
+    <p class="eyebrow">Dürüst sınırlamalar</p>
+    <h2>Neyi henüz yapmıyor</h2>
+    <div class="stack-sm" style="margin-top:8px">
+      <p class="lead"><b>Retrieval metriği dosya bazlı — chunk-level ıskayı gizliyor.</b> Kalan hataların kökü bu: doğru <i>dosya</i> ilk üçe giriyor, ama saati veya sayıyı içeren <i>parça</i> girmiyor. Metrik "OK" derken model aslında cevabı hiç görmüyor. Dürüst okuma: <b>%94, olduğundan iyimser.</b></p>
+      <p class="lead"><b>Benzerlik skorları birbirine çok yakın</b> — ilk beş parça arasındaki ortalama fark yalnızca 0.035. Ama suçlu tek başına embedding değil: 20 kat büyük bir model skorları dört kat geniş bir banda yaydığı halde daha isabetli sıralamadı. Sorun, kısa ve birbirine benzeyen otel paragraflarının doğasında.</p>
+      <p class="lead"><b>"Belge = parça" bu ölçekte işe yarıyor, ölçeklenmez.</b> Bilgi tabanı küçük olduğu için her belge tek parça kalıyor. Sayfalarca belgede bu çöker: uzun bir belgenin tek embedding'i tüm konuların ortalaması olur, hiçbir soruya güçlü eşleşmez. Parçalayıcı bunu ele alıyor (1000 karakteri aşan belge pasajlara bölünür) ama o rejim bu veriyle sınanmadı. Ayrıca arama tüm vektörleri tek tek gezer — büyük N için gerçek bir vektör indeksi gerekir.</p>
+      <p class="lead"><b>Model tavanı.</b> qwen3-4b, 6 GB'a sığan en iyi seçenek, ama günlük ve dolaylı ifadelerde ara sıra yanlış cümleye takılıyor. Tekrar-kırpıcı döngüyü keser, içerik hatasını değil.</p>
+      <p class="lead"><b>Ölçek.</b> Değerlendirme seti 17 soru ve elle hazırlandı; yön gösterir, istatistiksel güven iddia etmez. Arayüz tek kullanıcılı bir CLI — web arayüzü ve çok-turlu diyalog yok.</p>
+      <p class="lead"><b>PDF.</b> Yalnızca metin tabanlı; taranmış (görüntü) belgeden metin çıkmaz, OCR yok.</p>
+    </div>
+  </section>
+
+  <footer>
+    <p>Deniz Yıldızı Resort Asistanı · Offline Türkçe RAG · Microsoft Foundry Local + qwen3-4b · multilingual-e5-small · SQLite</p>
+    <p>Bir aylık yaz projesi. Veriler gerçek bir otelin herkese açık bilgilerinden uyarlanmış ve anonimleştirilmiştir; eğitim amaçlıdır.</p>
+  </footer>
+
+</div>

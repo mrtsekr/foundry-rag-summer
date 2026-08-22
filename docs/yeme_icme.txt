@@ -1,0 +1,16 @@
+Yeme ve İçme
+
+Ana restoran açık büfe hizmet verir. Kahvaltı 07:00 ile 11:00 arasında, öğle yemeği 12:30 ile 14:30 arasında, akşam yemeği ise 19:00 ile 21:30 arasında servis edilir. Ana restorandaki öğünler Ultra Her Şey Dahil konsepti kapsamında ücretsizdir.
+
+Tesiste altı adet à la carte restoran bulunur ve bunlar akşamları 19:00 ile 23:00 arasında hizmet verir. À la carte restoranlar rezervasyon ile çalışır ve ücrete tabidir. Mutfak seçenekleri şunlardır:
+
+- İtalyan mutfağı à la carte restoranı
+- Steakhouse (et restoranı)
+- Asya mutfağı restoranı
+- Deniz ürünleri restoranı
+- Türk mutfağı restoranı
+- Meksika mutfağı restoranı
+
+Tesiste çok sayıda bar bulunur; bunlar arasında lobi barı, çeşitli havuz barları, bir sahil barı ve vitamin bar yer alır.
+
+Ultra Her Şey Dahil konsepti kapsamında, tesisin belirlediği markalar dahilinde yerli ve yabancı alkollü ve alkolsüz içecekler 24 saat ücretsiz sunulur.
