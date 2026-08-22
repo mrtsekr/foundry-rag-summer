@@ -1,0 +1,410 @@
+{
+  "uretim": {
+    "belge": 9,
+    "parca": 9,
+    "chat_modeli": "qwen3-4b",
+    "embedding": "intfloat/multilingual-e5-small",
+    "top_k": 3
+  },
+  "kayitlar": [
+    {
+      "soru": "Kahvaltı kaçta başlar ve biter?",
+      "cevap": "Kahvaltı 07:00 ile 11:00 arasında servis edilir.",
+      "kaynaklar": [
+        {
+          "dosya": "yeme_icme.txt",
+          "skor": 0.81
+        },
+        {
+          "dosya": "politikalar.txt",
+          "skor": 0.795
+        },
+        {
+          "dosya": "ulasim.txt",
+          "skor": 0.772
+        }
+      ],
+      "sure": 0.99
+    },
+    {
+      "soru": "Kahvaltıyı en geç kaçta yiyebilirim?",
+      "cevap": "Kahvaltıyı en geç **11:00** da yiyebilirim.",
+      "kaynaklar": [
+        {
+          "dosya": "yeme_icme.txt",
+          "skor": 0.81
+        },
+        {
+          "dosya": "politikalar.txt",
+          "skor": 0.793
+        },
+        {
+          "dosya": "ulasim.txt",
+          "skor": 0.792
+        }
+      ],
+      "sure": 0.98
+    },
+    {
+      "soru": "Akşam à la carte İtalyan restoranı var mı?",
+      "cevap": "Evet, akşam à la carte İtalyan restoranı tesiste bulunur.",
+      "kaynaklar": [
+        {
+          "dosya": "yeme_icme.txt",
+          "skor": 0.857
+        },
+        {
+          "dosya": "politikalar.txt",
+          "skor": 0.796
+        },
+        {
+          "dosya": "aktiviteler.txt",
+          "skor": 0.778
+        }
+      ],
+      "sure": 1.49
+    },
+    {
+      "soru": "Akşam et yemek istiyorum, uygun bir restoran var mı?",
+      "cevap": "Aşağıdaki restoranlardan birinin akşam et yemek istiyorsan uygun olabilir:\n\n- **Steakhouse (et restoranı)**\n\nBu restoran, akşam yemeğine uygun bir seçenek olabilir.",
+      "kaynaklar": [
+        {
+          "dosya": "yeme_icme.txt",
+          "skor": 0.851
+        },
+        {
+          "dosya": "politikalar.txt",
+          "skor": 0.825
+        },
+        {
+          "dosya": "spa.md",
+          "skor": 0.813
+        }
+      ],
+      "sure": 1.53
+    },
+    {
+      "soru": "Denize karşı bir şeyler içebileceğim sahil barı var mı?",
+      "cevap": "Tesiste sahil barı mevcuttur ve bu bar, denize karşı bir şeyler içebileceğiniz bir yerdir.",
+      "kaynaklar": [
+        {
+          "dosya": "ulasim.txt",
+          "skor": 0.818
+        },
+        {
+          "dosya": "otel_genel.txt",
+          "skor": 0.814
+        },
+        {
+          "dosya": "yeme_icme.txt",
+          "skor": 0.809
+        }
+      ],
+      "sure": 1.09
+    },
+    {
+      "soru": "Ocean Suite odasında jakuzi var mı?",
+      "cevap": "Evet, Ocean Suite odasında jakuzi mevcuttur.",
+      "kaynaklar": [
+        {
+          "dosya": "odalar.txt",
+          "skor": 0.855
+        },
+        {
+          "dosya": "politikalar.txt",
+          "skor": 0.804
+        },
+        {
+          "dosya": "otel_genel.txt",
+          "skor": 0.801
+        }
+      ],
+      "sure": 0.9
+    },
+    {
+      "soru": "Otelde toplam kaç oda var?",
+      "cevap": "Otelde toplam 569 oda var.",
+      "kaynaklar": [
+        {
+          "dosya": "odalar.txt",
+          "skor": 0.86
+        },
+        {
+          "dosya": "otel_genel.txt",
+          "skor": 0.828
+        },
+        {
+          "dosya": "politikalar.txt",
+          "skor": 0.825
+        }
+      ],
+      "sure": 0.86
+    },
+    {
+      "soru": "Odalarda kasa var mı?",
+      "cevap": "Evet, odalarda kasa mevcuttur.",
+      "kaynaklar": [
+        {
+          "dosya": "odalar.txt",
+          "skor": 0.825
+        },
+        {
+          "dosya": "politikalar.txt",
+          "skor": 0.813
+        },
+        {
+          "dosya": "otel_genel.txt",
+          "skor": 0.808
+        }
+      ],
+      "sure": 0.86
+    },
+    {
+      "soru": "Otelde aquapark var mı?",
+      "cevap": "Deniz Yıldızı Resort & Casino'da tesisin belirlediği markalar dahilinde yerli ve yabancı alkollü ve alkolsüz içecekler 24 saat ücretsiz sunulur.",
+      "kaynaklar": [
+        {
+          "dosya": "havuz_plaj.txt",
+          "skor": 0.855
+        },
+        {
+          "dosya": "otel_genel.txt",
+          "skor": 0.835
+        },
+        {
+          "dosya": "yeme_icme.txt",
+          "skor": 0.833
+        }
+      ],
+      "sure": 3.42
+    },
+    {
+      "soru": "Otel toplam kaç havuzu var?",
+      "cevap": "Deniz Yıldızı Resort & Casino'da toplam **10 adet açık ve kapalı yüzme havuzu** bulunur.",
+      "kaynaklar": [
+        {
+          "dosya": "havuz_plaj.txt",
+          "skor": 0.847
+        },
+        {
+          "dosya": "odalar.txt",
+          "skor": 0.827
+        },
+        {
+          "dosya": "politikalar.txt",
+          "skor": 0.825
+        }
+      ],
+      "sure": 1.14
+    },
+    {
+      "soru": "Spa merkezinde Türk hamamı var mı?",
+      "cevap": "Evet, Spa merkezinde Türk hamamı mevcuttur.",
+      "kaynaklar": [
+        {
+          "dosya": "spa.md",
+          "skor": 0.861
+        },
+        {
+          "dosya": "politikalar.txt",
+          "skor": 0.836
+        },
+        {
+          "dosya": "balayi.pdf",
+          "skor": 0.803
+        }
+      ],
+      "sure": 0.91
+    },
+    {
+      "soru": "Otelde casino var mı?",
+      "cevap": "Evet, Deniz Yıldızı Resort & Casino'da casino mevcuttur.",
+      "kaynaklar": [
+        {
+          "dosya": "otel_genel.txt",
+          "skor": 0.868
+        },
+        {
+          "dosya": "odalar.txt",
+          "skor": 0.857
+        },
+        {
+          "dosya": "aktiviteler.txt",
+          "skor": 0.84
+        }
+      ],
+      "sure": 0.98
+    },
+    {
+      "soru": "Çocuğumla yapabileceğim aktiviteler neler?",
+      "cevap": "Ailelerin çocuklarıyla birlikte keyifli vakit geçirebileceği düzenli etkinlikler yapılır. Bu etkinlikler arasında:\n\n- Mini kulüp\n- Çocuk kulübü\n- Oyun parkı\n\nbulunur. Bu aktiviteler sayesinde çocuklarınızla keyifli zamanlar geçirebilirsiniz.",
+      "kaynaklar": [
+        {
+          "dosya": "aktiviteler.txt",
+          "skor": 0.836
+        },
+        {
+          "dosya": "politikalar.txt",
+          "skor": 0.797
+        },
+        {
+          "dosya": "balayi.pdf",
+          "skor": 0.785
+        }
+      ],
+      "sure": 1.89
+    },
+    {
+      "soru": "Ercan Havalimanı otele ne kadar uzakta?",
+      "cevap": "Ercan Havalimanı, Deniz Yıldızı Resort & Casino otele yaklaşık **56,8 kilometre** uzaklıktadır.",
+      "kaynaklar": [
+        {
+          "dosya": "ulasim.txt",
+          "skor": 0.866
+        },
+        {
+          "dosya": "otel_genel.txt",
+          "skor": 0.786
+        },
+        {
+          "dosya": "politikalar.txt",
+          "skor": 0.775
+        }
+      ],
+      "sure": 1.22
+    },
+    {
+      "soru": "Uçaktan indim, otele nasıl ulaşabilirim?",
+      "cevap": "Havayolu transfer hizmeti tesis tarafından ya da rezervasyon acentesi aracılığıyla sağlanabilir. Transfer talebinizi rezervasyon sırasında belirtmeniz önerilir.",
+      "kaynaklar": [
+        {
+          "dosya": "ulasim.txt",
+          "skor": 0.813
+        },
+        {
+          "dosya": "politikalar.txt",
+          "skor": 0.797
+        },
+        {
+          "dosya": "otel_genel.txt",
+          "skor": 0.788
+        }
+      ],
+      "sure": 1.43
+    },
+    {
+      "soru": "Odaya evcil hayvan getirebilir miyim?",
+      "cevap": "Evcil hayvan politikası gereğine göre, tesise evcil hayvan kabul edilmemektedir. Dolayısıyla, odaya evcil hayvan getirebilirsiniz ancak bu durum resepsiyonun yetkilileriyle paylaşılmalıdır.",
+      "kaynaklar": [
+        {
+          "dosya": "politikalar.txt",
+          "skor": 0.806
+        },
+        {
+          "dosya": "balayi.pdf",
+          "skor": 0.775
+        },
+        {
+          "dosya": "ulasim.txt",
+          "skor": 0.774
+        }
+      ],
+      "sure": 1.7
+    },
+    {
+      "soru": "Otel hangi yıl hizmete açıldı?",
+      "cevap": "Otel, 2018 yılında hizmete açılmıştır.",
+      "kaynaklar": [
+        {
+          "dosya": "politikalar.txt",
+          "skor": 0.815
+        },
+        {
+          "dosya": "otel_genel.txt",
+          "skor": 0.806
+        },
+        {
+          "dosya": "yeme_icme.txt",
+          "skor": 0.803
+        }
+      ],
+      "sure": 2.15
+    },
+    {
+      "soru": "Balayı ayrıcalığından yararlanmak için ne gerekiyor?",
+      "cevap": "Balayı ayrıcalığından yararlanmak isteyen çiftlerin, son 6 ay içinde alınmış evlilik cuzdanını ibraz etmesi gerekir.",
+      "kaynaklar": [
+        {
+          "dosya": "politikalar.txt",
+          "skor": 0.822
+        },
+        {
+          "dosya": "balayi.pdf",
+          "skor": 0.805
+        },
+        {
+          "dosya": "yeme_icme.txt",
+          "skor": 0.789
+        }
+      ],
+      "sure": 1.38
+    },
+    {
+      "soru": "Otelde bowling salonu var mı?",
+      "cevap": "Otelde bowling salonu bulunmamaktadır.",
+      "kaynaklar": [
+        {
+          "dosya": "politikalar.txt",
+          "skor": 0.824
+        },
+        {
+          "dosya": "odalar.txt",
+          "skor": 0.821
+        },
+        {
+          "dosya": "aktiviteler.txt",
+          "skor": 0.819
+        }
+      ],
+      "sure": 0.85
+    },
+    {
+      "soru": "Bugün hava nasıl olacak?",
+      "cevap": "Bugün hava durumu, bu bilgide yer almamaktadır. Lütfen resepsiyona danışmanızı öneririm.",
+      "kaynaklar": [
+        {
+          "dosya": "yeme_icme.txt",
+          "skor": 0.791
+        },
+        {
+          "dosya": "politikalar.txt",
+          "skor": 0.789
+        },
+        {
+          "dosya": "ulasim.txt",
+          "skor": 0.777
+        }
+      ],
+      "sure": 1.22
+    },
+    {
+      "soru": "Otelde helikopter pisti var mı?",
+      "cevap": "Bu konuda elimde bilgi yok, resepsiyona danisabilirsiniz.",
+      "kaynaklar": [
+        {
+          "dosya": "otel_genel.txt",
+          "skor": 0.81
+        },
+        {
+          "dosya": "politikalar.txt",
+          "skor": 0.808
+        },
+        {
+          "dosya": "ulasim.txt",
+          "skor": 0.803
+        }
+      ],
+      "sure": 1.01
+    }
+  ]
+}

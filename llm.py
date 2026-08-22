@@ -81,8 +81,17 @@ def _run(chat, messages) -> str:
         if delta:
             parcalar.append(delta)
     cevap = "".join(parcalar)
+
     if "</think>" in cevap:
         cevap = cevap.split("</think>", 1)[1]
+    elif cevap.lstrip().startswith("<think>"):
+        # Dusunme blogu ACILDI ama KAPANMADI: model max_tokens sinirina takilmis
+        # ve elimizde cevap degil, modelin ic sesi (genelde Ingilizce) var.
+        # Bunu kullaniciya vermek olmaz; bos donduruyoruz ki generate() bunu
+        # "kotu cevap" sayip bir kez yeniden denesin.
+        # NOT: /no_think her zaman tutmuyor, bu yuzden bu koruma gerekli.
+        cevap = ""
+
     return _trim_repetition(cevap)
 
 
