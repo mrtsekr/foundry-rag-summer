@@ -6,6 +6,11 @@ openai                    # OpenAI-uyumlu istemci (Foundry Local SDK ile kullani
 # Retrieval icin embedding (Python tarafinda; chat/uretim Foundry Local'da kalir)
 sentence-transformers     # HuggingFace embedding modelleri (kullanilan: intfloat/multilingual-e5-small)
 
+# Asagidaki ikisi sentence-transformers ile zaten geliyor, ama biz onlari
+# DOGRUDAN import ediyoruz; dolayli bagimliliga guvenmek kirilgan olurdu.
+numpy                     # embedding BLOB donusumu ve kosinus benzerligi (db.py, rag_core.py)
+torch                     # yalnizca cuda var mi diye bakmak icin (rag_core.py: device secimi)
+
 # Belge okuma: PDF metni cikarmak icin (ingest.py .txt/.md/.pdf destekler)
 pypdf                     # saf-Python PDF metin cozucu
 
