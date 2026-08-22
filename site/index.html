@@ -14,9 +14,12 @@
     --line:      #C6D2D5;
     --line-soft: #D9E1E3;
     --accent:    #0D7A84;   /* tuzlu teal */
+    --accent-lite:#3FA8B0;  /* huzmenin parlak ucu */
     --accent-dim:#0D7A8422;
     --signal:    #B0335E;   /* begonvil — yalnızca ıska/ret */
     --signal-dim:#B0335E1A;
+    --card-shadow: 0 0 0 1px #0f263008, 0 2px 4px #0f26300d, 0 12px 24px #0f26300d;
+    --card-shadow-hi: 0 0 0 1px #0D7A8455, 0 2px 4px #0f263014, 0 18px 34px #0f263017;
     --term-bg:   #0F2630;
     --term-ink:  #DCE7E9;
     --term-dim:  #7E98A1;
@@ -38,9 +41,12 @@
       --line:      #22414E;
       --line-soft: #1A3542;
       --accent:    #45BCC1;
+      --accent-lite:#93E9EC;
       --accent-dim:#45BCC122;
       --signal:    #E5749A;
       --signal-dim:#E5749A1F;
+      --card-shadow: 0 -20px 80px -20px #ffffff14 inset, 0 0 0 1px #ffffff1a;
+      --card-shadow-hi: 0 -20px 80px -20px #45BCC12e inset, 0 0 0 1px #45BCC166;
       --term-bg:   #071219;
       --term-ink:  #DCE7E9;
       --term-dim:  #6F8B95;
@@ -55,9 +61,12 @@
     --line:      #22414E;
     --line-soft: #1A3542;
     --accent:    #45BCC1;
+    --accent-lite:#93E9EC;
     --accent-dim:#45BCC122;
     --signal:    #E5749A;
     --signal-dim:#E5749A1F;
+    --card-shadow: 0 -20px 80px -20px #ffffff14 inset, 0 0 0 1px #ffffff1a;
+    --card-shadow-hi: 0 -20px 80px -20px #45BCC12e inset, 0 0 0 1px #45BCC166;
     --term-bg:   #071219;
     --term-ink:  #DCE7E9;
     --term-dim:  #6F8B95;
@@ -190,28 +199,26 @@
      kesikli cizgi "isik" gibi degil "kesik cizgi" gibi gorunuyordu. */
   /* stop-color'i CSS'ten veriyoruz: sunum niteligi olarak yazilan var() bazi
      tarayicilarda sessizce dusuyor, CSS kurali ise niteligi ezip garantiliyor. */
-  #beamGrad stop { stop-color: var(--accent); }
+  #beamGrad .s-bas { stop-color: var(--accent); }
+  #beamGrad .s-uc  { stop-color: var(--accent-lite); }
+
+  /* Taban yolu: her zaman gorunur, huzmenin izleyecegi rotayi gosterir. */
   .beam-base {
-    fill: none; stroke: var(--accent); stroke-width: 1.4; opacity: .18;
-    transition: opacity .7s ease .9s;
+    fill: none; stroke: var(--accent); stroke-width: 2; opacity: .2;
+    stroke-linecap: round; transition: opacity .7s ease .9s;
   }
-  /* Darbe gectikten sonra yol "yanik" kalir: animasyon bittiginde sema
-     bos gorunmesin, hattin calistigi izlensin. */
-  .diagram.run .beam-base { opacity: .5; }
-  /* DINLENME HALI: huzme her zaman gorunur — yolun tamami boyanmis durur.
-     Onceden baslangic opakligi 0'di ve 1'e cikaran kural yalnizca
-     no-preference icindeydi; "hareketi azalt" acik olan kullanicida huzme
-     HIC cizilmiyordu. Artik hareket kapaliyken de yol gorunur, sadece
-     ilerleme animasyonu calismaz. */
+  .diagram.run .beam-base { opacity: .42; }
+
+  /* Huzme: yolun TAMAMI boyanir; hareketi gradyanin kendisi saglar (asagida
+     SMIL ile x1/x2 kaydirilir). Onceki surum kesikli cizgi kaydiriyordu —
+     "isik" degil "kesik cizgi" gibi gorunuyordu.
+     Varsayilan (hareket azaltma) hali: duz, sabit, gorunur bir cizgi. */
   .beam {
-    fill: none; stroke: url(#beamGrad); stroke-width: 2.8; stroke-linecap: round;
-    filter: url(#beamGlow);
+    fill: none; stroke: var(--accent); opacity: .55;
+    stroke-width: 2.6; stroke-linecap: round;
   }
   @media (prefers-reduced-motion: no-preference) {
-    /* Hareket serbestse: once gizle, sema goruntuye girince darbe olarak gec. */
-    .beam { stroke-dasharray: 54 480; stroke-dashoffset: 54; opacity: 0; }
-    .diagram.run .beam { opacity: 1; animation: beam 2.5s cubic-bezier(.32,.06,.28,1) forwards; }
-    @keyframes beam { to { stroke-dashoffset: -430; } }
+    .beam { stroke: url(#beamGrad); opacity: 1; filter: url(#beamGlow); }
   }
   .beam-ctl {
     display: flex; flex-wrap: wrap; gap: .6rem 1rem; align-items: center;
@@ -260,11 +267,16 @@
   }
   .rail-item.warn { border-left-color: var(--signal); }
   .rail-item p { font-size: .88rem; color: var(--muted); }
+  /* Magic UI'in bento karti duz kenarlik yerine KATMANLI GOLGE kullaniyor:
+     1px'lik ince halka + yakin yumusak golge + genis dagilan golge. Koyu temada
+     bunun yerine kartin ustunden asagi inen ic parilti (inset) + yari saydam
+     kenarlik geliyor. Ayni yapiyi token'lara tasidik (--card-shadow). */
   .dec {
-    background: var(--surface); border: 1px solid var(--line); border-radius: 3px;
+    background: var(--surface); border: 0; border-radius: 3px;
+    box-shadow: var(--card-shadow);
     padding: 1.15rem 1.1rem; display: flex; flex-direction: column; gap: .7rem;
     position: relative; overflow: hidden;
-    transition: border-color .25s ease, box-shadow .25s ease, transform .25s ease;
+    transition: box-shadow .3s ease, transform .3s ease;
   }
   /* Hover'da ust kenarda beliren aksan cizgisi: kartin "aktif" oldugunu
      soyler, kutunun icindeki hicbir bilgiyi ortmez. */
@@ -274,13 +286,31 @@
     opacity: 0; transition: opacity .25s ease;
   }
   .dec:hover::after, .dec:focus-within::after { opacity: 1; }
-  .dec:hover, .dec:focus-within { border-color: var(--accent); box-shadow: 0 10px 30px -24px var(--ink); }
+  .dec:hover, .dec:focus-within { box-shadow: var(--card-shadow-hi); }
   /* Reddedilen kararlar begonvil rengiyle vurgulanir — rozetle ayni dil. */
   .dec:has(.verdict.no)::after { background: linear-gradient(90deg, var(--signal), transparent 72%); }
-  .dec:has(.verdict.no):hover, .dec:has(.verdict.no):focus-within { border-color: var(--signal); }
   @media (prefers-reduced-motion: no-preference) {
     .dec:hover, .dec:focus-within { transform: translateY(-2px); }
   }
+
+  /* KANIT SATIRI — Magic UI'in hover'da alttan beliren CTA'sinin karsiligi.
+     Bizde bir baglanti degil, karari dogrulayan OLCUM aciliyor: kart "iddia"yi
+     gosteriyor, hover "kanit"i veriyor.
+     grid-template-rows 0fr -> 1fr: yuksekligi bilinmeyen icerigi animasyonla
+     acmanin duzgun yolu (max-height tahmini gerektirmez).
+     Dar ekranda hover yok -> satir her zaman acik durur. */
+  .dec-kanit {
+    display: grid; grid-template-rows: 0fr; opacity: 0;
+    transition: grid-template-rows .3s ease, opacity .3s ease;
+  }
+  .dec-kanit > span {
+    overflow: hidden; min-height: 0;
+    font-family: "JetBrains Mono", monospace; font-size: .74rem;
+    color: var(--accent); font-variant-numeric: tabular-nums;
+  }
+  .dec:has(.verdict.no) .dec-kanit > span { color: var(--signal); }
+  .dec:hover .dec-kanit, .dec:focus-within .dec-kanit { grid-template-rows: 1fr; opacity: 1; }
+  @media (max-width: 859px) { .dec-kanit { grid-template-rows: 1fr; opacity: 1; } }
   .dec h3 { font-size: 1.06rem; }
   .dec p { font-size: .95rem; }
   .verdict {
@@ -502,13 +532,23 @@
           <path class="beam"      d="M158 170 H208 M358 170 H408 M578 170 H628 M713 196 V222 H520"/>
 
           <defs>
-            <!-- Darbenin basi parlak, kuyrugu sonuk: "ilerleyen isik" hissi buradan geliyor.
-                 userSpaceOnUse: gradyan semanin genisligine sabitlenir, darbe ilerledikce
-                 farkli bolgelerini orneklerken renk hafifce degisir. -->
-            <linearGradient id="beamGrad" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="980" y2="0">
-              <stop offset="0"   stop-color="var(--accent)" stop-opacity=".25"/>
-              <stop offset=".55" stop-color="var(--accent)" stop-opacity="1"/>
-              <stop offset="1"   stop-color="var(--accent)" stop-opacity=".9"/>
+            <!-- Huzmenin mekanizmasi: gradyan yalnizca ~98px genisliginde bir
+                 "pencere" (x1..x2). Pencere soldan saga kaydirilinca yolun uzerinde
+                 ilerleyen bir isik olusur. Kesikli cizgi kaydirmaktan farki: yolun
+                 tamami boyali kalir, sadece parlaklik gezer.
+                 easeOutExpo (0.16 1 0.3 1): hizli baslar, sonda yumusakca durur. -->
+            <linearGradient id="beamGrad" gradientUnits="userSpaceOnUse"
+                            x1="98" y1="0" x2="0" y2="0">
+              <stop offset="0"     class="s-bas" stop-opacity="0"/>
+              <stop offset="0"     class="s-bas" stop-opacity="1"/>
+              <stop offset="32.5%" class="s-uc"  stop-opacity="1"/>
+              <stop offset="100%"  class="s-uc"  stop-opacity="0"/>
+              <animate attributeName="x1" begin="indefinite" dur="2.5s" fill="freeze"
+                       calcMode="spline" keyTimes="0;1" keySplines="0.16 1 0.3 1"
+                       values="98;1078"/>
+              <animate attributeName="x2" begin="indefinite" dur="2.5s" fill="freeze"
+                       calcMode="spline" keyTimes="0;1" keySplines="0.16 1 0.3 1"
+                       values="0;980"/>
             </linearGradient>
             <filter id="beamGlow" x="-40%" y="-400%" width="180%" height="900%">
               <feGaussianBlur stdDeviation="2.4" result="bulanik"/>
@@ -562,6 +602,7 @@
             sorusunda doğru parçayı 2. sıradan 5.'ye düşürdü — yani ilk 3'ün dışına.
             Üstelik sorgu başına ~0,73 sn ekliyordu.
           </p>
+          <div class="dec-kanit"><span>kanıt ilk 3'te · e5 15/16 — qwen 14/16 · +0,73 sn/sorgu</span></div>
         </article>
 
         <article class="dec dec--md">
@@ -572,6 +613,7 @@
             ayrı parçaya bölmek cevabı komşu bağlamdan koparıyordu. Parçaları 1000 karaktere
             kadar toparlayınca 31 parça 9'a indi ve doğruluk belirgin biçimde arttı.
           </p>
+          <div class="dec-kanit"><span>31 parça → 9 parça · doğruluk %80 → %88 (5'er tur)</span></div>
         </article>
 
         <article class="dec dec--md">
@@ -583,6 +625,7 @@
             <span class="mono">0.7</span> döngüyü kırdı, cevap bağlama dayalı olduğu için
             kalite bozulmadı.
           </p>
+          <div class="dec-kanit"><span>0.3 → tekrar döngüsü · 0.7 → sıfır döngü, 7/7 soru doğru</span></div>
         </article>
 
         <article class="dec dec--md">
@@ -593,6 +636,7 @@
             boşalttı, hatta bir soruda "kumarhane <em>yok</em>"u "<em>var</em>"a çevirerek
             tehlikeli bir halüsinasyon üretti. Doğru araç sıcaklıktı.
           </p>
+          <div class="dec-kanit"><span>0.3 ve 0.6'da denendi · boş cevap + "yok" → "var" hatası</span></div>
         </article>
 
         <article class="dec dec--md">
@@ -603,6 +647,7 @@
             model doğru parçayı getiremediği bir soruda o sayıyı cevaba <em>sızdırdı</em>.
             Örnek, veri taşımayan tek bir güvenlik örneğine indirildi.
           </p>
+          <div class="dec-kanit"><span>"200 oda" örneği cevaba sızdı · doğruluk aynı, sızıntı sıfır</span></div>
         </article>
 
         <article class="dec dec--wide">
@@ -824,11 +869,17 @@ belirtmeniz önerilir.
     var replay  = document.getElementById("replay");
     if (!diagram) return;
 
+    var azHareket = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    var animler   = diagram.querySelectorAll("#beamGrad animate");
+
     // Darbeyi bir kez, sema gercekten goruntuye girdiginde calistir.
+    // SMIL begin="indefinite" ile bekliyor; beginElement() bastan tetikler.
     function run() {
-      diagram.classList.remove("run");
-      void diagram.getBoundingClientRect();   // reflow -> animasyon bastan baslar
       diagram.classList.add("run");
+      if (azHareket) return;                 // hareket azaltma: huzme sabit kalir
+      animler.forEach(function (a) {
+        try { a.beginElement(); } catch (e) { /* SMIL yoksa sabit huzme kalir */ }
+      });
     }
 
     if ("IntersectionObserver" in window) {
