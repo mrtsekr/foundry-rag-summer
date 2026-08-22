@@ -293,29 +293,82 @@
   }
   .btn:hover { background: var(--accent); color: var(--surface); }
 
-  /* ---------- Decisions: bento — kutu boyutu = kararın ağırlığı ---------- */
-  .decisions { display: grid; gap: 1.1rem; grid-template-columns: 1fr; }
-  /* Ara genislik: iki sutun — dar onizleme panelinde de bento hissi kaybolmasin.
-     Onceden tek esik (900px) vardi ve bundan dar her panelde tum kutular tek
-     sutuna diziliyordu, yani bento hic gorunmuyordu. */
-  @media (min-width: 620px) {
-    .decisions { grid-template-columns: repeat(2, 1fr); }
-    .dec--wide { grid-column: span 2; }
+  /* ---------- Kararlar: arastirma sirasi omurgasi (timeline) ----------
+     21st.dev "Timeline" (preetsuthar17) yapisinin React'siz karsiligi: mutlak
+     konumlu 1px ray + rayin uzerinde oturan durum dugumu + icerik sutunu.
+     TARIH EKSENI YOK. Eksen, kararlarin alindigi ARASTIRMA SIRASI; bu yuzden
+     isaretleyici bir tarih degil, sira numarasi + karar isareti tasiyor. */
+  .tl { --tl-node: 30px; list-style: none; margin: 0; padding: 0; counter-reset: kx; }
+  .tl-i {
+    counter-increment: kx;
+    position: relative;
+    display: grid;
+    grid-template-columns: var(--tl-node) 1fr;
+    gap: .55rem 1rem;
+    padding-bottom: clamp(1.7rem, 3.2vw, 2.4rem);
   }
-  @media (min-width: 860px) {
-    .decisions { grid-template-columns: repeat(6, 1fr); }
-    .dec--lg   { grid-column: span 4; }
-    .dec--md   { grid-column: span 2; }
-    .dec--wide { grid-column: span 6; flex-direction: row; flex-wrap: wrap;
-                 align-items: center; gap: 1rem 2rem; }
-    .dec--wide .dec-txt { flex: 1 1 320px; }
+  .tl-i:last-child { padding-bottom: 0; }
+  /* Ray dugumun MERKEZINDEN gecer, dugumun altindan baslar ve son maddede
+     kesilir — biten bir dizinin altinda bosluga sarkmasin. */
+  .tl-i::before {
+    content: ""; position: absolute;
+    top: calc(var(--tl-node) + .35rem); bottom: 0;
+    left: calc(var(--tl-node) / 2); width: 1px; margin-left: -.5px;
+    background: var(--line);
   }
-  .dec-readout {
+  .tl-i:last-child::before { display: none; }
+
+  .tl-node {
+    grid-column: 1; grid-row: 1;
+    width: var(--tl-node); height: var(--tl-node);
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 999px; position: relative; z-index: 1;
+    border: 1px solid var(--accent);
+    background: var(--accent); color: var(--surface);
+  }
+  /* Onay DOLU, ret BOS. Fark yalnizca tonda degil DOLGUDA da tasiniyor:
+     renk korlugunde, tek renkli baskida ve dusuk parlaklikta da ayirt edilir.
+     Ayrica dugumun yaninda karari YAZIYLA soyleyen .verdict rozeti duruyor —
+     "bilgiyi yalnizca renkle aktarma" kurali iki kanalla birden karsilaniyor. */
+  .tl-i--no .tl-node {
+    background: var(--surface); color: var(--signal); border-color: var(--signal);
+  }
+  .tl-node svg { width: 15px; height: 15px; display: block; }
+
+  .tl-body { grid-column: 2; grid-row: 1; min-width: 0;
+             display: flex; flex-direction: column; gap: .55rem; }
+  .tl-meta { display: flex; flex-wrap: wrap; align-items: center; gap: .45rem .7rem; }
+  /* Sira numarasi CSS sayacindan gelir: maddeler yeniden siralanirsa numaralar
+     kendiliginden duzelir, elle guncellenmesi gereken bir yer kalmaz. */
+  .tl-ord {
     font-family: "JetBrains Mono", monospace; font-variant-numeric: tabular-nums;
-    font-size: clamp(1.5rem, 1.2rem + 1.2vw, 2.1rem); font-weight: 700;
-    letter-spacing: -.02em; color: var(--accent); line-height: 1.1;
+    font-size: .72rem; font-weight: 500; letter-spacing: .06em; color: var(--muted);
   }
-  .dec-readout s { color: var(--signal); text-decoration-thickness: 1px; opacity: .8; }
+  .tl-ord::before { content: counter(kx, decimal-leading-zero); }
+  .tl-body h3 { font-size: 1.06rem; }
+  .tl-body p  { font-size: .95rem; max-width: 64ch; }
+
+  /* KANIT SATIRI — karari dogrulayan olcum. Bento kartlarinda hover'da
+     aciliyordu; timeline'da yer oldugu icin HER ZAMAN acik. Boylece olcum
+     dokunmatik cihazda da, yazdirmada da gorunur. */
+  .tl-kanit {
+    font-family: "JetBrains Mono", monospace; font-size: .74rem; line-height: 1.55;
+    color: var(--accent); font-variant-numeric: tabular-nums;
+    border-left: 2px solid var(--accent); padding-left: .65rem;
+  }
+  .tl-i--no .tl-kanit { color: var(--signal); border-left-color: var(--signal); }
+
+  .tl-readout {
+    font-family: "JetBrains Mono", monospace; font-variant-numeric: tabular-nums;
+    font-size: clamp(1.35rem, 1.1rem + 1vw, 1.9rem); font-weight: 700;
+    letter-spacing: -.02em; color: var(--accent); line-height: 1.15;
+  }
+  .tl-readout s { color: var(--signal); text-decoration-thickness: 1px; opacity: .8; }
+
+  @media (max-width: 480px) {
+    .tl { --tl-node: 26px; }
+    .tl-i { gap: .5rem .75rem; }
+  }
 
   /* ---------- Komut satiri parcaciklari (Geist "Snippet" kalibi) ----------
      Her komut kendi kutusunda, basinda soluk bir $ istemi ve saginda kopyala
@@ -358,60 +411,6 @@
   }
   .rail-item.warn { border-left-color: var(--signal); }
   .rail-item p { font-size: .88rem; color: var(--muted); }
-  /* Magic UI'in bento karti duz kenarlik yerine KATMANLI GOLGE kullaniyor:
-     1px'lik ince halka + yakin yumusak golge + genis dagilan golge. Koyu temada
-     bunun yerine kartin ustunden asagi inen ic parilti (inset) + yari saydam
-     kenarlik geliyor. Ayni yapiyi token'lara tasidik (--card-shadow). */
-  .dec {
-    background: var(--surface); border: 0; border-radius: 3px;
-    box-shadow: var(--card-shadow);
-    padding: 1.15rem 1.1rem; display: flex; flex-direction: column; gap: .7rem;
-    position: relative; overflow: hidden;
-    transition: box-shadow .3s ease, transform .3s ease;
-  }
-  /* Hover'da ust kenarda beliren aksan cizgisi: kartin "aktif" oldugunu
-     soyler, kutunun icindeki hicbir bilgiyi ortmez. */
-  .dec::after {
-    content: ""; position: absolute; inset: 0 0 auto 0; height: 2px;
-    background: linear-gradient(90deg, var(--accent), transparent 72%);
-    opacity: 0; transition: opacity .25s ease;
-  }
-  .dec:hover::after, .dec:focus-within::after { opacity: 1; }
-  .dec:hover, .dec:focus-within { box-shadow: var(--card-shadow-hi); }
-  /* Reddedilen kararlar begonvil rengiyle vurgulanir — rozetle ayni dil. */
-  .dec:has(.verdict.no)::after { background: linear-gradient(90deg, var(--signal), transparent 72%); }
-  @media (prefers-reduced-motion: no-preference) {
-    .dec:hover, .dec:focus-within { transform: translateY(-2px); }
-  }
-
-  /* KANIT SATIRI — Magic UI'in hover'da alttan beliren CTA'sinin karsiligi.
-     Bizde bir baglanti degil, karari dogrulayan OLCUM aciliyor: kart "iddia"yi
-     gosteriyor, hover "kanit"i veriyor.
-     grid-template-rows 0fr -> 1fr: yuksekligi bilinmeyen icerigi animasyonla
-     acmanin duzgun yolu (max-height tahmini gerektirmez).
-     Dar ekranda hover yok -> satir her zaman acik durur. */
-  /* VARSAYILAN: acik. Gizleme yalnizca hover'i olan cihazlarda devreye girer
-     (asagidaki @media). Boylece JS/hover yoksa kanit kaybolmuyor. */
-  .dec-kanit {
-    display: grid; grid-template-rows: 1fr; opacity: 1;
-    transition: grid-template-rows .3s ease, opacity .3s ease;
-  }
-  .dec-kanit > span {
-    overflow: hidden; min-height: 0;
-    font-family: "JetBrains Mono", monospace; font-size: .74rem;
-    color: var(--accent); font-variant-numeric: tabular-nums;
-  }
-  .dec:has(.verdict.no) .dec-kanit > span { color: var(--signal); }
-  /* Kanit satiri yalnizca GERCEK bir isaretleyici cihazi varsa gizlenir.
-     Onceden sadece genislige bakiyordu; genis ekranli dokunmatik cihazlarda
-     (tablet, dokunmatik dizustu) hover olmadigi icin kanit HIC gorunmuyordu.
-     "Onemli icerigi yalnizca hover'a bagilama" kuralinin ihlaliydi. */
-  @media (hover: hover) and (pointer: fine) {
-    .dec-kanit { grid-template-rows: 0fr; opacity: 0; }
-    .dec:hover .dec-kanit, .dec:focus-within .dec-kanit { grid-template-rows: 1fr; opacity: 1; }
-  }
-  .dec h3 { font-size: 1.06rem; }
-  .dec p { font-size: .95rem; }
   .verdict {
     display: inline-flex; align-items: center; gap: .45rem; align-self: flex-start;
     font-family: "JetBrains Mono", monospace; font-size: .72rem;
@@ -701,83 +700,131 @@
         <h2>Her ayar bir ölçümün sonucu.</h2>
         <p>
           Bu projede hiçbir sayı "iyi görünüyor" diye seçilmedi. Aşağıdakilerin hepsi
-          önce denendi, ölçüldü, bir kısmı da <em>reddedildi</em>.
+          önce denendi, ölçüldü, bir kısmı da <em>reddedildi</em>. Sıralama takvime
+          değil <em>araştırmaya</em> ait: her madde, bir öncekinin açtığı soruyu kapatıyor.
         </p>
       </div>
 
-      <div class="decisions">
-        <article class="dec dec--lg">
-          <span class="verdict no">reddedildi</span>
-          <h3>Daha büyük embedding modeli</h3>
-          <p>
-            Planın önerdiği <span class="mono">qwen3-embedding-0.6b</span> gerçekten kuruldu
-            ve üretim ayarında ölçüldü. Sıralamanın tepesinde iyiydi ama havalimanı transferi
-            sorusunda doğru parçayı 2. sıradan 5.'ye düşürdü — yani ilk 3'ün dışına.
-            Üstelik sorgu başına ~0,73 sn ekliyordu.
-          </p>
-          <div class="dec-kanit"><span>kanıt ilk 3'te · e5 15/16 — qwen 14/16 · +0,73 sn/sorgu</span></div>
-        </article>
+      <!-- Eksen = arastirma sirasi. Sira anlamli oldugu icin isaretleme
+           ol; list-style kaldirilinca bazi tarayicilar liste anlamini
+           dusurdugu icin role="list" korumasi ekli. -->
+      <ol class="tl" role="list" aria-label="Kararlar, araştırma sırasına göre">
 
-        <article class="dec dec--md">
-          <span class="verdict">uygulandı</span>
-          <h3>Parçaları bölmemek</h3>
-          <p>
-            Sezgi "küçük parça = keskin embedding" diyordu. Ölçüm çürüttü: her paragrafı
-            ayrı parçaya bölmek cevabı komşu bağlamdan koparıyordu. Parçaları 1000 karaktere
-            kadar toparlayınca 31 parça 9'a indi ve doğruluk belirgin biçimde arttı.
-          </p>
-          <div class="dec-kanit"><span>31 parça → 9 parça · doğruluk %80 → %88 (5'er tur)</span></div>
-        </article>
-
-        <article class="dec dec--md">
-          <span class="verdict">uygulandı</span>
-          <h3>Sıcaklığı <em>yükseltmek</em></h3>
-          <p>
-            Model aynı cümleyi 20 kez tekrarlıyordu. Suçlu sanılan sıcaklık aslında çözümdü:
-            düşük sıcaklıkta (0.3) üretim aynı token dizisine saplanıyordu.
-            <span class="mono">0.7</span> döngüyü kırdı, cevap bağlama dayalı olduğu için
-            kalite bozulmadı.
-          </p>
-          <div class="dec-kanit"><span>0.3 → tekrar döngüsü · 0.7 → sıfır döngü, 7/7 soru doğru</span></div>
-        </article>
-
-        <article class="dec dec--md">
-          <span class="verdict no">reddedildi</span>
-          <h3>Tekrar cezası (<span class="mono">frequency_penalty</span>)</h3>
-          <p>
-            Tekrar sorununa "bariz" çözüm olarak denendi ve işi kötüleştirdi: cevapları
-            boşalttı, hatta bir soruda "kumarhane <em>yok</em>"u "<em>var</em>"a çevirerek
-            tehlikeli bir halüsinasyon üretti. Doğru araç sıcaklıktı.
-          </p>
-          <div class="dec-kanit"><span>0.3 ve 0.6'da denendi · boş cevap + "yok" → "var" hatası</span></div>
-        </article>
-
-        <article class="dec dec--md">
-          <span class="verdict">uygulandı</span>
-          <h3>Örnekten olguyu çıkarmak</h3>
-          <p>
-            Modele biçim öğreten few-shot örneğine somut bir sayı ("200 oda") konduğunda,
-            model doğru parçayı getiremediği bir soruda o sayıyı cevaba <em>sızdırdı</em>.
-            Örnek, veri taşımayan tek bir güvenlik örneğine indirildi.
-          </p>
-          <div class="dec-kanit"><span>"200 oda" örneği cevaba sızdı · doğruluk aynı, sızıntı sıfır</span></div>
-        </article>
-
-        <article class="dec dec--wide">
-          <div class="dec-txt stack">
-            <span class="verdict">uygulandı</span>
+        <li class="tl-i">
+          <span class="tl-node" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+          <div class="tl-body">
+            <div class="tl-meta">
+              <span class="tl-ord num" aria-hidden="true"></span>
+              <span class="verdict">uygulandı</span>
+            </div>
             <h3>GPU'yu açıkça seçmek</h3>
             <p>
-              Foundry SDK, çalışma sağlayıcıları bu sürece kayıtlı değilken sessizce CPU
-              varyantını seçiyor: model doğru çalışır ama sürünür. Sorun bir hata mesajı
-              vermiyor — yalnızca yavaşlık olarak görünüyor. Açıkça
-              <span class="mono">cuda-gpu</span> varyantı seçilince aynı soru, aynı model,
-              aynı bilgisayarda 8 kat hızlandı.
+              İlk iş ölçmeyi mümkün kılmaktı. Foundry SDK, çalışma sağlayıcıları bu
+              sürece kayıtlı değilken sessizce CPU varyantını seçiyor: model doğru
+              çalışır ama sürünür. Sorun bir hata mesajı vermiyor — yalnızca yavaşlık
+              olarak görünüyor. Açıkça <span class="mono">cuda-gpu</span> varyantı
+              seçilince aynı soru, aynı model, aynı bilgisayarda 8 kat hızlandı ve
+              bundan sonraki her deneme uygulanabilir hale geldi.
             </p>
+            <p class="tl-readout"><s>21,6 sn</s> → 2,5 sn</p>
           </div>
-          <p class="dec-readout"><s>21,6 sn</s> → 2,5 sn</p>
-        </article>
-      </div>
+        </li>
+
+        <li class="tl-i tl-i--no">
+          <span class="tl-node" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></span>
+          <div class="tl-body">
+            <div class="tl-meta">
+              <span class="tl-ord num" aria-hidden="true"></span>
+              <span class="verdict no">reddedildi</span>
+            </div>
+            <h3>Tekrar cezası (<span class="mono">frequency_penalty</span>)</h3>
+            <p>
+              Model aynı cümleyi 20 kez tekrarlıyordu ve ilk şüpheli belliydi: tekrarı
+              doğrudan cezalandırmak. Bu yüzden tekrar cezası daha en baştan açık
+              çalıştırıldı — ama döngüyü kırmadı, üstelik işi kötüleştirdi: cevapları
+              boşalttı, hatta bir soruda "kumarhane <em>yok</em>"u "<em>var</em>"a
+              çevirerek tehlikeli bir halüsinasyon üretti.
+            </p>
+            <div class="tl-kanit">0.3 ve 0.6'da denendi · boş cevap + "yok" → "var" hatası</div>
+          </div>
+        </li>
+
+        <li class="tl-i">
+          <span class="tl-node" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+          <div class="tl-body">
+            <div class="tl-meta">
+              <span class="tl-ord num" aria-hidden="true"></span>
+              <span class="verdict">uygulandı</span>
+            </div>
+            <h3>Sıcaklığı <em>yükseltmek</em></h3>
+            <p>
+              Ceza yanlış araç çıkınca suçlu başka yerde arandı. Suçlu sanılan sıcaklık
+              aslında çözümdü: düşük sıcaklıkta (0.3) üretim aynı token dizisine
+              saplanıyordu. <span class="mono">0.7</span> döngüyü kırdı, cevap bağlama
+              dayalı olduğu için kalite bozulmadı.
+            </p>
+            <div class="tl-kanit">0.3 → tekrar döngüsü · 0.7 → sıfır döngü, 7/7 soru doğru</div>
+          </div>
+        </li>
+
+        <li class="tl-i">
+          <span class="tl-node" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+          <div class="tl-body">
+            <div class="tl-meta">
+              <span class="tl-ord num" aria-hidden="true"></span>
+              <span class="verdict">uygulandı</span>
+            </div>
+            <h3>Örnekten olguyu çıkarmak</h3>
+            <p>
+              Üretim düzelince sıra istemin kendisine geldi. Modele biçim öğreten
+              few-shot örneğine somut bir sayı ("200 oda") konduğunda, model doğru
+              parçayı getiremediği bir soruda o sayıyı cevaba <em>sızdırdı</em> — yani
+              örneğin kendisi bir halüsinasyon kaynağına dönüşmüştü. Örnek, veri
+              taşımayan tek bir güvenlik örneğine indirildi.
+            </p>
+            <div class="tl-kanit">"200 oda" örneği cevaba sızdı · doğruluk aynı, sızıntı sıfır</div>
+          </div>
+        </li>
+
+        <li class="tl-i tl-i--no">
+          <span class="tl-node" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></span>
+          <div class="tl-body">
+            <div class="tl-meta">
+              <span class="tl-ord num" aria-hidden="true"></span>
+              <span class="verdict no">reddedildi</span>
+            </div>
+            <h3>Daha büyük embedding modeli</h3>
+            <p>
+              Üretim tarafı oturunca soru retrieval'a döndü. Planın önerdiği
+              <span class="mono">qwen3-embedding-0.6b</span> gerçekten kuruldu ve üretim
+              ayarında ölçüldü. Sıralamanın tepesinde iyiydi ama havalimanı transferi
+              sorusunda doğru parçayı 2. sıradan 5.'ye düşürdü — yani ilk 3'ün dışına.
+              Üstelik sorgu başına ~0,73 sn ekliyordu.
+            </p>
+            <div class="tl-kanit">kanıt ilk 3'te · e5 15/16 — qwen 14/16 · +0,73 sn/sorgu</div>
+          </div>
+        </li>
+
+        <li class="tl-i">
+          <span class="tl-node" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>
+          <div class="tl-body">
+            <div class="tl-meta">
+              <span class="tl-ord num" aria-hidden="true"></span>
+              <span class="verdict">uygulandı</span>
+            </div>
+            <h3>Parçaları bölmemek</h3>
+            <p>
+              Aynı kıyasın asıl bulgusu embedding modeli değildi: her iki model de en
+              iyi sonucu parçalama <em>yokken</em> veriyordu. Sezgi "küçük parça =
+              keskin embedding" diyordu, ölçüm çürüttü — her paragrafı ayrı parçaya
+              bölmek cevabı komşu bağlamdan koparıyordu. Parçaları 1000 karaktere kadar
+              toparlayınca 31 parça 9'a indi ve doğruluk belirgin biçimde arttı.
+            </p>
+            <div class="tl-kanit">31 parça → 9 parça · doğruluk %80 → %88 (5'er tur)</div>
+          </div>
+        </li>
+
+      </ol>
 
       <div class="stack col">
         <h3>Embedding kıyası — karar tablosu</h3>
@@ -1157,7 +1204,7 @@ belirtmeniz önerilir.
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     if (!("IntersectionObserver" in window)) return;
 
-    var ogeler = document.querySelectorAll("main section > *");
+    var ogeler = document.querySelectorAll("main section > *, .tl-i");
     ogeler.forEach(function (o) { o.classList.add("rv"); });
 
     var io = new IntersectionObserver(function (girisler) {
