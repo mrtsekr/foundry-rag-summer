@@ -9,8 +9,8 @@ retrieval, üretim) hazır bir çerçeveye sarılmadan elle kurmak ve her ayarı
 ölçerek seçmek.
 
 **Tanıtım sayfası:** <https://mrtsekr.github.io/foundry-rag-summer/>
-Mimari, ölçümler, alınan ve reddedilen kararlar, 21 gerçek çalıştırmada arama.
-Tek HTML dosyası, sunucu istemez. Kendi bilgisayarında `python site/sunucu.py`
+Aynı içeriğin görsel hâli: mimari şeması, ölçüm grafikleri ve 21 gerçek
+çalıştırmada arama. Tek HTML dosyası, sunucu istemez. `python site/sunucu.py`
 ile açarsan sayfa canlı moda geçer ve istediğin soruyu gerçekten modele sorarsın.
 
 | | |
@@ -19,6 +19,39 @@ ile açarsan sayfa canlı moda geçer ve istediğin soruyu gerçekten modele sor
 | Retrieval | `sentence-transformers` + `intfloat/multilingual-e5-small` (384 boyut) |
 | Depo | Python'un yerleşik `sqlite3`'ü, ayrı vektör veritabanı yok |
 | Bilgi tabanı | 9 belge → 9 parça (`.txt` · `.md` · `.pdf`) |
+
+---
+
+## Ne yapıldı
+
+RAG hattının tamamı elle yazıldı. LangChain, LlamaIndex ya da benzeri bir
+çerçeve, ve Chroma/FAISS gibi bir vektör veritabanı kullanılmadı. Bunun sebebi
+tercih değil amaç: her adımın ne yaptığını görmek.
+
+Elle yazılan kısımlar:
+
+- **Parçalayıcı** (`ingest.py` → `chunk_text`): paragraf öncelikli, toparlayıcı
+  (greedy packing). Paragrafları 1000 karaktere kadar birleştirir, sınırı aşan
+  belgeleri örtüşmeli pasajlara böler.
+- **Retrieval** (`db.py` → `search`, `rag_core.py` → `cosine_similarity`):
+  sorgu vektörü ile bütün parçalar arasında kosinüs benzerliği, en iyi `TOP_K`.
+- **Depolama** (`db.py`): SQLite şeması ve embedding'lerin `float32` BLOB olarak
+  saklanması. Ayrı bir vektör sunucusu yok.
+- **İstem ve few-shot** (`rag.py`): bağlam yerleştirme, kaynak gösterimi, ve
+  bağlamda cevap yoksa "bilgim yok" davranışını öğreten tek bir güvenlik örneği.
+- **Tekrar kırpıcı** (`llm.py`): küçük Qwen modellerinin girdiği tekrar
+  döngüsünü çıktıda keser.
+- **Değerlendirme takımı** (`eval.py`): 17 soru, cevap doğruluğu ve retrieval
+  isabeti ayrı ayrı, artı 5 uç durum testi.
+- **Kıyas araçları** (`bench/`): embedding arka uçları, parçalama ayarları ve
+  `TOP_K` taraması.
+- **Tanıtım sayfası** (`site/`): tek dosya, düz HTML/CSS/JS, build adımı yok.
+
+Hazır alınanlar: Foundry Local (model çalıştırma), `sentence-transformers`
+(embedding modeli), `sqlite3` (stdlib), `pypdf`, `numpy`, `torch`.
+
+Bu depodaki her ayar bir ölçümle seçildi. Aşağıdaki tablolar o ölçümlerin
+kendisi; reddedilen denemeler de yazılı.
 
 ---
 
@@ -100,93 +133,183 @@ Model ezberinden değil, getirilen belgeden cevaplar. Belgede yoksa uydurmaz,
 | `tani/` | Tanı scriptleri: `compare_chat.py`, `diag_variants.py`, `diag_eps.py` |
 | `site/` | Tanıtım sayfası: `index.html`, `kayitlar.json`, `kayit_uret.py`, `sunucu.py` |
 
-`tani/` altındakiler tek seferlik teşhis scriptleri ama duruyorlar, çünkü sitede
-yayımlanan VRAM ve süre sayılarını bunlar üretti. Silinirse ölçümlerin kaynağı
-kaybolur.
+`tani/` altındakiler tek seferlik teşhis scriptleri ama duruyorlar, çünkü
+belgelenen VRAM ve süre sayılarını bunlar üretti.
 
 ---
 
 ## Teknik kararlar
 
-Bu bölüm özet. Ölçümlerin tamamı, grafikleri ve reddedilen denemeler
-[tanıtım sayfasında](https://mrtsekr.github.io/foundry-rag-summer/).
+### Chat modeli: `qwen3-4b`
 
-**Chat modeli `qwen3-4b`, çünkü kart öyle istedi.** Aday `qwen3.5-4b` 6 GB'lık
-karta sığmadı: tepe kullanım 5903/6144 MiB'e tırmandı, paylaşımlı belleğe taştı,
-cevap süresi 115 saniyeye çıktı. `qwen3-4b` 4516 MiB'de kalıyor ve 2,5 saniyede
-cevaplıyor. Ölçüm `tani/compare_chat.py`.
+Kararı donanım verdi. Aday `qwen3.5-4b` (5.36 GB) 6 GB'lık karta sığmadı.
 
-**GPU'yu elle seçmek gerekiyor.** Foundry SDK, çalışma sağlayıcıları bu sürece
-kayıtlı değilken sessizce CPU varyantını seçiyor. Model doğru çalışır ama sürünür
-(21,6 sn/cevap) ve hata mesajı vermez. `llm.py` önce EP'leri kaydedip sonra
-`cuda-gpu` varyantını açıkça seçiyor: 21,6 sn → 2,5 sn.
+| Model | Yükleme | VRAM tepe | Ortalama cevap |
+|---|---|---|---|
+| `qwen3-4b` | 11.9 sn | 4516 / 6144 MiB | **2.7 sn** |
+| `qwen3.5-4b` | 29.6 sn | 5903 / 6144 MiB | 115.1 sn |
 
-**Embedding çok dilli olmalı.** İngilizce merkezli `all-MiniLM-L6-v2` Türkçe
-sorularda yanlış parça getirdi ve model uydurdu. Retrieval için özel eğitilmiş
-`multilingual-e5-small` en iyi sonucu verdi. Üçü de 384 boyut olduğu için şema
-hiç değişmedi. e5 modelleri ön ek ister: sorguya `query: `, parçaya `passage: `.
+`qwen3.5-4b` paylaşımlı belleğe taştı ve düşünme bloğunun içinde takılıp geçerli
+cevap üretemedi. Ölçüm `tani/compare_chat.py`.
 
-**`temperature = 0.7`, sezgiye ters ama doğru.** Model aynı cümleyi 20 kez
-tekrarlıyordu. Suçlu sanılan sıcaklık aslında çözümdü: düşük sıcaklıkta (0.3)
-üretim aynı token dizisine saplanıyordu. 0.7 döngüyü kırdı, cevap bağlama dayalı
-olduğu için kalite bozulmadı.
+### GPU'yu elle seçmek gerekiyor
 
-**`frequency_penalty` kullanılmadı.** Tekrar sorununa bariz çözüm gibi görünüyordu
-ama işi kötüleştirdi: cevapları boşalttı, bir soruda "kumarhane yok"u "var"a
+Foundry SDK, çalışma sağlayıcıları (EP) bu sürece kayıtlı değilken sessizce
+`-generic-cpu` varyantını seçiyor. Model doğru çalışır ama sürünür ve hiçbir hata
+mesajı vermez; sorun yalnızca yavaşlık olarak görünür. `llm.py` önce EP'leri
+kaydedip sonra `cuda-gpu` varyantını açıkça seçiyor: **21.6 sn → 2.5 sn**, aynı
+soru, aynı model, aynı bilgisayar. Teşhis `tani/diag_variants.py` ve
+`tani/diag_eps.py`.
+
+### Embedding çok dilli olmalı
+
+İngilizce merkezli `all-MiniLM-L6-v2` Türkçe sorularda (havuz, evcil hayvan)
+yanlış parça getirdi ve model uydurdu. `paraphrase-multilingual-MiniLM-L12-v2`
+bunu düzeltti; retrieval için özel eğitilmiş `multilingual-e5-small` dolaylı
+sorularda daha da iyi oldu (retrieval isabeti %88 → %94). Üçü de 384 boyut
+olduğu için şema hiç değişmedi. e5 modelleri ön ek ister: sorguya `query: `,
+parçaya `passage: ` (`rag_core.py`).
+
+### `temperature = 0.7`, sezgiye ters ama doğru
+
+Model aynı cümleyi 20 kez tekrarlıyordu. Suçlu sanılan sıcaklık aslında çözümdü:
+düşük sıcaklıkta (0.3) üretim aynı token dizisine saplanıyordu. 0.7 döngüyü
+kırdı, cevap bağlama dayalı olduğu için kalite bozulmadı.
+
+### `frequency_penalty` kullanılmadı
+
+Tekrar sorununa bariz çözüm gibi görünüyordu. 0.3 ve 0.6 ile denendi, ikisinde de
+işi kötüleştirdi: cevapları boşalttı ve bir soruda "kumarhane yok"u "var"a
 çevirerek tehlikeli bir halüsinasyon üretti. Doğru araç sıcaklıktı.
 
-**Parçaları bölmemek.** Başlangıçta her paragraf ayrı parçaya düşüyordu (31 parça)
-ve sezgi "küçük parça = keskin embedding" diyordu. Ölçüm bunu çürüttü: bir konunun
-cevabı komşu paragraftaki bağlamdan koparılıyordu. Parçaları 1000 karaktere kadar
-toparlayınca 31 parça 9'a indi ve cevap doğruluğu %80'den %88'e çıktı.
+### Parçaları bölmemek
 
-**Foundry'nin embedding modeline geçilmedi.** Proje başladığında Foundry Local
-kataloğunda embedding modeli yoktu; retrieval bu yüzden Python tarafında kuruldu.
-Temmuz sonunda katalog yeniden kontrol edildiğinde `qwen3-embedding-0.6b` çıkmıştı.
-Yani mevcut kurulum artık zorunluluk değil, tercih. Tercih ölçülerek verildi:
+Başlangıçta her paragraf ayrı parçaya düşüyordu (`CHUNK_MAX_CHARS=350`, 31 parça)
+ve sezgi "küçük parça = keskin embedding" diyordu. Ölçüm bunu çürüttü: bir
+konunun cevabı komşu paragraftaki bağlamdan koparılıyordu.
+
+| | Eski (31 parça) | Yeni (9 parça) |
+|---|---|---|
+| Cevap doğruluğu (5 çalıştırma) | 13-14 / 17, ort. %80 | 14-16 / 17, ort. **%88** |
+
+1000 sınırı keyfi değil: bu korpustaki belgeleri (ortalama 718 karakter) bölmeyecek
+kadar büyük, uzun bir belgeyi birkaç paragraflık pasajlara bölecek kadar küçük.
+Aynı kod sayfalarca belgede de doğru davranır, o zaman bir belge birden çok parça
+olur.
+
+### Foundry'nin embedding modeline geçilmedi
+
+Proje başladığında Foundry Local kataloğunda embedding modeli yoktu; retrieval bu
+yüzden Python tarafında kuruldu. Temmuz sonunda katalog yeniden kontrol
+edildiğinde `qwen3-embedding-0.6b` (495 MB) ve `qwen3-embedding-8b` çıkmıştı.
+Yani mevcut kurulum artık zorunluluk değil, tercih. Tercih üç ölçümle verildi.
+
+**Birinci ölçüm** (31 parça, e5 için optimize edilmiş ayar) e5'i açık ara önde
+gösterdi, ama bu kıyas taraflıydı: Qwen3-Embedding uzun bağlam için eğitilmiş bir
+model ve o ayar onun güçlü olduğu yeri hiç kullanmıyordu.
+
+**İkinci ölçüm** aynı iki modeli dört farklı parçalama ayarında karşılaştırdı
+(`bench/bench_chunking.py`). MRR = kanıtın sırasının tersinin ortalaması; 1.0
+kanıtın hep ilk sırada olması demek.
+
+| Parçalama | Parça | Ort. uzunluk | e5 hit@3 | qwen hit@3 | e5 MRR | qwen MRR |
+|---|---|---|---|---|---|---|
+| 350 / 120 / 80 | 25 | 264 | 11/16 | **13/16** | 0.665 | **0.795** |
+| 700 / 200 / 120 | 12 | 538 | 14/16 | 14/16 | 0.747 | **0.792** |
+| 1200 / 300 / 150 | 9 | 718 | **15/16** | 14/16 | 0.840 | **0.854** |
+| parçalama yok | 9 | 718 | **15/16** | 14/16 | 0.840 | **0.854** |
+
+Qwen dört ayarın dördünde de daha iyi MRR veriyor, yani doğru parçayı listenin
+tepesine taşımakta iyi. Ama `TOP_K=3` ile çalışan bir sistemde belirleyici olan
+MRR değil, doğru parçanın ilk 3'e girip girmediği.
+
+**Üçüncü ve belirleyici ölçüm** üretim ayarında yapıldı: Foundry yolu gerçekten
+`rag_core.embed_texts()` üzerinden bağlandı, `ingest.py` 1024 boyutlu vektörlerle
+yeniden çalıştırıldı, ölçüm dağıtılan ayarda (9 parça) alındı.
 
 | Ölçüt (16 soru, 9 parça) | e5-small (384) | qwen3-emb (1024) |
 |---|---|---|
 | Kanıt ilk 3'te (karar metriği) | **15/16 · %94** | 14/16 · %88 |
 | Doğru dosya ilk 3'te | **14/16 · %88** | 13/16 · %81 |
+| Kanıt ilk 1'de | 12/16 · %75 | **13/16 · %81** |
 | MRR | 0.840 | **0.854** |
-| 16 soruyu embedleme | **0,08 sn** | 11,75 sn |
+| 16 soruyu embedleme | **0.08 sn** | 11.75 sn |
 
-`TOP_K = 3` olduğu için karar satırı "kanıt ilk 3'te": modelin gerçekten gördüğü
-bilgi budur. 20 kat büyük model orada geride kaldı ve sorgu başına ~0,73 saniye
-ekledi. Foundry yolu silinmedi, `config.EMBED_BACKEND` tek satırda geri açıyor.
+20 kat büyük model karar metriğinde geride kaldı ve sorgu başına ~0.73 saniye
+ekledi. Somut örnek: havalimanı transferi sorusunda doğru parçayı 2. sıradan
+5.'ye düşürdü, yani ilk 3'ün dışına. Foundry yolu silinmedi,
+`config.EMBED_BACKEND` tek satırda geri açıyor ve bilgi tabanı büyüdüğünde aynı
+kıyas tekrarlanabiliyor.
 
-İlk kıyas taraflıydı, çünkü parçalar e5 için optimize edilmiş bir ayarla
-kurulmuştu. `bench/bench_chunking.py` aynı iki modeli dört farklı parçalama
-ayarında ölçüyor; küçük parçalarda Qwen öne geçiyor, bu korpusun gerçek
-ayarında (9 parça) fark kapanıyor.
+### `TOP_K = 3`
 
-**`TOP_K = 3`.** `bench/tune_topk.py` taramasında isabet k=3'te doyuyor, daha
-büyük k üretime yalnızca gürültü taşıyor.
+`bench/tune_topk.py` taramasında isabet k=3'te doyuyor, daha büyük k üretime
+yalnızca gürültü taşıyor.
 
 ---
 
 ## Değerlendirme
 
-`python eval.py` iki metriği ayrı ölçer: cevap doğruluğu ve retrieval isabeti.
-Ayırmak, bir hatanın nerede olduğunu söyler. Yanlış parça mı geldi, yoksa doğru
-parça gelip model mi yanlış cevapladı?
+`eval.py` elle hazırlanmış 17 soruluk bir set çalıştırır: doğrudan sorular,
+dolaylı/parafraz sorular ve bilerek bilgi tabanında olmayan bir soru. İki metrik
+ayrı ölçülür.
 
 | Metrik | Sonuç |
 |---|---|
-| Cevap doğruluğu (17 soru, 4 çalıştırma) | 13-16 / 17, ortalama %84 |
-| Retrieval isabeti (16 soru, deterministik) | 15 / 16, %94 |
-| Uç durum testleri | 5 / 5 |
-| Ortalama cevap süresi | 2,5 sn |
+| Cevap doğruluğu | 13-16 / 17, ortalama **%84** (4 çalıştırma) |
+| Retrieval isabeti | 15 / 16, **%94** (çalıştırmalar arası sabit) |
+| Uç durumlar | 5 / 5 (ayrı ölçülür) |
+
+İki metriği ayırmak bir hatanın nerede olduğunu söyler: cevap yanlış ama
+retrieval doğruysa sorun üretimde, retrieval de ıskalamışsa sorun
+embedding veya `TOP_K` tarafında.
 
 Cevap doğruluğu tek sayı değil aralık, çünkü üretim örneklemeli
-(`temperature = 0.7`) ve aynı soru çalıştırmalar arasında farklı cevaplanabiliyor.
-En iyi tur seçilmedi, gözlenen aralık yazıldı. Retrieval deterministik olduğu için
-hiç oynamıyor.
+(`temperature = 0.7`). En iyi tur seçilmedi, gözlenen aralık yazıldı. Retrieval
+deterministik olduğu için hiç oynamıyor.
 
-Uç durum testleri ana yüzdelere karıştırılmadı. Ana set "doğru cevabı biliyor mu",
-uç durumlar "beklenmedik girdide güvenli mi" sorusunu ölçüyor; beşi de kolay
-geçtiği için aynı tabloya konsaydı doğruluk suni biçimde şişerdi.
+`eval.py` süre ölçmüyor, o yüzden tabloda yok. Cevap süresi ayrı ölçüldü ve tek
+bir sayı değil: `site/kayitlar.json` içindeki 21 gerçek çalıştırmanın ortalaması
+1.33 sn, medyanı 1.14, aralığı 0.85-3.42 sn. GPU düzeltmesi bölümündeki 2.5 sn
+başka bir ölçümden, o karşılaştırmanın kendi öncesi/sonrası çiftinden geliyor.
+
+### Metrik iki kez sıkılaştırıldı
+
+Her ikisinde de raporlanan sayı düştü. Ölçüm ne kadar gevşekse sonuç o kadar
+anlamsız.
+
+Birinci turda tek başına `"var"` kabul anahtarı olan sorular temizlendi. "En az
+bir anahtar geçsin" kuralı yüzünden model yanlış bir şey söylese bile cümlesinde
+"var" geçtiği için doğru sayılabiliyordu. Artık her soru kendine özgü terimi
+istiyor: jakuzi, hamam, aquapark, casino, sahil barı.
+
+İkinci tur bir kod incelemesinden geldi, temizlik eksik kalmıştı: "Akşam et yemek
+istiyorum, uygun bir restoran var mı?" sorusunda `"var"` hâlâ kabul anahtarıydı
+ve soru zaten "var mı?" ile bittiği için neredeyse her cevap geçiyordu.
+
+### Uç durumlar
+
+Doğruluk ölçümünün yanında ayrı bir dayanıklılık bölümü var: sistem beklenmedik
+girdide ne yapıyor? `eval.py` beş uç durumu ayrı raporlar, beşi de geçiyor.
+
+| Girdi | Beklenen davranış |
+|---|---|
+| `""` (boş) | Retrieval ve üretim hiç çalışmamalı, yönlendirme mesajı dönmeli |
+| `"   "` (yalnız boşluk) | Aynı yol, `strip()` sonrası boş sayılmalı |
+| `"Bana otelden bahset."` | Çok genel soruya bağlamdaki gerçeklere dayanan cevap |
+| `"havuz"` | Tam cümle olmasa da doğru konuya gitmeli |
+| `"Bugün hava nasıl olacak?"` | Bilgi tabanı dışı, uydurmamalı |
+
+Bu beş test ana yüzdelere karıştırılmadı. Ana set "doğru cevabı biliyor mu", bu
+bölüm "beklenmedik girdide güvenli mi" sorusunu ölçüyor; beşi de kolay geçtiği
+için aynı tabloya konsaydı doğruluk suni biçimde şişerdi.
+
+Boş sorgunun kapıda durdurulması kozmetik bir kontrol değil. Boş metin de
+embed'lenebiliyor, `db.search()` yine en benzer 3 parçayı döndürüyor (skorlar
+anlamsız) ve model bu rastgele bağlamla bir şeyler yazıyordu. Artık
+`rag.answer()` boş girdide retrieval'a hiç gitmiyor. Aynı sebeple
+`assistant.py`'de boş Enter oturumu kapatmıyor; kazara basılan bir tuş GPU'da
+yüklü modeli düşürmesin diye çıkış yalnızca `q` ile.
 
 ### Güvenli başarısızlık
 
@@ -205,42 +328,47 @@ sızıntı bitti.
 
 ## Bilinen sınırlamalar
 
-- **Retrieval metriği fazla katı.** Her soru için tek bir doğru kaynak bekliyor.
-  "Otelde casino var mı" sorusunda beklenen `aktiviteler.txt` yerine
-  `otel_genel.txt` geliyor; o belge de casino'dan bahsettiği için cevap doğru
-  çıkıyor ama metrik ıska sayıyor. %94 bu yüzden kötümser.
-- **Benzerlik skorları birbirine çok yakın.** Bütün skorlar 0,77-0,87 aralığına
-  sıkışıyor, yani yüksek skor tek başına "doğru parça geldi" demek değil.
-  Parçaları büyütmek bunu hafifletti, kalan pay için bir yeniden sıralama adımı
-  gerekir.
+- **Retrieval metriği fazla katı, %94 olduğundan kötümser.** Her soru için tek
+  bir doğru kaynak bekliyor. "Otelde casino var mı" sorusunda beklenen
+  `aktiviteler.txt` yerine `otel_genel.txt` geliyor; o belge de casino'dan
+  bahsettiği için cevap doğru çıkıyor ama metrik ıska sayıyor. Doğru çözüm soru
+  başına birden çok kabul edilebilir kaynak tanımlamak.
+- **Benzerlik skorları birbirine çok yakın.** 21 çalıştırmanın 63 skorunun hepsi
+  0.77-0.87 aralığına sıkışıyor, yani yüksek skor tek başına "doğru parça geldi"
+  demek değil. 31 parçalı eski yapılandırmada ilk beş parça arasındaki ortalama
+  fark yalnızca 0.035'ti. Parçaları büyütmek bunu hafifletti; kalan pay için bir
+  yeniden sıralama adımı gerekir.
 - **"Belge = parça" yaklaşımı bu korpusa özel.** Sayfalarca belgeye ölçeklenmez:
-  uzun bir belgenin tek embedding'i tüm konuların ortalaması olur. Parçalayıcı
-  bunu ele alıyor (1000 karakteri aşan belgeler bölünüyor) ama o rejim bu veriyle
-  sınanmadı. Ayrıca `db.search()` tüm vektörleri belleğe alıp tek tek
-  karşılaştırıyor; büyük N için gerçek bir vektör indeksi gerekir.
+  uzun bir belgenin tek embedding'i tüm konuların ortalaması olur ve hiçbir
+  soruya güçlü eşleşmez. Parçalayıcı bunu ele alıyor (1000 karakteri aşan
+  belgeler pasajlara bölünüyor) ama o rejim bu veriyle sınanmadı. Ayrıca
+  `db.search()` tüm vektörleri belleğe alıp tek tek karşılaştırıyor; büyük N için
+  gerçek bir vektör indeksi gerekir.
 - **Model tavanı.** `qwen3-4b` 6 GB'a sığan en iyi seçenek ama günlük ve dolaylı
   ifadelerde ara sıra yanlış cümleye takılıyor. `llm.py` içindeki tekrar kırpıcı
   döngüyü keser, içerik hatasını düzeltmez.
 - **PDF yalnızca metin tabanlı.** Taranmış (görüntü) PDF'ten metin çıkmaz, OCR yok.
 - **Değerlendirme seti küçük** (17 soru) ve elle hazırlandı. İstatistiksel güven
   aralığı iddia etmiyor, yön gösteriyor.
-- **Oturum hafızası yok.** Her soru bağımsız; çok turlu diyalog kurulmadı.
+- **Oturum hafızası yok.** Her soru bağımsız, çok turlu diyalog kurulmadı.
 
 ## Sonraki adımlar
 
 - **Embedding kıyasını daha büyük bir bilgi tabanında tekrarlamak.** Bugünkü 9
-  parçalık korpusta e5-small önde çıktı, ama `bench/bench_chunking.py` Qwen'in
+  parçalık korpusta e5-small önde çıktı, ama yukarıdaki parçalama tablosu Qwen'in
   parça sayısı arttıkça güçlendiğini gösteriyor. Eksik olan kod değil veri: arka
   uç kurulu, `config.EMBED_BACKEND` tek satır. Yeni belgeler gerçek olduğunda
   anlamlı olur; sırf ölçüm yapmak için sentetik belge üretmek hem sonucu hem
   anlatıyı bozar.
 - **Yeniden sıralama (reranker).** Bu ölçekte işe yaramaz: toplam 9 parça var ve
   `TOP_K = 3`. Reranker'ın işi çok sayıda aday arasından iyi olanı yukarı çekmek,
-  9 adayın olduğu yerde sıralanacak bir şey yok. Üstelik ikinci bir model cevap
-  süresine eklenir. Parça sayısı birkaç yüze çıkarsa gündeme gelir.
+  9 adayın olduğu yerde sıralanacak bir şey yok. Üstelik ikinci bir model
+  (cross-encoder) cevap süresine eklenir. Parça sayısı birkaç yüze çıkarsa
+  gündeme gelir.
 - **Çok turlu diyalog.** Şu an her soru bağımsız. Önceki soruya atıf yapan
-  ("peki orada kahvaltı kaçta?") sorular için soru yeniden yazma adımı gerekir.
-  Değerlendirme seti de buna göre genişletilmeli, yoksa iyileşme ölçülemez.
+  ("peki orada kahvaltı kaçta?") sorular için bir soru yeniden yazma adımı
+  gerekir. Değerlendirme seti de buna göre genişletilmeli, yoksa iyileşme
+  ölçülemez.
 
 ---
 
@@ -271,12 +399,12 @@ Kullanılan araçlar ve modeller:
 Yöntem için başvurulanlar:
 
 - Lewis ve ark., [*Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks*](https://arxiv.org/abs/2005.11401) (2020) — RAG'in özgün tanımı
-- Wang ve ark., [*Multilingual E5 Text Embeddings*](https://arxiv.org/abs/2402.05672) (2024) — e5 ön ek kuralı (`query:` / `passage:`) buradan
+- Wang ve ark., [*Multilingual E5 Text Embeddings*](https://arxiv.org/abs/2402.05672) (2024) — `query:` / `passage:` ön ek kuralı buradan
 - [Foundry Local SDK dokümantasyonu](https://learn.microsoft.com/azure/ai-foundry/foundry-local/reference/reference-sdk) — EP kaydı ve varyant seçimi
 
 Tanıtım sayfasındaki bileşenler [21st.dev](https://21st.dev) kaynaklarından
 uyarlandı (Timeline, Hero Highlight, AI Agent Pipeline, animated-beam,
-bento-grid). Hepsi React bileşeniydi; bu projede düz HTML/CSS'e taşındı.
+bento-grid). Hepsi React bileşeniydi, bu projede düz HTML/CSS'e taşındı.
 
 ## Lisans
 
