@@ -118,9 +118,15 @@ Kendi belgelerini eklemek için `docs/` klasörüne `.txt`, `.md` veya `.pdf` ko
 | `tune_topk.py` | Retrieval-only `TOP_K` taraması |
 | `bench_embed.py` | Embedding arka uçlarının kıyası (LLM'siz, deterministik): e5-small vs `qwen3-embedding-0.6b` |
 | `bench_chunking.py` | Parçalama × embedding taraması (kıyasın kendi ayarımıza taraflılığını ölçer) |
+| `site/index.html` | Tanıtım sayfası — tek dosya, düz HTML/CSS/JS, build adımı yok |
+| `site/kayitlar.json` | 21 gerçek çalıştırmanın kaydı (soru, cevap, kaynaklar, skor, süre); sayfaya gömülü |
+| `site/kayit_uret.py` | O kayıtları üreten script (`rag.answer` çağırır) |
+| `site/sunucu.py` | Sayfayı canlı moda geçiren küçük yerel sunucu (yalnızca stdlib) |
 
-Öğrenme/tanı scriptleri: `hello_model.py` (Foundry testi), `embed_test.py`
-(embedding testi), `compare_chat.py` (model karşılaştırması), `diag_*.py`.
+Tanı scriptleri: `compare_chat.py` (model karşılaştırması — sitedeki VRAM ve
+süre grafiğinin kaynağı), `diag_variants.py` / `diag_eps.py` (qwen3-4b neden
+CPU'ya düşüyordu). Bunlar duruyor çünkü sitede yayımlanan sayıları bu scriptler
+üretti; silinirse ölçümlerin kaynağı kaybolur.
 
 ---
 
