@@ -117,6 +117,7 @@
   .btn:focus-visible,
   .btn-ghost:focus-visible,
   .kopyala:focus-visible,
+  .dny-temizle:focus-visible,
   .nav-links a:focus-visible,
   /* Yatay kaydirilabilir kutular tabindex=0 aldi (klavyeyle kaydirilabilsinler
      diye); odaklandiklarinda da gorunur olmalilar. */
@@ -531,6 +532,104 @@
     .kopyala  { order: 3; }
   }
 
+
+  /* ---------- Deneyin: kayitli calistirma araligi ----------
+     ARIA combobox + listbox kalibi (WAI-ARIA APG). 21st'teki adaylarin
+     neredeyse tamami MODAL komut paletiydi (Cmd+K ile acilan global
+     baslatici); bu bolum sayfaya GOMULU bir panel oldugu icin modal yanlis
+     kalipti — sayfayi orterdi. Satir ici combobox secildi.
+     BURADA CANLI MODEL YOK: her sey sayfaya gomulu 21 gercek calistirmadan
+     geliyor. Havuzda karsiligi olmayan soruda sayfa da asistan gibi
+     "bilmiyorum" deyip kuruluma yonlendiriyor. */
+  .dny-ust { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem .8rem; }
+  .dny-rozet {
+    display: inline-flex; align-items: center; gap: .4rem;
+    font-family: "JetBrains Mono", monospace; font-size: .68rem;
+    padding: .2rem .5rem; border-radius: 2px;
+    background: var(--accent-dim); color: var(--accent); border: 1px solid var(--accent);
+  }
+  .dny-rozet::before {
+    content: ""; width: 6px; height: 6px; border-radius: 999px;
+    background: var(--accent); flex: none;
+  }
+
+  .dny-ara {
+    display: flex; align-items: center; gap: .55rem;
+    background: var(--surface); border: 1px solid var(--line); border-radius: 3px;
+    padding: 0 .6rem; transition: border-color .2s ease, box-shadow .2s ease;
+  }
+  /* Girisin kendi outline'i kaldirildi ama YERINE kutunun tamami halkalaniyor —
+     odak gostergesi kaybolmuyor, buyuyor. */
+  .dny-ara:focus-within { border-color: var(--accent); box-shadow: var(--card-shadow-hi); }
+  @media (prefers-reduced-motion: reduce) { .dny-ara { transition: none; } }
+  .dny-onek { font-family: "JetBrains Mono", monospace; font-size: .84rem; color: var(--accent); flex: none; }
+  #dnyGiris {
+    flex: 1 1 auto; min-width: 0; border: 0; background: transparent; outline: none;
+    font-family: "JetBrains Mono", monospace; font-size: .88rem;
+    color: var(--ink); padding: .72rem 0;
+  }
+  #dnyGiris::placeholder { color: var(--muted); opacity: 1; }
+  .dny-temizle {
+    flex: none; cursor: pointer; border-radius: 2px; background: transparent;
+    border: 1px solid var(--line); color: var(--muted);
+    font-family: Archivo, sans-serif; font-size: .7rem; padding: .2rem .5rem;
+    transition: color .2s ease, border-color .2s ease;
+  }
+  .dny-temizle:hover { color: var(--accent); border-color: var(--accent); }
+  @media (prefers-reduced-motion: reduce) { .dny-temizle { transition: none; } }
+
+  .dny-liste {
+    list-style: none; margin: .45rem 0 0; padding: .3rem;
+    background: var(--surface); border: 1px solid var(--line); border-radius: 3px;
+    max-height: 15rem; overflow-y: auto;
+  }
+  .dny-liste li {
+    padding: .5rem .6rem; border-radius: 2px; cursor: pointer;
+    font-size: .92rem; line-height: 1.35;
+  }
+  .dny-liste li:hover,
+  .dny-liste li[aria-selected="true"] { background: var(--accent-dim); }
+  /* Eslesen parca: renk + kalinlik, yani yalnizca renge dayanmiyor. */
+  .dny-liste mark { background: transparent; color: var(--accent); font-weight: 700; }
+  .dny-sayac { margin-top: .45rem; font-size: .76rem; color: var(--muted); }
+
+  .dny-sonuc { margin-top: clamp(1.1rem, 3vw, 1.7rem); }
+  .dny-sonuc .qa-a { white-space: pre-wrap; }
+
+  .dny-kaynaklar { display: flex; flex-direction: column; gap: .5rem; }
+  .dny-kaynak {
+    display: grid; grid-template-columns: minmax(0, 11rem) 1fr auto;
+    align-items: center; gap: .65rem;
+  }
+  .dny-dosya {
+    font-size: .78rem; color: var(--muted);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .dny-bar { height: 6px; border-radius: 999px; background: var(--line); overflow: hidden; }
+  /* Opaklik OLCULEREK secildi: .45'te dolgu izden ayrilmiyordu (1.81:1 acik,
+     2.14:1 koyu — grafik esigi 3:1). .85 iki temada da esigi geciyor
+     (3.2:1 / 3.8:1) ve ilk kaynagin tam opak cubugundan hala ayirt ediliyor. */
+  .dny-bar i { display: block; height: 100%; background: var(--accent); opacity: .85; }
+  .dny-skor { font-size: .76rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+  /* Ilk kaynak = sirada en tepedeki. Vurgu SIRAYI gosteriyor, uydurma bir
+     "guven" degeri degil. */
+  .dny-kaynak:first-child .dny-dosya { color: var(--ink); }
+  .dny-kaynak:first-child .dny-bar i { opacity: 1; }
+  .dny-kaynak:first-child .dny-skor { color: var(--accent); }
+  @media (max-width: 560px) {
+    .dny-kaynak { grid-template-columns: 1fr auto; }
+    .dny-bar { grid-column: 1 / -1; order: 3; }
+  }
+
+  /* Havuzda yoksa: sayfa da asistan gibi guvenli basarisiz olur. */
+  .dny-bos {
+    display: flex; flex-direction: column; gap: .8rem; align-items: flex-start;
+    background: var(--surface); border: 1px solid var(--signal);
+    border-radius: 3px; padding: 1.15rem 1.1rem;
+  }
+  .dny-bos strong { color: var(--signal); }
+  .dny-bos p { font-size: .95rem; max-width: 62ch; }
+
   /* ---------- Terminal + açıklama rayı ---------- */
   .term-grid { display: grid; gap: 1.1rem; grid-template-columns: 1fr; align-items: start; }
   @media (min-width: 860px) { .term-grid { grid-template-columns: minmax(0,1.9fr) minmax(0,1fr); } }
@@ -633,6 +732,7 @@
         <li><a href="#mekanizma">Mekanizma</a></li>
         <li><a href="#kararlar">Kararlar</a></li>
         <li><a href="#calisirken">Çalışırken</a></li>
+        <li><a href="#deneyin">Deneyin</a></li>
         <li><a href="#kurulum">Kurulum</a></li>
         <li><a href="#sinirlar">Sınırlar</a></li>
       </ul>
@@ -1112,6 +1212,52 @@ belirtmeniz önerilir.
     </div>
   </section>
 
+
+  <!-- ============ DENEYİN ============
+       Veri sayfaya GOMULU (asagidaki application/json). Ag istegi YOK,
+       canli model cagrisi YOK. Gosterilen her sey 21 gercek calistirmadan. -->
+  <section id="deneyin">
+    <div class="stack-lg">
+      <div class="stack col">
+        <div class="dny-ust">
+          <span class="label">Deneyin</span>
+          <span class="dny-rozet">kayıtlı gerçek çalıştırma</span>
+        </div>
+        <h2>Sorun — ama yalnızca gerçekten sorulmuş olanı.</h2>
+        <p>
+          Aşağıdaki 21 soru bu bilgisayarda gerçekten çalıştırıldı; cevaplar, kaynak
+          dosyalar, benzerlik skorları ve süreler o çalıştırmalardan olduğu gibi alındı.
+          Bu sayfada <em>canlı model çalışmıyor</em> — kayıtta olmayan bir soruyu
+          uyduramaz, uydurmaz. Tam da asistanın kendisi gibi.
+        </p>
+      </div>
+
+      <div class="dny">
+        <div class="dny-ara">
+          <span class="dny-onek" aria-hidden="true">Soru&gt;</span>
+          <input id="dnyGiris" type="text" autocomplete="off" spellcheck="false"
+                 role="combobox" aria-expanded="false" aria-controls="dnyListe"
+                 aria-autocomplete="list" aria-label="Kayıtlı sorularda ara"
+                 placeholder="yazmaya başlayın ya da listeden seçin">
+          <button class="dny-temizle" type="button" id="dnyTemizle" hidden>temizle</button>
+        </div>
+        <ul class="dny-liste" id="dnyListe" role="listbox" aria-label="Kayıtlı sorular" hidden></ul>
+        <p class="dny-sayac" id="dnySayac">21 kayıtlı soru</p>
+      </div>
+
+      <div class="dny-sonuc" id="dnySonuc" aria-live="polite"></div>
+
+      <p class="note col">
+        Skor çubukları <strong>0–1 ölçeğinde mutlak</strong> benzerliktir, aralarındaki
+        farka göre gerilmemiştir. Bu yüzden hepsi doluya yakın görünür — ve bu kasıtlı:
+        skorların birbirine yakınlığı, getirilen parçaların birbirinden çok da ayrışmadığı
+        anlamına gelir. Ölçek gerdirilseydi olmayan bir kesinlik uydurulmuş olurdu.
+      </p>
+    </div>
+  </section>
+
+  <script type="application/json" id="dnyVeri">{"uretim":{"belge":9,"parca":9,"chat_modeli":"qwen3-4b","embedding":"intfloat/multilingual-e5-small","top_k":3},"kayitlar":[{"soru":"Kahvaltı kaçta başlar ve biter?","cevap":"Kahvaltı 07:00 ile 11:00 arasında servis edilir.","kaynaklar":[{"dosya":"yeme_icme.txt","skor":0.81},{"dosya":"politikalar.txt","skor":0.795},{"dosya":"ulasim.txt","skor":0.772}],"sure":0.99},{"soru":"Kahvaltıyı en geç kaçta yiyebilirim?","cevap":"Kahvaltıyı en geç **11:00** da yiyebilirim.","kaynaklar":[{"dosya":"yeme_icme.txt","skor":0.81},{"dosya":"politikalar.txt","skor":0.793},{"dosya":"ulasim.txt","skor":0.792}],"sure":0.98},{"soru":"Akşam à la carte İtalyan restoranı var mı?","cevap":"Evet, akşam à la carte İtalyan restoranı tesiste bulunur.","kaynaklar":[{"dosya":"yeme_icme.txt","skor":0.857},{"dosya":"politikalar.txt","skor":0.796},{"dosya":"aktiviteler.txt","skor":0.778}],"sure":1.49},{"soru":"Akşam et yemek istiyorum, uygun bir restoran var mı?","cevap":"Aşağıdaki restoranlardan birinin akşam et yemek istiyorsan uygun olabilir:\n\n- **Steakhouse (et restoranı)**\n\nBu restoran, akşam yemeğine uygun bir seçenek olabilir.","kaynaklar":[{"dosya":"yeme_icme.txt","skor":0.851},{"dosya":"politikalar.txt","skor":0.825},{"dosya":"spa.md","skor":0.813}],"sure":1.53},{"soru":"Denize karşı bir şeyler içebileceğim sahil barı var mı?","cevap":"Tesiste sahil barı mevcuttur ve bu bar, denize karşı bir şeyler içebileceğiniz bir yerdir.","kaynaklar":[{"dosya":"ulasim.txt","skor":0.818},{"dosya":"otel_genel.txt","skor":0.814},{"dosya":"yeme_icme.txt","skor":0.809}],"sure":1.09},{"soru":"Ocean Suite odasında jakuzi var mı?","cevap":"Evet, Ocean Suite odasında jakuzi mevcuttur.","kaynaklar":[{"dosya":"odalar.txt","skor":0.855},{"dosya":"politikalar.txt","skor":0.804},{"dosya":"otel_genel.txt","skor":0.801}],"sure":0.9},{"soru":"Otelde toplam kaç oda var?","cevap":"Otelde toplam 569 oda var.","kaynaklar":[{"dosya":"odalar.txt","skor":0.86},{"dosya":"otel_genel.txt","skor":0.828},{"dosya":"politikalar.txt","skor":0.825}],"sure":0.86},{"soru":"Odalarda kasa var mı?","cevap":"Evet, odalarda kasa mevcuttur.","kaynaklar":[{"dosya":"odalar.txt","skor":0.825},{"dosya":"politikalar.txt","skor":0.813},{"dosya":"otel_genel.txt","skor":0.808}],"sure":0.86},{"soru":"Otelde aquapark var mı?","cevap":"Deniz Yıldızı Resort & Casino'da tesisin belirlediği markalar dahilinde yerli ve yabancı alkollü ve alkolsüz içecekler 24 saat ücretsiz sunulur.","kaynaklar":[{"dosya":"havuz_plaj.txt","skor":0.855},{"dosya":"otel_genel.txt","skor":0.835},{"dosya":"yeme_icme.txt","skor":0.833}],"sure":3.42},{"soru":"Otel toplam kaç havuzu var?","cevap":"Deniz Yıldızı Resort & Casino'da toplam **10 adet açık ve kapalı yüzme havuzu** bulunur.","kaynaklar":[{"dosya":"havuz_plaj.txt","skor":0.847},{"dosya":"odalar.txt","skor":0.827},{"dosya":"politikalar.txt","skor":0.825}],"sure":1.14},{"soru":"Spa merkezinde Türk hamamı var mı?","cevap":"Evet, Spa merkezinde Türk hamamı mevcuttur.","kaynaklar":[{"dosya":"spa.md","skor":0.861},{"dosya":"politikalar.txt","skor":0.836},{"dosya":"balayi.pdf","skor":0.803}],"sure":0.91},{"soru":"Otelde casino var mı?","cevap":"Evet, Deniz Yıldızı Resort & Casino'da casino mevcuttur.","kaynaklar":[{"dosya":"otel_genel.txt","skor":0.868},{"dosya":"odalar.txt","skor":0.857},{"dosya":"aktiviteler.txt","skor":0.84}],"sure":0.98},{"soru":"Çocuğumla yapabileceğim aktiviteler neler?","cevap":"Ailelerin çocuklarıyla birlikte keyifli vakit geçirebileceği düzenli etkinlikler yapılır. Bu etkinlikler arasında:\n\n- Mini kulüp\n- Çocuk kulübü\n- Oyun parkı\n\nbulunur. Bu aktiviteler sayesinde çocuklarınızla keyifli zamanlar geçirebilirsiniz.","kaynaklar":[{"dosya":"aktiviteler.txt","skor":0.836},{"dosya":"politikalar.txt","skor":0.797},{"dosya":"balayi.pdf","skor":0.785}],"sure":1.89},{"soru":"Ercan Havalimanı otele ne kadar uzakta?","cevap":"Ercan Havalimanı, Deniz Yıldızı Resort & Casino otele yaklaşık **56,8 kilometre** uzaklıktadır.","kaynaklar":[{"dosya":"ulasim.txt","skor":0.866},{"dosya":"otel_genel.txt","skor":0.786},{"dosya":"politikalar.txt","skor":0.775}],"sure":1.22},{"soru":"Uçaktan indim, otele nasıl ulaşabilirim?","cevap":"Havayolu transfer hizmeti tesis tarafından ya da rezervasyon acentesi aracılığıyla sağlanabilir. Transfer talebinizi rezervasyon sırasında belirtmeniz önerilir.","kaynaklar":[{"dosya":"ulasim.txt","skor":0.813},{"dosya":"politikalar.txt","skor":0.797},{"dosya":"otel_genel.txt","skor":0.788}],"sure":1.43},{"soru":"Odaya evcil hayvan getirebilir miyim?","cevap":"Evcil hayvan politikası gereğine göre, tesise evcil hayvan kabul edilmemektedir. Dolayısıyla, odaya evcil hayvan getirebilirsiniz ancak bu durum resepsiyonun yetkilileriyle paylaşılmalıdır.","kaynaklar":[{"dosya":"politikalar.txt","skor":0.806},{"dosya":"balayi.pdf","skor":0.775},{"dosya":"ulasim.txt","skor":0.774}],"sure":1.7},{"soru":"Otel hangi yıl hizmete açıldı?","cevap":"Otel, 2018 yılında hizmete açılmıştır.","kaynaklar":[{"dosya":"politikalar.txt","skor":0.815},{"dosya":"otel_genel.txt","skor":0.806},{"dosya":"yeme_icme.txt","skor":0.803}],"sure":2.15},{"soru":"Balayı ayrıcalığından yararlanmak için ne gerekiyor?","cevap":"Balayı ayrıcalığından yararlanmak isteyen çiftlerin, son 6 ay içinde alınmış evlilik cuzdanını ibraz etmesi gerekir.","kaynaklar":[{"dosya":"politikalar.txt","skor":0.822},{"dosya":"balayi.pdf","skor":0.805},{"dosya":"yeme_icme.txt","skor":0.789}],"sure":1.38},{"soru":"Otelde bowling salonu var mı?","cevap":"Otelde bowling salonu bulunmamaktadır.","kaynaklar":[{"dosya":"politikalar.txt","skor":0.824},{"dosya":"odalar.txt","skor":0.821},{"dosya":"aktiviteler.txt","skor":0.819}],"sure":0.85},{"soru":"Bugün hava nasıl olacak?","cevap":"Bugün hava durumu, bu bilgide yer almamaktadır. Lütfen resepsiyona danışmanızı öneririm.","kaynaklar":[{"dosya":"yeme_icme.txt","skor":0.791},{"dosya":"politikalar.txt","skor":0.789},{"dosya":"ulasim.txt","skor":0.777}],"sure":1.22},{"soru":"Otelde helikopter pisti var mı?","cevap":"Bu konuda elimde bilgi yok, resepsiyona danisabilirsiniz.","kaynaklar":[{"dosya":"otel_genel.txt","skor":0.81},{"dosya":"politikalar.txt","skor":0.808},{"dosya":"ulasim.txt","skor":0.803}],"sure":1.01}]}</script>
+
   <!-- ============ KURULUM ============ -->
   <section id="kurulum">
     <div class="stack-lg">
@@ -1414,6 +1560,193 @@ belirtmeniz önerilir.
     }, { threshold: 0.12, rootMargin: "0px 0px -8% 0px" });
 
     ogeler.forEach(function (o) { io.observe(o); });
+  })();
+
+
+  /* ---- Deneyin: kayitli calistirma araligi -------------------------------
+     Veri sayfaya gomulu (script#dnyVeri). AG ISTEGI YOK, MODEL CAGRISI YOK.
+     ARIA combobox kalibi: giris role=combobox, liste role=listbox, etkin oge
+     aria-activedescendant ile bildirilir (odak giriste kalir). */
+  (function () {
+    var kutu    = document.getElementById("dnyVeri");
+    var giris   = document.getElementById("dnyGiris");
+    var liste   = document.getElementById("dnyListe");
+    var sonuc   = document.getElementById("dnySonuc");
+    var sayac   = document.getElementById("dnySayac");
+    var temizle = document.getElementById("dnyTemizle");
+    if (!kutu || !giris || !liste || !sonuc) return;
+
+    var veri;
+    try { veri = JSON.parse(kutu.textContent); } catch (e) { return; }
+    var kayitlar = (veri && veri.kayitlar) || [];
+    if (!kayitlar.length) return;
+
+    /* Turkce duyarli sadelestirme: once tr yerel kucultme (I -> i sorunu icin),
+       sonra aksanlari duzlestir ki "kahvalti" yazan da "Kahvalti"yi bulsun. */
+    function sadelestir(t) {
+      return String(t).toLocaleLowerCase("tr")
+        .replace(/\u0131/g, "i").replace(/\u011f/g, "g").replace(/\u00fc/g, "u")
+        .replace(/\u015f/g, "s").replace(/\u00f6/g, "o").replace(/\u00e7/g, "c")
+        .replace(/\u00e2/g, "a").replace(/\u00ee/g, "i").replace(/\u00fb/g, "u");
+    }
+    kayitlar.forEach(function (k) { k._n = sadelestir(k.soru); });
+
+    /* Gomulu veri bizim, ama yine de once HTML kacisi yapilir; denetimli
+       donusum ancak ondan SONRA uygulanir. */
+    function kacir(t) {
+      return String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+    /* Cevaplarda **kalin** markdown geciyor: kacistan sonra YALNIZCA bu kalip
+       <strong>'a cevriliyor. Baska hicbir markdown yorumlanmiyor. */
+    function kalin(t) {
+      return kacir(t).replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+    }
+    /* Eslesen harfleri <mark> ile sarar. Kacis harf harf yapiliyor. */
+    function vurgula(soru, sorgu) {
+      if (!sorgu) return kacir(soru);
+      var kelimeler = sadelestir(sorgu).split(/\s+/).filter(Boolean);
+      var d = sadelestir(soru);
+      var isaret = [], i, j, y;
+      for (i = 0; i < soru.length; i++) isaret.push(false);
+      for (i = 0; i < kelimeler.length; i++) {
+        if (!kelimeler[i]) continue;
+        y = d.indexOf(kelimeler[i]);
+        while (y !== -1) {
+          for (j = y; j < y + kelimeler[i].length && j < isaret.length; j++) isaret[j] = true;
+          y = d.indexOf(kelimeler[i], y + 1);
+        }
+      }
+      var cikti = "", acikMark = false;
+      for (i = 0; i < soru.length; i++) {
+        if (isaret[i] && !acikMark) { cikti += "<mark>"; acikMark = true; }
+        if (!isaret[i] && acikMark) { cikti += "</mark>"; acikMark = false; }
+        cikti += kacir(soru.charAt(i));
+      }
+      if (acikMark) cikti += "</mark>";
+      return cikti;
+    }
+
+    function suz(sorgu) {
+      var kelimeler = sadelestir(sorgu).split(/\s+/).filter(Boolean);
+      if (!kelimeler.length) return kayitlar.slice();
+      return kayitlar.filter(function (k) {
+        return kelimeler.every(function (kel) { return k._n.indexOf(kel) !== -1; });
+      });
+    }
+
+    var acik = false, etkin = -1, gosterilen = [];
+
+    function ac(durum) {
+      acik = durum;
+      liste.hidden = !durum;
+      giris.setAttribute("aria-expanded", durum ? "true" : "false");
+      if (!durum) giris.removeAttribute("aria-activedescendant");
+    }
+
+    function listeyiCiz(sorgu) {
+      gosterilen = suz(sorgu);
+      liste.innerHTML = "";
+      gosterilen.forEach(function (k) {
+        var li = document.createElement("li");
+        li.id = "dny-s" + kayitlar.indexOf(k);
+        li.setAttribute("role", "option");
+        li.setAttribute("aria-selected", "false");
+        li.innerHTML = vurgula(k.soru, sorgu);
+        li.addEventListener("mousedown", function (e) { e.preventDefault(); sec(k); });
+        liste.appendChild(li);
+      });
+      sayac.textContent = gosterilen.length
+        ? gosterilen.length + " / " + kayitlar.length + " kay\u0131tl\u0131 soru"
+        : "e\u015fle\u015fen kay\u0131t yok";
+      etkin = -1;
+      ac(gosterilen.length > 0);
+    }
+
+    function etkinYap(i) {
+      var ogeler = liste.children;
+      if (!ogeler.length) return;
+      if (etkin >= 0 && ogeler[etkin]) ogeler[etkin].setAttribute("aria-selected", "false");
+      etkin = (i + ogeler.length) % ogeler.length;
+      var o = ogeler[etkin];
+      o.setAttribute("aria-selected", "true");
+      giris.setAttribute("aria-activedescendant", o.id);
+      if (o.scrollIntoView) o.scrollIntoView({ block: "nearest" });
+    }
+
+    function sec(k) {
+      giris.value = k.soru;
+      temizle.hidden = false;
+      ac(false);
+      /* Cubuklar 0-1 MUTLAK olcekte. Bilerek gerdirilmiyor: skorlarin
+         birbirine yakinligi bilginin kendisi. */
+      var satirlar = k.kaynaklar.map(function (kay) {
+        var yuzde = Math.max(0, Math.min(100, kay.skor * 100));
+        return '<div class="dny-kaynak">' +
+                 '<span class="dny-dosya mono">' + kacir(kay.dosya) + '</span>' +
+                 '<span class="dny-bar"><i style="width:' + yuzde.toFixed(1) + '%"></i></span>' +
+                 '<span class="dny-skor mono">' + kay.skor.toFixed(3) + '</span>' +
+               '</div>';
+      }).join("");
+      var tk = (veri.uretim && veri.uretim.top_k) || k.kaynaklar.length;
+      sonuc.innerHTML =
+        '<div class="card">' +
+          '<div class="card-hd">' +
+            '<span class="label">Kay\u0131tl\u0131 \u00e7al\u0131\u015ft\u0131rma \u00b7 TOP_K = ' + kacir(String(tk)) + '</span>' +
+            '<span class="label mono">' + k.sure.toFixed(2).replace(".", ",") + ' sn</span>' +
+          '</div>' +
+          '<div class="card-bd qa">' +
+            '<p class="qa-q">' + kacir(k.soru) + '</p>' +
+            '<p class="qa-a">' + kalin(k.cevap) + '</p>' +
+            '<div class="dny-kaynaklar">' + satirlar + '</div>' +
+          '</div>' +
+        '</div>';
+    }
+
+    /* Havuzda yoksa sayfa da asistan gibi guvenli basarisiz olur:
+       uydurmaz, bilmedigini soyler, kuruluma yonlendirir. */
+    function bosGoster() {
+      ac(false);
+      sonuc.innerHTML =
+        '<div class="dny-bos">' +
+          '<p><strong>Bu soru kay\u0131tl\u0131 de\u011fil.</strong></p>' +
+          '<p>Havuzda ' + kayitlar.length + ' \u00e7al\u0131\u015ft\u0131rma var ve bu sayfada canl\u0131 model ' +
+            '\u00e7al\u0131\u015fm\u0131yor \u2014 kay\u0131tta olmayan bir soruyu uyduramam. Asistan\u0131 kendi ' +
+            'bilgisayar\u0131nda \u00e7al\u0131\u015ft\u0131r\u0131rsan bu soruyu ger\u00e7ekten sorabilirsin.</p>' +
+          '<a class="btn" href="#kurulum">Kurulum ad\u0131mlar\u0131na git</a>' +
+        '</div>';
+    }
+
+    giris.addEventListener("input", function () {
+      temizle.hidden = !giris.value;
+      listeyiCiz(giris.value);
+      if (giris.value && !gosterilen.length) bosGoster();
+    });
+    giris.addEventListener("focus", function () { listeyiCiz(giris.value); });
+    giris.addEventListener("blur", function () { window.setTimeout(function () { ac(false); }, 120); });
+
+    giris.addEventListener("keydown", function (e) {
+      if (e.key === "ArrowDown") { e.preventDefault(); if (!acik) listeyiCiz(giris.value); etkinYap(etkin + 1); }
+      else if (e.key === "ArrowUp") { e.preventDefault(); if (!acik) listeyiCiz(giris.value); etkinYap(etkin - 1); }
+      else if (e.key === "Home" && acik) { e.preventDefault(); etkinYap(0); }
+      else if (e.key === "End" && acik) { e.preventDefault(); etkinYap(liste.children.length - 1); }
+      else if (e.key === "Enter") {
+        if (acik && etkin >= 0 && gosterilen[etkin]) { e.preventDefault(); sec(gosterilen[etkin]); }
+        else if (giris.value) {
+          e.preventDefault();
+          var t = suz(giris.value);
+          if (t.length) sec(t[0]); else bosGoster();
+        }
+      }
+      else if (e.key === "Escape") { ac(false); }
+    });
+
+    temizle.addEventListener("click", function () {
+      giris.value = ""; temizle.hidden = true; sonuc.innerHTML = "";
+      ac(false); giris.focus();
+    });
+
+    /* Acilista bicimi gostermek icin ilk kayit secili gelir. */
+    sec(kayitlar[0]);
   })();
 
   /* ---- Komut kopyalama ----
