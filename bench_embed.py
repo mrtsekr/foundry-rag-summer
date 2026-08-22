@@ -104,19 +104,31 @@ def olc(ad, soru_vecs, parca_vecs, parca_metin, parca_kaynak, sure) -> dict:
     }
 
 
-def arka_ucu_olc(backend: str, ad: str, parca_metin, parca_kaynak) -> dict:
-    """Verilen arka uctan hem parca hem soru vektorlerini alir ve olcer."""
+def embed_ile(backend: str, metinler: list[str], kind: str) -> np.ndarray:
+    """Metinleri VERILEN arka uc ile vektorlestirir; config'i gecici degistirir.
+
+    Iki olcum script'inin (bench_embed, bench_chunking) ortak yardimcisi. Ikisi de
+    ayni yoldan — rag_core.embed_texts — gectigi icin olculen sey uretimde
+    calisan kodun ta kendisidir; on-ek kurallari (e5 query:/passage:, Qwen
+    Instruct) orada bir kez tanimli, burada tekrarlanmaz.
+
+    try/finally: olcum bittiginde ayar mutlaka eski haline doner, aksi halde
+    sonraki cagrilar yanlis arka uca gider.
+    """
     onceki = config.EMBED_BACKEND
     config.EMBED_BACKEND = backend          # rag_core.embed_texts bunu okur
     try:
-        parca_vecs = np.asarray(rag_core.embed_texts(parca_metin, kind="passage"),
-                                dtype=np.float32)
-        t0 = time.perf_counter()
-        soru_vecs = np.asarray(rag_core.embed_texts([t["soru"] for t in SORULAR],
-                                                    kind="query"), dtype=np.float32)
-        sure = time.perf_counter() - t0
+        return np.asarray(rag_core.embed_texts(metinler, kind=kind), dtype=np.float32)
     finally:
-        config.EMBED_BACKEND = onceki       # olcum ayari sizdirmasin
+        config.EMBED_BACKEND = onceki
+
+
+def arka_ucu_olc(backend: str, ad: str, parca_metin, parca_kaynak) -> dict:
+    """Verilen arka uctan hem parca hem soru vektorlerini alir ve olcer."""
+    parca_vecs = embed_ile(backend, parca_metin, "passage")
+    t0 = time.perf_counter()
+    soru_vecs = embed_ile(backend, [t["soru"] for t in SORULAR], "query")
+    sure = time.perf_counter() - t0
     return olc(ad, soru_vecs, parca_vecs, parca_metin, parca_kaynak, sure)
 
 

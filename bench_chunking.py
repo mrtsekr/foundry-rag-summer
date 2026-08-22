@@ -24,10 +24,8 @@ Calistirma:  python bench_chunking.py
 import numpy as np
 
 import config
-from bench_embed import (QWEN_INSTRUCT, SORULAR, birimle, foundry_embed,
-                         foundry_istemci, sadelestir)
+from bench_embed import SORULAR, embed_ile, sadelestir
 from ingest import SUPPORTED, chunk_text, read_document
-from rag_core import embed_texts
 
 # (etiket, max_chars, min_chars, overlap) — None => belge hic bolunmez
 AYARLAR = [
@@ -72,12 +70,13 @@ def metrikler(sr: list, k_butce: int) -> dict:
 
 
 def main() -> None:
-    print("Foundry embedding modeli yukleniyor...")
-    istemci = foundry_istemci()
-
+    # Vektorler embed_texts icinde zaten birim uzunluga getiriliyor (normalize=True),
+    # bu yuzden nokta carpimi dogrudan kosinus benzerligidir.
     sorular = [t["soru"] for t in SORULAR]
-    e5_soru = birimle(np.asarray(embed_texts(sorular, kind="query"), dtype=np.float32))
-    qw_soru = foundry_embed(istemci, [QWEN_INSTRUCT + s for s in sorular])
+    print("e5-small ile sorular vektorlestiriliyor...")
+    e5_soru = embed_ile("st", sorular, "query")
+    print("qwen3-embedding yukleniyor ve sorular vektorlestiriliyor...")
+    qw_soru = embed_ile("foundry", sorular, "query")
 
     n = len(SORULAR)
     print(f"\n{n} soru · her ayar icin iki model\n")
@@ -92,8 +91,8 @@ def main() -> None:
         ort_uzn = sum(len(t) for t in metin) / len(metin)
         k_butce = max(1, round(BAGLAM_BUTCESI / ort_uzn))
 
-        e5_parca = birimle(np.asarray(embed_texts(metin), dtype=np.float32))
-        qw_parca = foundry_embed(istemci, metin)
+        e5_parca = embed_ile("st", metin, "passage")
+        qw_parca = embed_ile("foundry", metin, "passage")
 
         e = metrikler(siralar(e5_soru, e5_parca, metin), k_butce)
         q = metrikler(siralar(qw_soru, qw_parca, metin), k_butce)

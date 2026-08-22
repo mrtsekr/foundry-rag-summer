@@ -40,6 +40,10 @@ from llm import load_chat
 # bir sey soylese bile cumlesinde "var" gectigi icin cevap DOGRU sayilabiliyordu.
 # Artik her soru, o soruya OZGU terimi (jakuzi, hamam, aquapark, casino, sahil
 # bar...) istiyor. Bu, olculen basariyi dusurur ama gercege yaklastirir.
+# AYNI KURALIN GENEL HALI: SORUNUN ICINDE gecen bir kelime anahtar olamaz.
+# Soru "...var mi?" ile bitiyorsa "var", "aktiviteler neler?" ise "aktivite"
+# anahtari, model soruyu yankilamasi halinde bile gecer -> metrik siser.
+# Anahtar, cevabin DOGRU oldugunu ayirt eden terim olmali.
 #
 # Not: bilerek DOLAYLI/parafraz sorular da var (retrieval'i zorlamak icin).
 TESTLER = [
@@ -57,10 +61,10 @@ TESTLER = [
     {"soru": "Otel hangi yil hizmete acildi?", "anahtar": ["2018"], "kaynak": "otel_genel.txt"},
     # --- dolayli / parafraz sorular (retrieval'i zorlar) ---
     {"soru": "Denize karsi bir seyler icebilecegim sahil bari var mi?", "anahtar": ["sahil bar"], "kaynak": "yeme_icme.txt"},
-    {"soru": "Cocugumla yapabilecegim aktiviteler neler?", "anahtar": ["çocuk", "oyun", "mini kulüp", "aktivite"], "kaynak": "aktiviteler.txt"},
+    {"soru": "Cocugumla yapabilecegim aktiviteler neler?", "anahtar": ["çocuk", "oyun", "mini kulüp"], "kaynak": "aktiviteler.txt"},
     {"soru": "Balayi ayricaligindan yararlanmak icin ne gerekiyor?", "anahtar": ["evlilik", "cüzdan", "6 ay"], "kaynak": "balayi.pdf"},
     {"soru": "Ucaktan indim, otele nasil ulasabilirim?", "anahtar": ["transfer", "Ercan", "56"], "kaynak": "ulasim.txt"},
-    {"soru": "Aksam et yemek istiyorum, uygun bir restoran var mi?", "anahtar": ["steak", "et restoran", "var"], "kaynak": "yeme_icme.txt"},
+    {"soru": "Aksam et yemek istiyorum, uygun bir restoran var mi?", "anahtar": ["steak", "et restoran"], "kaynak": "yeme_icme.txt"},
     # --- bilgi tabaninda OLMAYAN (uydurmamali) ---
     {"soru": "Otelde bowling salonu var mi?", "anahtar": ["bilgi yok", "bulunm", "yok", "danış"], "kaynak": None},
 ]

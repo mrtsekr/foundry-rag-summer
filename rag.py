@@ -73,7 +73,9 @@ def answer(question: str, conn=None, goster=False):
             print(f"    {skor:.3f} [{source}] {ozet}...")
 
     # 3) Generation (few-shot ornekleriyle)
-    cevap = generate(SYSTEM, user, examples=EXAMPLES)
+    # soru=question: echo kontrolu baglami degil, yalnizca soruyu gormeli —
+    # yoksa belgeden birebir alinti yapan dogru cevaplar 'echo' sanilir.
+    cevap = generate(SYSTEM, user, examples=EXAMPLES, soru=question)
 
     if kapat:
         conn.close()

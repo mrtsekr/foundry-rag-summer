@@ -86,24 +86,36 @@ def _run(chat, messages) -> str:
     return _trim_repetition(cevap)
 
 
-def _kotu_cevap(cevap: str, user: str) -> bool:
-    """Cevap bos mu ya da girdiyi (soruyu) AYNEN tekrarliyor mu (echo)? Bu iki
-    durumda cevabi 'kotu' sayip bir kez yeniden deneriz."""
+def _kotu_cevap(cevap: str, soru: str) -> bool:
+    """Cevap bos mu ya da SORUYU aynen tekrarliyor mu (echo)? Bu iki durumda
+    cevabi 'kotu' sayip bir kez yeniden deneriz.
+
+    DIKKAT — burasi yalnizca SORU ile karsilastirilir, prompt'un tamami ile
+    DEGIL. Onceden tum 'BAGLAM:...SORU:...' metni veriliyordu; o zaman getirilen
+    parcalardan birini birebir alintilayan cevaplar da 'echo' sayiliyordu.
+    Oysa belgeden birebir alinti RAG'in tam olarak istedigi seydir: dogru cevap
+    bosuna ikinci kez uretiliyor (~2.5 sn) ve temperature=0.7 oldugu icin ikinci
+    deneme cevabi sadik bir alintidan daha serbest bir parafraza cevirebiliyordu.
+    """
     c = cevap.strip().lower()
     if not c:
         return True
-    # Model bazen cevap uretmeyip girdinin bir parcasini aynen geri yazar (echo).
-    if len(c) > 12 and c in user.lower():
+    # Model bazen cevap uretmeyip sorunun bir parcasini aynen geri yazar (echo).
+    if len(c) > 12 and c in soru.lower():
         return True
     return False
 
 
-def generate(system: str, user: str, examples=None, _retry: bool = True) -> str:
+def generate(system: str, user: str, examples=None, soru: str | None = None,
+             _retry: bool = True) -> str:
     """Tek turlu uretim: system + (opsiyonel few-shot ornekleri) + user mesajiyla
     qwen3-4b'den Turkce cevap alir.
 
     examples: [(ornek_soru, ornek_cevap), ...] -> modele "boyle cevapla" ornegi
               gosterir (few-shot). Cevap bicimini ve baglama sadik kalmayi ogretir.
+    soru:     echo kontrolu icin HAM soru. RAG'de `user` icinde baglam da
+              bulundugu icin karsilastirma ona gore yapilamaz (bkz. _kotu_cevap).
+              Verilmezse `user`'a duser (baglamsiz cagrilar icin dogru davranis).
     _retry:   cevap bos ya da echo ise bir kez yeniden dener.
     Dusunme modunu kapatmak icin system'e '/no_think' eklenir.
     """
@@ -114,10 +126,11 @@ def generate(system: str, user: str, examples=None, _retry: bool = True) -> str:
         messages.append({"role": "assistant", "content": ornek_cevap})
     messages.append({"role": "user", "content": user})
 
+    echo_kaynagi = soru if soru is not None else user
     cevap = _run(chat, messages)
-    if _retry and _kotu_cevap(cevap, user):
+    if _retry and _kotu_cevap(cevap, echo_kaynagi):
         cevap2 = _run(chat, messages)          # bir kez daha dene
-        if not _kotu_cevap(cevap2, user):
+        if not _kotu_cevap(cevap2, echo_kaynagi):
             return cevap2
         return cevap or cevap2                 # ikisi de kotuyse bos olmayani ver
     return cevap

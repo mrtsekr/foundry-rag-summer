@@ -18,7 +18,30 @@ import db
 import rag
 from llm import load_chat
 
-CIKIS_KOMUTLARI = {"q", "quit", "exit", "cikis", "çıkış", "kapat"}
+# Komutlar SADELESTIRILMIS halde tutulur (aksansiz, kucuk harf): "çıkış" da
+# "CIKIS" da asagidaki normalize'dan sonra "cikis" olur, tek satir yeter.
+CIKIS_KOMUTLARI = {"q", "quit", "exit", "cikis", "kapat"}
+
+# Turkce'ye ozgu harflerin ASCII karsiligi (komut eslestirmesi icin).
+_KATLAMA = str.maketrans("çğıöşü", "cgiosu")
+
+
+def komut_normalize(s: str) -> str:
+    """Kullanici girdisini komut karsilastirmasi icin sadelestirir.
+
+    IKI ayri tuzak var, ikisi de tek basina cozum degil:
+
+    1) Python'un str.lower()'i Turkce'nin noktali/noktasiz I kuralini bilmez:
+       "ÇIKIŞ".lower() -> "çikiş" (noktali i). Onun icin once I->ı, İ->i.
+    2) Ama yalnizca bunu yapinca ASCII yazim bozulur: "CIKIS" -> "cıkıs" olur ve
+       "cikis" ile eslesmez. Turkce klavyesi olmayan kullanici Caps Lock'ta
+       cikamaz hale gelir.
+
+    Cozum ikisini birlestirmek: once Turkce'ye uygun kucult, sonra aksanlari
+    ASCII'ye katla. Boylece "çıkış", "ÇIKIŞ", "cikis", "CIKIS", "Çıkış" -> hepsi
+    "cikis" olur.
+    """
+    return s.replace("I", "ı").replace("İ", "i").lower().translate(_KATLAMA)
 
 
 def main() -> None:
@@ -41,7 +64,7 @@ def main() -> None:
             print("\nGorusuruz!")
             break
 
-        if soru.lower() in CIKIS_KOMUTLARI:
+        if komut_normalize(soru) in CIKIS_KOMUTLARI:
             print("Gorusuruz!")
             break
 

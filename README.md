@@ -180,16 +180,27 @@ model, yani kıyas onun güçlü olduğu yeri hiç kullanmıyordu. `bench_chunki
 aynı iki modeli dört farklı parçalama ayarında ölçer (MRR = kanıtın sırasının
 tersinin ortalaması; 1.0 = kanıt hep ilk sırada):
 
-| Parçalama | Parça | Ort. uzunluk | e5-small MRR | qwen3-emb MRR |
-|---|---|---|---|---|
-| 350 / 120 / 80 *(mevcut, e5'e göre ayarlı)* | 31 | 212 | **0.729** | 0.728 |
-| 700 / 200 / 120 | 20 | 322 | 0.699 | **0.746** |
-| 1200 / 300 / 150 | 15 | 430 | 0.776 | **0.812** |
-| belge bütünü (parçalama yok) | 9 | 718 | 0.840 | **0.854** |
+| Parçalama | Parça | Ort. uzunluk | e5 hit@3 | qwen hit@3 | e5-small MRR | qwen3-emb MRR |
+|---|---|---|---|---|---|---|
+| 350 / 120 / 80 | 25 | 264 | 11/16 | **13/16** | 0.665 | **0.795** |
+| 700 / 200 / 120 | 12 | 538 | 14/16 | 14/16 | 0.747 | **0.792** |
+| 1200 / 300 / 150 | 9 | 718 | **15/16** | 14/16 | 0.840 | **0.854** |
+| belge bütünü (parçalama yok) | 9 | 718 | **15/16** | 14/16 | 0.840 | **0.854** |
 
-Sonuç dürüstçe şu: **e5-small yalnızca kendi ayarında önde.** Diğer üç ayarda
-Qwen daha isabetli sıralıyor. Yani "büyük model kazanamadı" demek eksik olurdu —
-doğrusu, ilk kıyasın veri temsili bir modelin lehine hazırlanmıştı.
+Sonuç dürüstçe şu: **Qwen dört ayarın dördünde de daha iyi MRR veriyor** — yani
+doğru parçayı listenin tepesine taşımakta e5'ten iyi. Ama `TOP_K=3` ile çalışan
+sistemde önemli olan MRR değil, doğru parçanın ilk 3'e girip girmediği; orada
+üretim ayarında (9 parça) e5 önde: 15/16 vs 14/16. İki ölçüm birbiriyle tutarlı:
+Qwen sıralamanın tepesini iyileştiriyor, e5 ise ilk 3'ün kapsamını.
+
+Küçük parçalarda (350) fark Qwen lehine belirgin — Qwen3-Embedding uzun bağlam
+için eğitilmiş bir model ve o ayar e5 için optimize edilmişti; bu yüzden ilk
+kıyasın veri temsili bir modelin lehineydi. Bugün o ayar zaten kullanılmıyor.
+
+> Not: bu tablo, `chunk_text` toparlayıcı (greedy packing) hâline geçtikten
+> sonra yeniden ölçülmüştür. Daha eski bir sürümde 350 ayarı 31 parça
+> üretiyordu; şimdi aynı ayar 25 parça veriyor. Tablo `python bench_chunking.py`
+> ile yeniden üretilebilir.
 
 **Üçüncü ve belirleyici ölçüm: üretim ayarlarında, gerçekten bağlanmış haliyle.**
 Önceki iki kıyas ya e5'e göre ayarlanmış bir parçalamada yapılmıştı ya da Foundry
@@ -228,7 +239,7 @@ uzayı ve boyutu (384 ↔ 1024) değişir. Unutulursa `db.search()` bunu yakalar
 sessizce saçma sonuç döndürmek yerine ne yapılacağını söyleyen bir hata verir.
 
 **Asıl bulgu ise başka bir yerde:** her iki model de en iyi sonucu parçalama
-*yokken* veriyor (MRR 0.73 → 0.84). Bu belgeler zaten kısa (ortalama 718
+*yokken* veriyor (e5 MRR 0.665 → 0.840, Qwen 0.795 → 0.854). Bu belgeler zaten kısa (ortalama 718
 karakter); onları bölmek retrieval'a yardım etmiyor, zarar veriyor. Yani buradaki
 en büyük kaldıraç embedding modeli değil, parçalama stratejisi — ve bu bulguya
 göre hareket edildi (bir sonraki karar).
@@ -260,8 +271,9 @@ metriği **ayrı** ölçer:
 
 | Metrik | Sonuç |
 |---|---|
-| **Cevap doğruluğu** | 14–16 / 17 · ortalama **%88** (5 çalıştırma) |
+| **Cevap doğruluğu** | 13–16 / 17 · ortalama **%84** (4 çalıştırma) |
 | **Retrieval isabeti** | 14 / 16 · **%88** (çalıştırmalar arası sabit) |
+| **Uç durumlar** | 5 / 5 (ayrı ölçülür, aşağıda) |
 
 İki metriği ayırmak, bir hatanın nerede olduğunu söyler: cevap yanlış ama
 retrieval doğruysa sorun **üretimde**, retrieval de ıskalamışsa sorun
@@ -272,11 +284,27 @@ Cevap doğruluğunun bir aralık olarak verilmesinin sebebi `temperature=0.7`:
 cevaplanabiliyor. Tek bir "en iyi" çalıştırmayı seçip raporlamak yerine gözlenen
 aralık veriliyor. Retrieval ise deterministik olduğu için hiç oynamıyor.
 
-Metriğin kendisi de bir kez sıkılaştırıldı. Önce bazı sorularda tek başına
-`"var"` kabul anahtarıydı ve "en az bir anahtar geçsin" kuralı yüzünden model
-yanlış bir şey söylese bile cümlesinde "var" geçtiği için **doğru sayılabiliyordu**.
-Artık her soru kendine özgü terimi istiyor (jakuzi, hamam, aquapark, casino,
-sahil barı…). Yukarıdaki tablo bu sıkı metrikle ölçülmüştür.
+Metriğin kendisi **iki kez** sıkılaştırıldı ve her ikisinde de raporlanan sayı
+düştü — kasıtlı olarak, çünkü ölçüm ne kadar gevşekse sonuç o kadar anlamsız.
+
+Birinci turda tek başına `"var"` kabul anahtarı olan sorular temizlendi: "en az
+bir anahtar geçsin" kuralı yüzünden model yanlış bir şey söylese bile cümlesinde
+"var" geçtiği için **doğru sayılabiliyordu**. Artık her soru kendine özgü terimi
+istiyor (jakuzi, hamam, aquapark, casino, sahil barı…).
+
+İkinci tur bir kod incelemesinden geldi: temizlik eksik kalmıştı. "Akşam et
+yemek istiyorum, uygun bir restoran **var mı**?" sorusunda `"var"` hâlâ kabul
+anahtarıydı ve soru zaten "var mı?" ile bittiği için neredeyse her cevap —
+"Ana restoran var ama et menüsü için resepsiyona sorun." gibi yanlış bir cevap
+dahi — geçiyordu. Aynı kusurun ikinci örneği "aktivite" anahtarıydı; o da
+sorunun içinde geçen bir kelimeydi. Buradan çıkan genel kural `eval.py`'ye
+yazıldı: **sorunun içinde geçen bir kelime kabul anahtarı olamaz.** Anahtar,
+cevabın doğru olduğunu ayırt eden terim olmalı.
+
+Bu bölümün başındaki sonuç tablosu sıkı metrikle ölçülmüştür. Buna karşılık
+*Önemli teknik kararlar* altındaki parçalama A/B tablosu (31 parça vs 9 parça)
+daha eski, gevşek metrikle ölçülmüştür: kendi içinde geçerli bir karşılaştırma
+ama headline doğruluğuyla birebir kıyaslanmamalıdır.
 
 Değerlendirmede küçük ama önemli bir ayrıntı: anahtar kelimelerin bir kısmı
 **bilerek kök** halinde yazılmıştır (`"bulunm"`, `"kabul edilm"`). Türkçe sondan

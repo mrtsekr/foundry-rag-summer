@@ -23,7 +23,8 @@ def main() -> None:
         raise SystemExit("Once calistir:  python ingest.py")
 
     conn = db.connect()
-    k_degerleri = [1, 2, 3, 4, 5, 6]
+    # ARTAN sirada olmali: asagidaki "ilk doyma noktasi" mantigi buna dayanir.
+    k_degerleri = sorted([1, 2, 3, 4, 5, 6])
 
     print(f"Retrieval isabeti ({len(OLCULEN)} soru), farkli TOP_K icin:\n")
     print(f"{'TOP_K':>6}{'İsabet':>10}{'Oran':>8}")
@@ -38,12 +39,16 @@ def main() -> None:
                 isabet += 1
         oran = isabet / len(OLCULEN)
         print(f"{k:>6}{isabet:>7}/{len(OLCULEN)}{oran:>7.0%}")
+        # Kesin ">" + artan tarama: isabetin doydugu EN KUCUK k tutulur.
+        # (">=" yapilsaydi ya da liste azalan sirada olsaydi, en BUYUK k secilir
+        # ve onerinin anlami tersine donerdi.)
         if en_iyi is None or isabet > en_iyi[1]:
             en_iyi = (k, isabet)
 
     conn.close()
-    # En dusuk k ile tam isabeti bul (fazla k gereksiz gurultu ekler)
-    print("\nNot: isabetin doygunlastigi EN KUCUK k iyi bir secimdir")
+    print(f"\nOnerilen TOP_K: {en_iyi[0]}  (isabet {en_iyi[1]}/{len(OLCULEN)}, "
+          f"su an config.TOP_K = {config.TOP_K})")
+    print("Not: isabetin doygunlastigi EN KUCUK k iyi bir secimdir")
     print("     (daha buyuk k, uretime alakasiz parca da tasiyip modeli sasirtabilir).")
     # Hangi sorular hala iskaliyor (en buyuk k'da) -> goster
     conn2 = db.connect()
