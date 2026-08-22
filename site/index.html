@@ -113,17 +113,68 @@
   .stack { display: flex; flex-direction: column; gap: 1.15rem; }
   .stack-lg { display: flex; flex-direction: column; gap: clamp(1.8rem, 4vw, 2.8rem); }
 
-  /* ---------- Masthead ---------- */
-  .masthead {
-    display: flex; flex-wrap: wrap; gap: 1rem; align-items: baseline;
-    justify-content: space-between;
-    padding-block: 1.6rem; border-bottom: 1px solid var(--line-soft);
+  /* ---------- Sabit ust gezinme ----------
+     Sayfa tek uzun akista okunuyordu; bolum baglantilari hem yon duygusu
+     veriyor hem de videoda dogrudan bir bolume atlamayi mumkun kiliyor.
+     Kaydirinca alt kenarlik/golge beliriyor (.pinned) — sayfanin kaydigi
+     bilgisini basligin kendisi tasiyor. */
+  .site-nav {
+    position: sticky; top: 0; z-index: 50;
+    background: var(--ground);
+    border-bottom: 1px solid transparent;
+    transition: border-color .25s ease, box-shadow .25s ease;
+  }
+  @supports (backdrop-filter: blur(1px)) {
+    .site-nav { background: color-mix(in srgb, var(--ground) 80%, transparent);
+                backdrop-filter: blur(12px) saturate(140%); }
+  }
+  .site-nav.pinned { border-bottom-color: var(--line-soft); box-shadow: 0 8px 24px -24px var(--ink); }
+  .nav-inner {
+    display: flex; flex-wrap: wrap; gap: .6rem 1.5rem;
+    align-items: center; justify-content: space-between; padding-block: .8rem;
   }
   .mark { display: flex; align-items: baseline; gap: .6rem; }
   .mark strong { font-family: Archivo, sans-serif; font-weight: 700; letter-spacing: -.01em; }
+  .nav-links { display: flex; flex-wrap: wrap; gap: .2rem; list-style: none; margin: 0; padding: 0; }
+  .nav-links a {
+    display: inline-block; padding: .3rem .62rem; border-radius: 999px;
+    font-family: Archivo, sans-serif; font-size: .77rem; font-weight: 600;
+    color: var(--muted); text-decoration: none;
+    transition: color .2s ease, background .2s ease;
+  }
+  .nav-links a:hover { color: var(--ink); background: var(--accent-dim); }
+  .nav-links a[aria-current="true"] { color: var(--accent); background: var(--accent-dim); }
+  .btn-ghost {
+    background: transparent; border: 1px solid var(--line); color: var(--muted);
+    font-size: .74rem; font-weight: 600; padding: .32rem .7rem;
+    border-radius: 999px; cursor: pointer; font-family: Archivo, sans-serif;
+    transition: color .2s ease, border-color .2s ease;
+  }
+  .btn-ghost:hover { color: var(--accent); border-color: var(--accent); }
+  html { scroll-behavior: smooth; scroll-padding-top: 5rem; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+
+  /* ---------- Kaydirinca beliren bolumler (blur fade) ----------
+     .rv sinifini JS ekliyor: JS calismazsa hicbir sey gizlenmez, sayfa
+     oldugu gibi gorunur. Erisilebilir varsayilan bu. */
+  @media (prefers-reduced-motion: no-preference) {
+    .rv { opacity: 0; transform: translateY(16px); filter: blur(6px);
+          transition: opacity .7s ease, transform .7s cubic-bezier(.22,.68,.32,1), filter .7s ease; }
+    .rv.in { opacity: 1; transform: none; filter: none; }
+  }
 
   /* ---------- Hero ---------- */
-  .hero { padding-top: clamp(2.5rem, 6vw, 4.5rem); }
+  .hero { padding-top: clamp(2.5rem, 6vw, 4.5rem); position: relative; }
+  /* Nokta dokusu: duz zemin yerine olculu bir yuzey. Radyal maske ile
+     kenarlara dogru soner, boylece bir kutu gibi degil atmosfer gibi durur. */
+  .hero::before {
+    content: ""; position: absolute; inset: -1.5rem 0 auto 0; height: 380px;
+    background-image: radial-gradient(circle at 1px 1px, var(--line) 1px, transparent 0);
+    background-size: 22px 22px; opacity: .7; pointer-events: none; z-index: 0;
+    -webkit-mask-image: radial-gradient(ellipse 75% 70% at 25% 0%, #000 35%, transparent 100%);
+    mask-image: radial-gradient(ellipse 75% 70% at 25% 0%, #000 35%, transparent 100%);
+  }
+  .hero > * { position: relative; z-index: 1; }
   .lede { font-size: var(--step-1); color: var(--muted); max-width: 56ch; }
   .hero h1 { max-width: 20ch; }
   .kicker { color: var(--accent); }
@@ -366,15 +417,28 @@
   }
 </style>
 
-<div class="wrap">
-  <header class="masthead">
+<header class="site-nav" id="ustCubuk">
+  <div class="wrap nav-inner">
     <div class="mark">
       <strong>Deniz Yıldızı Asistanı</strong>
-      <span class="label">Yerel RAG · Foundry Local</span>
+      <span class="label">Yerel RAG</span>
     </div>
-    <span class="label mono">v1 · Ağustos 2026</span>
-  </header>
-</div>
+
+    <nav aria-label="Bölümler">
+      <ul class="nav-links">
+        <li><a href="#olcum">Ölçüm</a></li>
+        <li><a href="#mekanizma">Mekanizma</a></li>
+        <li><a href="#kararlar">Kararlar</a></li>
+        <li><a href="#calisirken">Çalışırken</a></li>
+        <li><a href="#sinirlar">Sınırlar</a></li>
+      </ul>
+    </nav>
+
+    <button class="btn-ghost" type="button" id="temaBtn" aria-pressed="false">
+      <span id="temaEtiket">Koyu tema</span>
+    </button>
+  </div>
+</header>
 
 <main class="wrap">
 
@@ -415,7 +479,7 @@
   </section>
 
   <!-- ============ ÖLÇÜMLER ============ -->
-  <section>
+  <section id="olcum">
     <div class="stack-lg">
       <div class="stack col">
         <span class="label">Ölçüm</span>
@@ -429,19 +493,19 @@
 
       <div class="stats">
         <div class="stat">
-          <span class="stat-num num">%84</span>
+          <span class="stat-num num sayac" data-to="84" data-onek="%">%84</span>
           <span class="stat-cap">cevap doğruluğu<br>13–16 / 17 · 4 çalıştırma</span>
         </div>
         <div class="stat">
-          <span class="stat-num num">%88</span>
+          <span class="stat-num num sayac" data-to="88" data-onek="%">%88</span>
           <span class="stat-cap">retrieval isabeti<br>14 / 16 · deterministik</span>
         </div>
         <div class="stat">
-          <span class="stat-num num">5/5</span>
+          <span class="stat-num num sayac" data-to="5" data-sonek="/5">5/5</span>
           <span class="stat-cap">uç durum testi<br>boş girdi · genel · konu dışı</span>
         </div>
         <div class="stat">
-          <span class="stat-num num">2,5 sn</span>
+          <span class="stat-num num sayac" data-to="2.5" data-basamak="1" data-sonek=" sn">2,5 sn</span>
           <span class="stat-cap">ortalama cevap<br>RTX 3060 · 6 GB VRAM</span>
         </div>
       </div>
@@ -456,7 +520,7 @@
   </section>
 
   <!-- ============ NASIL ÇALIŞIYOR ============ -->
-  <section>
+  <section id="mekanizma">
     <div class="stack-lg">
       <div class="stack col">
         <span class="label">Mekanizma</span>
@@ -581,7 +645,7 @@
   </section>
 
   <!-- ============ KARARLAR ============ -->
-  <section>
+  <section id="kararlar">
     <div class="stack-lg">
       <div class="stack col">
         <span class="label">Kararlar</span>
@@ -723,7 +787,7 @@
   </section>
 
   <!-- ============ TERMİNAL ============ -->
-  <section>
+  <section id="calisirken">
     <div class="stack-lg">
       <div class="stack col">
         <span class="label">Çalışırken</span>
@@ -791,7 +855,7 @@ belirtmeniz önerilir.
   </section>
 
   <!-- ============ DÜRÜSTLÜK ============ -->
-  <section>
+  <section id="sinirlar">
     <div class="stack-lg">
       <div class="stack col">
         <span class="label">Sınırlar</span>
@@ -837,7 +901,7 @@ belirtmeniz önerilir.
   </section>
 
   <!-- ============ VERİ NOTU ============ -->
-  <section>
+  <section id="veri">
     <div class="stack col">
       <span class="label">Veri notu</span>
       <h2>Bilgi tabanı nereden geliyor?</h2>
@@ -895,5 +959,144 @@ belirtmeniz önerilir.
     }
 
     if (replay) replay.addEventListener("click", run);
+  })();
+
+  /* ---- Tema anahtari ----------------------------------------------------
+     Sayfa varsayilan olarak izleyicinin sistem temasini kullanir. Bu dugme
+     kok elemana data-theme yazarak secimi ezer; secim localStorage'da tutulur.
+     Depolama erisimi bazi baglamlarda hata firlatabilir (gizli pencere,
+     onizleme) — bu yuzden her okuma/yazma try/catch icinde. */
+  (function () {
+    var kok = document.documentElement;
+    var btn = document.getElementById("temaBtn");
+    var etiket = document.getElementById("temaEtiket");
+    if (!btn) return;
+
+    var sistemKoyu = window.matchMedia("(prefers-color-scheme: dark)");
+
+    function suAnKoyuMu() {
+      var secim = kok.getAttribute("data-theme");
+      if (secim) return secim === "dark";
+      return sistemKoyu.matches;
+    }
+    function tazele() {
+      var koyu = suAnKoyuMu();
+      etiket.textContent = koyu ? "Açık tema" : "Koyu tema";   // dugme HEDEFI yazar
+      btn.setAttribute("aria-pressed", koyu ? "true" : "false");
+    }
+
+    try {
+      var kayitli = localStorage.getItem("tema");
+      if (kayitli === "dark" || kayitli === "light") kok.setAttribute("data-theme", kayitli);
+    } catch (e) { /* depolama yoksa sistem temasiyla devam */ }
+
+    tazele();
+    sistemKoyu.addEventListener("change", tazele);
+
+    btn.addEventListener("click", function () {
+      var yeni = suAnKoyuMu() ? "light" : "dark";
+      kok.setAttribute("data-theme", yeni);
+      try { localStorage.setItem("tema", yeni); } catch (e) {}
+      tazele();
+    });
+  })();
+
+  /* ---- Sabit baslik: kaydirinca kenarlik/golge ---- */
+  (function () {
+    var cubuk = document.getElementById("ustCubuk");
+    if (!cubuk) return;
+    var isaret = document.createElement("div");
+    isaret.style.cssText = "position:absolute;top:0;left:0;width:1px;height:1px;";
+    document.body.prepend(isaret);
+    new IntersectionObserver(function (e) {
+      cubuk.classList.toggle("pinned", !e[0].isIntersecting);
+    }).observe(isaret);
+  })();
+
+  /* ---- Gezinme: okunan bolumu isaretle (scroll-spy) ---- */
+  (function () {
+    var baglantilar = Array.prototype.slice.call(
+      document.querySelectorAll(".nav-links a[href^='#']"));
+    if (!baglantilar.length || !("IntersectionObserver" in window)) return;
+
+    var esleme = {};
+    baglantilar.forEach(function (a) {
+      var b = document.querySelector(a.getAttribute("href"));
+      if (b) esleme[b.id] = a;
+    });
+
+    var io = new IntersectionObserver(function (girisler) {
+      girisler.forEach(function (g) {
+        if (!g.isIntersecting) return;
+        baglantilar.forEach(function (a) { a.removeAttribute("aria-current"); });
+        var a = esleme[g.target.id];
+        if (a) a.setAttribute("aria-current", "true");
+      });
+    }, { rootMargin: "-45% 0px -50% 0px" });   // ekranin ortasindaki bolum kazanir
+
+    Object.keys(esleme).forEach(function (id) {
+      io.observe(document.getElementById(id));
+    });
+  })();
+
+  /* ---- Bolumlerin kaydirinca belirmesi ----
+     .rv sinifi BURADA ekleniyor: JS calismazsa hicbir sey gizli kalmaz. */
+  (function () {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (!("IntersectionObserver" in window)) return;
+
+    var ogeler = document.querySelectorAll("main section > *");
+    ogeler.forEach(function (o) { o.classList.add("rv"); });
+
+    var io = new IntersectionObserver(function (girisler) {
+      girisler.forEach(function (g) {
+        if (!g.isIntersecting) return;
+        g.target.classList.add("in");
+        io.unobserve(g.target);
+      });
+    }, { threshold: 0.12, rootMargin: "0px 0px -8% 0px" });
+
+    ogeler.forEach(function (o) { io.observe(o); });
+  })();
+
+  /* ---- Sayilarin sayarak gelmesi ----
+     Bitis degeri HTML'de zaten yazili; JS yalnizca gorunur olunca 0'dan
+     oraya sayiyor. JS calismazsa dogru sayi olduğu gibi durur. */
+  (function () {
+    var sayaclar = document.querySelectorAll(".sayac");
+    if (!sayaclar.length) return;
+    var azHareket = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (azHareket || !("IntersectionObserver" in window)) return;
+
+    function bicimle(deger, basamak, onek, sonek) {
+      var s = basamak ? deger.toFixed(basamak).replace(".", ",") : String(Math.round(deger));
+      return onek + s + sonek;
+    }
+
+    var io = new IntersectionObserver(function (girisler) {
+      girisler.forEach(function (g) {
+        if (!g.isIntersecting) return;
+        var el = g.target;
+        io.unobserve(el);
+
+        var hedef   = parseFloat(el.dataset.to);
+        var basamak = parseInt(el.dataset.basamak || "0", 10);
+        var onek    = el.dataset.onek || "";
+        var sonek   = el.dataset.sonek || "";
+        var sure    = 1100, bas = null;
+
+        function adim(zaman) {
+          if (bas === null) bas = zaman;
+          var t = Math.min((zaman - bas) / sure, 1);
+          var yumusak = 1 - Math.pow(1 - t, 3);          // easeOutCubic
+          el.textContent = bicimle(hedef * yumusak, basamak, onek, sonek);
+          if (t < 1) requestAnimationFrame(adim);
+          else el.textContent = bicimle(hedef, basamak, onek, sonek);
+        }
+        requestAnimationFrame(adim);
+      });
+    }, { threshold: 0.6 });
+
+    sayaclar.forEach(function (s) { io.observe(s); });
   })();
 </script>
