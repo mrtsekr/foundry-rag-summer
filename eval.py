@@ -8,6 +8,10 @@ Elle hazirlanmis bir soru-cevap seti uzerinde RAG'i olcer. Iki metrik:
 Bu ikisini ayirmak onemli: cevap yanlissa sorun retrieval'da mi (yanlis parca
 geldi) yoksa uretimde mi (dogru parca geldi ama model yanlis cevapladi) anlariz.
 
+Ayrica ucuncu bir bolum var: UC DURUMLAR (bos girdi, cok genel soru, konu disi
+soru). Onlar dogrulugu degil DAYANIKLILIGI olcer ve yukaridaki yuzdelere
+karismaz — ayri raporlanir.
+
 Once:  python ingest.py
 Sonra: python eval.py
 """
@@ -62,10 +66,68 @@ TESTLER = [
 ]
 
 
+# --- Uc durumlar (edge cases) ---
+# Plan s.11 acikca istiyor: "empty query input, or very general questions".
+# Bunlar bilerek AYRI olculur ve ana yuzdelere KARISMAZ; iki farkli soru
+# soruyorlar: ana set "dogru cevabi biliyor mu?", burasi "beklenmedik girdide
+# guvenli mi davraniyor?". Karistirsaydik headline sayisi ne artisa ne dususe
+# dogru yorumlanabilirdi (5 kolay uc durum yuzdeyi sisirirdi).
+#   - "bekle"   : cevapta gecmesi beklenen anahtar(lar)dan en az biri
+#   - "hits_bos": True ise retrieval HIC calismamis olmali (kaynak listesi bos)
+UC_DURUMLAR = [
+    {"ad": "bos sorgu", "soru": "",
+     "bekle": ["soru yazmadiniz"], "hits_bos": True,
+     "neden": "Bos girdide retrieval ve uretim hic calismamali; sabit yonlendirme donmeli."},
+    {"ad": "sadece bosluk", "soru": "   \t  ",
+     "bekle": ["soru yazmadiniz"], "hits_bos": True,
+     "neden": "Bosluk-only girdi de bos sayilmali (strip sonrasi ayni yol)."},
+    {"ad": "cok genel soru", "soru": "Bana otelden bahset.",
+     "bekle": ["otel", "resort", "deniz yıldızı", "bafra", "oda", "havuz"],
+     "neden": "Genel soruda cevap uretmeli ama baglamdaki gercege dayanmali."},
+    {"ad": "tek kelime", "soru": "havuz",
+     "bekle": ["havuz"],
+     "neden": "Tam cumle olmayan girdide bile dogru konuya gitmeli."},
+    {"ad": "konu disi soru", "soru": "Bugun hava nasil olacak?",
+     "bekle": ["bilgi yok", "bulunm", "resepsiyon", "yok"],
+     "neden": "Bilgi tabani disi soruda uydurmamali; guvenli sekilde basarisiz olmali."},
+]
+
+
 def sadelestir(s: str) -> str:
     """Turkce'ye uygun kucuk harfe cevir (I/ı, İ/i dahil) ve normalize et."""
     s = s.replace("I", "ı").replace("İ", "i")
     return unicodedata.normalize("NFC", s).lower()
+
+
+def uc_durumlari_calistir(conn) -> tuple[int, int]:
+    """UC_DURUMLAR listesini calistirir ve (gecen, toplam) dondurur.
+
+    Ana tablodan ayri basilir: burada olculen sey dogruluk degil DAYANIKLILIK.
+    """
+    print("\n" + "=" * 62)
+    print("UC DURUMLAR — bos girdi / cok genel / konu disi (plan s.11)")
+    print("=" * 62)
+
+    gecen = 0
+    for u in UC_DURUMLAR:
+        cevap, hits = rag.answer(u["soru"], conn=conn)
+        cl = sadelestir(cevap)
+        ok = any(sadelestir(b) in cl for b in u["bekle"])
+        # Bos girdide kaynak listesi de bos olmali: retrieval'a hic gidilmedigin
+        # kaniti budur (aksi halde model rastgele baglamla cevap uydurabilirdi).
+        if u.get("hits_bos") and hits:
+            ok = False
+        gecen += ok
+
+        print(f"\n[{'OK' if ok else 'YANLIS'}] {u['ad']}   girdi: {u['soru']!r}")
+        print(f"      beklenen : {u['neden']}")
+        print(f"      cevap    : {cevap[:110]}")
+        kaynaklar = list(dict.fromkeys(src for _, _, _, src in hits))
+        print(f"      kaynak   : {', '.join(kaynaklar) if kaynaklar else '(yok — retrieval calismadi)'}")
+
+    print(f"\nUc durum sonucu: {gecen}/{len(UC_DURUMLAR)} gecti "
+          f"(bu sayi yukaridaki dogruluk yuzdelerine DAHIL DEGILDIR).")
+    return gecen, len(UC_DURUMLAR)
 
 
 def main() -> None:
@@ -110,6 +172,8 @@ def main() -> None:
           f"(%{100*isabetli_retrieval/retrieval_olculen:.0f})")
     print("\nNot: cevap YANLIS ama retrieval OK ise -> uretim (model) sorunu;")
     print("     cevap YANLIS ve retrieval ISKA ise -> retrieval (embedding/top_k) sorunu.")
+
+    uc_durumlari_calistir(conn)
     conn.close()
 
 

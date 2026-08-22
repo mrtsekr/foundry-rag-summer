@@ -34,8 +34,26 @@ EXAMPLES = [
 ]
 
 
+# Bos (ya da yalnizca bosluk olan) sorgu icin sabit yanit.
+# NEDEN kapida durduruyoruz: bos metin de embed'lenebilir -> db.search yine de
+# TOP_K parca dondurur (skorlari anlamsizdir) ve model bu rastgele baglamla
+# "bir seyler" yazar; yani sistem sessizce alakasiz bir cevap uydurur.
+# Girdiyi burada kesmek hem dogru davranis hem de bedava: GPU'ya hic gidilmez.
+BOS_SORU_MESAJI = (
+    "Bir soru yazmadiniz. Ornegin 'Kahvalti kacta baslar?' diye sorabilirsiniz."
+)
+
+
 def answer(question: str, conn=None, goster=False):
-    """Bir soruya RAG ile cevap uretir. (cevap, kaynaklar) dondurur."""
+    """Bir soruya RAG ile cevap uretir. (cevap, kaynaklar) dondurur.
+
+    Bos/bosluk-only sorguda retrieval ve uretim hic calistirilmaz: sabit bir
+    yonlendirme mesaji ve BOS kaynak listesi doner.
+    """
+    question = (question or "").strip()
+    if not question:
+        return BOS_SORU_MESAJI, []
+
     kapat = False
     if conn is None:
         conn = db.connect()

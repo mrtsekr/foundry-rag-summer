@@ -1,7 +1,8 @@
 """
 Hafta 4 · Etkileşimli asistan (CLI)
 Sürekli soru-cevap döngüsü: model bir kez yüklenir, sonra sen soru sordukça
-RAG ile Türkçe cevaplar. Çıkmak için 'q', 'çıkış' veya boş Enter (Ctrl+C de olur).
+RAG ile Türkçe cevaplar. Çıkmak için 'q' / 'çıkış' (Ctrl+C de olur).
+Boş Enter oturumu KAPATMAZ; sadece nasıl soru sorulacağını hatırlatır.
 
 Önce bilgi tabanı kurulmuş olmalı:
     python ingest.py
@@ -31,7 +32,7 @@ def main() -> None:
     conn = db.connect()
     belge, parca = db.count(conn)
     print(f"Hazir. Bilgi tabani: {belge} belge, {parca} parca.")
-    print("Soru sor (cikmak icin 'q' ya da bos Enter).")
+    print("Soru sor (cikmak icin 'q').")
 
     while True:
         try:
@@ -40,9 +41,17 @@ def main() -> None:
             print("\nGorusuruz!")
             break
 
-        if not soru or soru.lower() in CIKIS_KOMUTLARI:
+        if soru.lower() in CIKIS_KOMUTLARI:
             print("Gorusuruz!")
             break
+
+        # Bos Enter artik CIKIS DEGIL: kazara basilan Enter oturumu (ve GPU'daki
+        # yuklu modeli) kapatmasin. Bos girdiyi rag.answer zaten kapida yakalar;
+        # burada onu cagirip ayni mesaji gostererek tek bir davranis kaynagi
+        # tutuyoruz (mesaj iki yerde kopyalanmiyor).
+        if not soru:
+            print(rag.BOS_SORU_MESAJI)
+            continue
 
         cevap, hits = rag.answer(soru, conn=conn)
         print(f"\n{cevap}")
