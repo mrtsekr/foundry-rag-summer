@@ -1,0 +1,664 @@
+<title>Deniz Yıldızı Asistanı</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=JetBrains+Mono:wght@400;500;700&display=swap">
+
+<style>
+  /* ---------- Tokens: light (bare :root = complete palette) ---------- */
+  :root {
+    --ground:    #E9EDEE;   /* deniz pusu */
+    --surface:   #FBFCFC;
+    --surface-2: #DFE6E7;
+    --ink:       #0F2630;   /* derin deniz mürekkebi */
+    --muted:     #5C737C;   /* aksana meyilli nötr */
+    --line:      #C6D2D5;
+    --line-soft: #D9E1E3;
+    --accent:    #0D7A84;   /* tuzlu teal */
+    --accent-dim:#0D7A8422;
+    --signal:    #B0335E;   /* begonvil — yalnızca ıska/ret */
+    --signal-dim:#B0335E1A;
+    --term-bg:   #0F2630;
+    --term-ink:  #DCE7E9;
+    --term-dim:  #7E98A1;
+
+    --measure: 68ch;
+    --step--1: clamp(.82rem, .8rem + .1vw, .88rem);
+    --step-0:  clamp(1rem, .97rem + .16vw, 1.09rem);
+    --step-1:  clamp(1.2rem, 1.12rem + .4vw, 1.45rem);
+    --step-2:  clamp(1.5rem, 1.34rem + .8vw, 2.05rem);
+    --step-3:  clamp(2rem, 1.66rem + 1.7vw, 3.15rem);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ground:    #0A1922;
+      --surface:   #102630;
+      --surface-2: #16313D;
+      --ink:       #E4EDEF;
+      --muted:     #93AAB2;
+      --line:      #22414E;
+      --line-soft: #1A3542;
+      --accent:    #45BCC1;
+      --accent-dim:#45BCC122;
+      --signal:    #E5749A;
+      --signal-dim:#E5749A1F;
+      --term-bg:   #071219;
+      --term-ink:  #DCE7E9;
+      --term-dim:  #6F8B95;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground:    #0A1922;
+    --surface:   #102630;
+    --surface-2: #16313D;
+    --ink:       #E4EDEF;
+    --muted:     #93AAB2;
+    --line:      #22414E;
+    --line-soft: #1A3542;
+    --accent:    #45BCC1;
+    --accent-dim:#45BCC122;
+    --signal:    #E5749A;
+    --signal-dim:#E5749A1F;
+    --term-bg:   #071219;
+    --term-ink:  #DCE7E9;
+    --term-dim:  #6F8B95;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--ground);
+    color: var(--ink);
+    font-family: "Source Serif 4", Georgia, "Times New Roman", serif;
+    font-size: var(--step-0);
+    line-height: 1.62;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap { width: 100%; max-width: 1120px; margin: 0 auto; padding: 0 clamp(1rem, 4vw, 2.5rem); }
+  .col  { max-width: var(--measure); }
+
+  h1, h2, h3, .label, .stat-num, nav, .btn {
+    font-family: Archivo, "Helvetica Neue", Arial, sans-serif;
+  }
+  h1, h2, h3 { text-wrap: balance; line-height: 1.1; margin: 0; }
+  h1 { font-size: var(--step-3); font-weight: 700; letter-spacing: -.025em; }
+  h2 { font-size: var(--step-2); font-weight: 600; letter-spacing: -.018em; }
+  h3 { font-size: var(--step-1); font-weight: 600; letter-spacing: -.01em; }
+  p  { margin: 0; }
+
+  .label {
+    font-size: .69rem; font-weight: 600; letter-spacing: .13em;
+    text-transform: uppercase; color: var(--muted);
+  }
+  .mono { font-family: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace; }
+  .num  { font-variant-numeric: tabular-nums; }
+
+  a { color: var(--accent); text-underline-offset: .18em; text-decoration-thickness: 1px; }
+  a:focus-visible, .btn:focus-visible {
+    outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 2px;
+  }
+
+  /* ---------- Section rhythm (one owner for vertical space) ---------- */
+  section { padding-block: clamp(3rem, 7vw, 5.5rem); border-top: 1px solid var(--line-soft); }
+  section:first-of-type { border-top: 0; }
+  .stack { display: flex; flex-direction: column; gap: 1.15rem; }
+  .stack-lg { display: flex; flex-direction: column; gap: clamp(1.8rem, 4vw, 2.8rem); }
+
+  /* ---------- Masthead ---------- */
+  .masthead {
+    display: flex; flex-wrap: wrap; gap: 1rem; align-items: baseline;
+    justify-content: space-between;
+    padding-block: 1.6rem; border-bottom: 1px solid var(--line-soft);
+  }
+  .mark { display: flex; align-items: baseline; gap: .6rem; }
+  .mark strong { font-family: Archivo, sans-serif; font-weight: 700; letter-spacing: -.01em; }
+
+  /* ---------- Hero ---------- */
+  .hero { padding-top: clamp(2.5rem, 6vw, 4.5rem); }
+  .lede { font-size: var(--step-1); color: var(--muted); max-width: 56ch; }
+  .hero h1 { max-width: 20ch; }
+  .kicker { color: var(--accent); }
+
+  /* ---------- Instrument card ---------- */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+  }
+  .card-hd {
+    display: flex; flex-wrap: wrap; gap: .5rem 1rem; align-items: baseline;
+    justify-content: space-between;
+    padding: .7rem 1rem; border-bottom: 1px solid var(--line-soft);
+  }
+  .card-bd { padding: 1.15rem 1rem; }
+
+  .qa { display: flex; flex-direction: column; gap: .85rem; }
+  .qa-q { font-family: "JetBrains Mono", monospace; font-size: var(--step--1); color: var(--muted); }
+  .qa-q::before { content: "Soru> "; color: var(--accent); }
+  .qa-a { font-size: var(--step-1); line-height: 1.45; }
+  .srcs { display: flex; flex-wrap: wrap; gap: .4rem; }
+  .src {
+    font-family: "JetBrains Mono", monospace; font-size: .72rem;
+    padding: .18rem .5rem; border: 1px solid var(--line);
+    border-radius: 999px; color: var(--muted); background: var(--ground);
+    font-variant-numeric: tabular-nums;
+  }
+  .src b { color: var(--accent); font-weight: 500; }
+
+  /* ---------- Stats ---------- */
+  .stats {
+    display: grid; gap: 1px; background: var(--line);
+    border: 1px solid var(--line); border-radius: 3px;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  }
+  .stat { background: var(--surface); padding: 1.1rem 1rem; display: flex; flex-direction: column; gap: .3rem; }
+  .stat-num {
+    font-size: clamp(1.7rem, 1.3rem + 1.6vw, 2.4rem); font-weight: 700;
+    letter-spacing: -.03em; font-variant-numeric: tabular-nums; line-height: 1;
+  }
+  .stat-cap { font-size: var(--step--1); color: var(--muted); }
+
+  /* ---------- Pipeline diagram ---------- */
+  .scroll-x { overflow-x: auto; padding-bottom: .4rem; }
+  .diagram { min-width: 720px; width: 100%; height: auto; display: block; }
+  .d-node   { fill: var(--surface); stroke: var(--line); stroke-width: 1.2; }
+  .d-node-a { fill: var(--accent-dim); stroke: var(--accent); stroke-width: 1.4; }
+  .d-title  { font-family: Archivo, sans-serif; font-size: 12.5px; font-weight: 600; fill: var(--ink); }
+  .d-sub    { font-family: "JetBrains Mono", monospace; font-size: 10px; fill: var(--muted); }
+  .d-edge   { stroke: var(--muted); stroke-width: 1.2; fill: none; }
+  .d-edge-lbl { font-family: "JetBrains Mono", monospace; font-size: 9.5px; fill: var(--muted); }
+  .d-step   { font-family: "JetBrains Mono", monospace; font-size: 9.5px; fill: var(--accent); font-weight: 700; }
+
+  /* ---------- Tables ---------- */
+  .tbl-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 3px; background: var(--surface); }
+  table { border-collapse: collapse; width: 100%; min-width: 460px; }
+  th, td { padding: .62rem .85rem; text-align: right; border-bottom: 1px solid var(--line-soft); }
+  th:first-child, td:first-child { text-align: left; }
+  thead th {
+    font-family: Archivo, sans-serif; font-size: .72rem; font-weight: 600;
+    letter-spacing: .07em; text-transform: uppercase; color: var(--muted);
+    border-bottom: 1px solid var(--line);
+  }
+  tbody tr:last-child td { border-bottom: 0; }
+  td.n { font-family: "JetBrains Mono", monospace; font-variant-numeric: tabular-nums; font-size: var(--step--1); }
+  td .win { color: var(--accent); font-weight: 700; }
+  td .lose { color: var(--signal); }
+
+  /* ---------- Decisions ---------- */
+  .decisions { display: grid; gap: 1.1rem; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); }
+  .dec { background: var(--surface); border: 1px solid var(--line); border-radius: 3px; padding: 1.15rem 1.1rem; display: flex; flex-direction: column; gap: .7rem; }
+  .dec h3 { font-size: 1.06rem; }
+  .dec p { font-size: .95rem; }
+  .verdict {
+    display: inline-flex; align-items: center; gap: .45rem; align-self: flex-start;
+    font-family: "JetBrains Mono", monospace; font-size: .72rem;
+    padding: .22rem .55rem; border-radius: 2px;
+    background: var(--accent-dim); color: var(--accent); border: 1px solid var(--accent);
+  }
+  .verdict.no { background: var(--signal-dim); color: var(--signal); border-color: var(--signal); }
+
+  /* ---------- Terminal ---------- */
+  .term {
+    background: var(--term-bg); color: var(--term-ink);
+    border: 1px solid var(--line); border-radius: 3px; overflow: hidden;
+  }
+  .term-bar {
+    display: flex; align-items: center; gap: .5rem;
+    padding: .55rem .85rem; border-bottom: 1px solid #ffffff1a;
+    font-family: "JetBrains Mono", monospace; font-size: .72rem; color: var(--term-dim);
+  }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: #ffffff26; }
+  .term pre {
+    margin: 0; padding: 1rem .95rem; overflow-x: auto;
+    font-family: "JetBrains Mono", monospace; font-size: .8rem; line-height: 1.72;
+    white-space: pre; tab-size: 2;
+  }
+  .term .p  { color: #7FD8DC; }
+  .term .d  { color: var(--term-dim); }
+  .term .hl { color: #FFD9A0; }
+
+  /* ---------- Notes / footer ---------- */
+  .note {
+    border-left: 2px solid var(--accent); padding-left: 1rem;
+    color: var(--muted); font-size: .95rem;
+  }
+  .spec { display: grid; gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 3px;
+          grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); }
+  .spec div { background: var(--surface); padding: .85rem 1rem; display: flex; flex-direction: column; gap: .22rem; }
+  .spec dt { font-size: .68rem; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); font-family: Archivo, sans-serif; font-weight: 600; }
+  .spec dd { margin: 0; font-family: "JetBrains Mono", monospace; font-size: .84rem; }
+
+  footer { border-top: 1px solid var(--line-soft); padding-block: 2.2rem 3rem; color: var(--muted); font-size: .9rem; }
+  .foot-row { display: flex; flex-wrap: wrap; gap: 1rem 2rem; justify-content: space-between; align-items: baseline; }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .reveal { animation: rise .6s cubic-bezier(.22,.68,.32,1) both; }
+    @keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+  }
+</style>
+
+<div class="wrap">
+  <header class="masthead">
+    <div class="mark">
+      <strong>Deniz Yıldızı Asistanı</strong>
+      <span class="label">Yerel RAG · Foundry Local</span>
+    </div>
+    <span class="label mono">v1 · Ağustos 2026</span>
+  </header>
+</div>
+
+<main class="wrap">
+
+  <!-- ============ HERO ============ -->
+  <section class="hero">
+    <div class="stack-lg">
+      <div class="stack col">
+        <span class="label">Tamamen çevrimdışı · Türkçe · tek dizüstü bilgisayar</span>
+        <h1>Bilmediğini <span class="kicker">bilen</span> bir otel asistanı.</h1>
+        <p class="lede">
+          Bir tatil köyünün belgelerini okuyup misafir sorularını Türkçe yanıtlıyor —
+          internet bağlantısı olmadan, kendi GPU'sunda. Her cevabın altında hangi
+          belgeden geldiği yazıyor; belgelerde yoksa uydurmuyor.
+        </p>
+      </div>
+
+      <div class="card reveal">
+        <div class="card-hd">
+          <span class="label">Gerçek çıktı · hiçbir şey düzeltilmedi</span>
+          <span class="label mono">TOP_K = 3</span>
+        </div>
+        <div class="card-bd qa">
+          <p class="qa-q">Otelde bowling salonu var mı?</p>
+          <p class="qa-a">Bu konuda elimde bilgi yok, resepsiyona danışmanız önerilir.</p>
+          <div class="srcs">
+            <span class="src">politikalar.txt <b>0.823</b></span>
+            <span class="src">odalar.txt <b>0.821</b></span>
+            <span class="src">otel_genel.txt <b>0.819</b></span>
+          </div>
+          <p class="note">
+            Bilgi tabanında bowling yok. Sistem en yakın üç parçayı yine getirdi —
+            skorlar birbirine çok yakın, yani hiçbiri gerçekten ilgili değil — ve model
+            uydurmak yerine bilmediğini söyledi. Projenin en önemsediği davranış bu.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ ÖLÇÜMLER ============ -->
+  <section>
+    <div class="stack-lg">
+      <div class="stack col">
+        <span class="label">Ölçüm</span>
+        <h2>Sayılar iyimser değil, dürüst.</h2>
+        <p>
+          17 soruluk bir değerlendirme seti iki metriği <em>ayrı</em> ölçüyor: cevap
+          doğruluğu ve retrieval isabeti. Ayırmak, bir hatanın nerede olduğunu söylüyor —
+          yanlış parça mı geldi, yoksa doğru parça gelip model mi yanlış cevapladı.
+        </p>
+      </div>
+
+      <div class="stats">
+        <div class="stat">
+          <span class="stat-num num">%84</span>
+          <span class="stat-cap">cevap doğruluğu<br>13–16 / 17 · 4 çalıştırma</span>
+        </div>
+        <div class="stat">
+          <span class="stat-num num">%88</span>
+          <span class="stat-cap">retrieval isabeti<br>14 / 16 · deterministik</span>
+        </div>
+        <div class="stat">
+          <span class="stat-num num">5/5</span>
+          <span class="stat-cap">uç durum testi<br>boş girdi · genel · konu dışı</span>
+        </div>
+        <div class="stat">
+          <span class="stat-num num">2,5 sn</span>
+          <span class="stat-cap">ortalama cevap<br>RTX 3060 · 6 GB VRAM</span>
+        </div>
+      </div>
+
+      <p class="note col">
+        Cevap doğruluğu bir <em>aralık</em> olarak veriliyor çünkü üretim örneklemeli
+        (<span class="mono">temperature = 0.7</span>): aynı soru çalıştırmalar arasında farklı
+        cevaplanabiliyor. En iyi turu seçip raporlamak yerine gözlenen aralık yazılıyor.
+        Retrieval ise deterministik olduğu için hiç oynamıyor.
+      </p>
+    </div>
+  </section>
+
+  <!-- ============ NASIL ÇALIŞIYOR ============ -->
+  <section>
+    <div class="stack-lg">
+      <div class="stack col">
+        <span class="label">Mekanizma</span>
+        <h2>Bir sorunun izlediği yol.</h2>
+        <p>
+          RAG = <em>retrieval</em> + <em>generation</em>. Model ezberinden değil, o an
+          getirilen belge parçasından cevaplıyor. Aşağıdaki hattın her adımı bu depoda
+          bir dosya.
+        </p>
+      </div>
+
+      <div class="scroll-x">
+        <svg class="diagram" viewBox="0 0 980 250" role="img"
+             aria-label="Belgeler parçalanır, embedding'e çevrilir, SQLite'a yazılır; soru da embedding'e çevrilip kosinüs benzerliğiyle en yakın üç parça bulunur ve bunlar bağlam olarak qwen3-4b modeline verilir.">
+          <!-- Hazırlık şeridi -->
+          <text x="8" y="20" class="d-step">HAZIRLIK · ingest.py (bir kez)</text>
+          <g>
+            <rect x="8"   y="32" width="150" height="52" rx="3" class="d-node"/>
+            <text x="20"  y="53" class="d-title">docs/ — 9 belge</text>
+            <text x="20"  y="70" class="d-sub">.txt · .md · .pdf</text>
+
+            <rect x="208" y="32" width="150" height="52" rx="3" class="d-node"/>
+            <text x="220" y="53" class="d-title">9 parça</text>
+            <text x="220" y="70" class="d-sub">≤1000 krk, toparlayıcı</text>
+
+            <rect x="408" y="32" width="170" height="52" rx="3" class="d-node"/>
+            <text x="420" y="53" class="d-title">embedding</text>
+            <text x="420" y="70" class="d-sub">e5-small · 384 boyut</text>
+
+            <rect x="628" y="32" width="170" height="52" rx="3" class="d-node"/>
+            <text x="640" y="53" class="d-title">SQLite</text>
+            <text x="640" y="70" class="d-sub">float32 BLOB</text>
+
+            <path d="M158 58 H208" class="d-edge" marker-end="url(#ar)"/>
+            <path d="M358 58 H408" class="d-edge" marker-end="url(#ar)"/>
+            <path d="M578 58 H628" class="d-edge" marker-end="url(#ar)"/>
+          </g>
+
+          <!-- Sorgu şeridi -->
+          <text x="8" y="132" class="d-step">SORGU · her soruda</text>
+          <g>
+            <rect x="8"   y="144" width="150" height="52" rx="3" class="d-node-a"/>
+            <text x="20"  y="165" class="d-title">Misafir sorusu</text>
+            <text x="20"  y="182" class="d-sub">Türkçe, serbest</text>
+
+            <rect x="208" y="144" width="150" height="52" rx="3" class="d-node"/>
+            <text x="220" y="165" class="d-title">kosinüs</text>
+            <text x="220" y="182" class="d-sub">tüm parçalarla</text>
+
+            <rect x="408" y="144" width="170" height="52" rx="3" class="d-node"/>
+            <text x="420" y="165" class="d-title">en yakın 3 parça</text>
+            <text x="420" y="182" class="d-sub">TOP_K = 3 → BAĞLAM</text>
+
+            <rect x="628" y="144" width="170" height="52" rx="3" class="d-node-a"/>
+            <text x="640" y="165" class="d-title">qwen3-4b</text>
+            <text x="640" y="182" class="d-sub">Foundry Local · CUDA</text>
+
+            <path d="M158 170 H208" class="d-edge" marker-end="url(#ar)"/>
+            <path d="M358 170 H408" class="d-edge" marker-end="url(#ar)"/>
+            <path d="M578 170 H628" class="d-edge" marker-end="url(#ar)"/>
+
+            <!-- DB'den sorguya besleme -->
+            <path d="M713 84 V116 H295 V144" class="d-edge" stroke-dasharray="4 3" marker-end="url(#ar)"/>
+            <text x="330" y="112" class="d-edge-lbl">kayıtlı vektörler</text>
+
+            <!-- Cevap -->
+            <path d="M713 196 V222 H500" class="d-edge" marker-end="url(#ar)"/>
+            <text x="510" y="226" class="d-title">Cevap + kaynak belge adı</text>
+          </g>
+
+          <defs>
+            <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5"
+                    markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M0 0 L10 5 L0 10 z" fill="currentColor" style="color: var(--muted)"/>
+            </marker>
+          </defs>
+        </svg>
+      </div>
+
+      <div class="spec">
+        <div><dt>Üretim</dt><dd>qwen3-4b · Foundry Local</dd></div>
+        <div><dt>Retrieval</dt><dd>multilingual-e5-small</dd></div>
+        <div><dt>Depolama</dt><dd>SQLite · float32 BLOB</dd></div>
+        <div><dt>Donanım</dt><dd>RTX 3060 Laptop · 6 GB</dd></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ KARARLAR ============ -->
+  <section>
+    <div class="stack-lg">
+      <div class="stack col">
+        <span class="label">Kararlar</span>
+        <h2>Her ayar bir ölçümün sonucu.</h2>
+        <p>
+          Bu projede hiçbir sayı "iyi görünüyor" diye seçilmedi. Aşağıdakilerin hepsi
+          önce denendi, ölçüldü, bir kısmı da <em>reddedildi</em>.
+        </p>
+      </div>
+
+      <div class="decisions">
+        <article class="dec">
+          <span class="verdict no">reddedildi</span>
+          <h3>Daha büyük embedding modeli</h3>
+          <p>
+            Planın önerdiği <span class="mono">qwen3-embedding-0.6b</span> gerçekten kuruldu
+            ve üretim ayarında ölçüldü. Sıralamanın tepesinde iyiydi ama havalimanı transferi
+            sorusunda doğru parçayı 2. sıradan 5.'ye düşürdü — yani ilk 3'ün dışına.
+            Üstelik sorgu başına ~0,73 sn ekliyordu.
+          </p>
+        </article>
+
+        <article class="dec">
+          <span class="verdict">uygulandı</span>
+          <h3>Parçaları bölmemek</h3>
+          <p>
+            Sezgi "küçük parça = keskin embedding" diyordu. Ölçüm çürüttü: her paragrafı
+            ayrı parçaya bölmek cevabı komşu bağlamdan koparıyordu. Parçaları 1000 karaktere
+            kadar toparlayınca 31 parça 9'a indi ve doğruluk belirgin biçimde arttı.
+          </p>
+        </article>
+
+        <article class="dec">
+          <span class="verdict">uygulandı</span>
+          <h3>Sıcaklığı <em>yükseltmek</em></h3>
+          <p>
+            Model aynı cümleyi 20 kez tekrarlıyordu. Suçlu sanılan sıcaklık aslında çözümdü:
+            düşük sıcaklıkta (0.3) üretim aynı token dizisine saplanıyordu.
+            <span class="mono">0.7</span> döngüyü kırdı, cevap bağlama dayalı olduğu için
+            kalite bozulmadı.
+          </p>
+        </article>
+
+        <article class="dec">
+          <span class="verdict no">reddedildi</span>
+          <h3>Tekrar cezası (<span class="mono">frequency_penalty</span>)</h3>
+          <p>
+            Tekrar sorununa "bariz" çözüm olarak denendi ve işi kötüleştirdi: cevapları
+            boşalttı, hatta bir soruda "kumarhane <em>yok</em>"u "<em>var</em>"a çevirerek
+            tehlikeli bir halüsinasyon üretti. Doğru araç sıcaklıktı.
+          </p>
+        </article>
+
+        <article class="dec">
+          <span class="verdict">uygulandı</span>
+          <h3>Örnekten olguyu çıkarmak</h3>
+          <p>
+            Modele biçim öğreten few-shot örneğine somut bir sayı ("200 oda") konduğunda,
+            model doğru parçayı getiremediği bir soruda o sayıyı cevaba <em>sızdırdı</em>.
+            Örnek, veri taşımayan tek bir güvenlik örneğine indirildi.
+          </p>
+        </article>
+
+        <article class="dec">
+          <span class="verdict">uygulandı</span>
+          <h3>GPU'yu açıkça seçmek</h3>
+          <p>
+            Foundry SDK, çalışma sağlayıcıları bu sürece kayıtlı değilken sessizce CPU
+            varyantını seçiyor: model doğru çalışır ama sürünür. Açıkça
+            <span class="mono">cuda-gpu</span> seçilince cevap süresi 21,6 sn'den 2,5 sn'ye indi.
+          </p>
+        </article>
+      </div>
+
+      <div class="stack col">
+        <h3>Embedding kıyası — karar tablosu</h3>
+        <p>
+          Retrieval deterministik olduğu için model seçimi burada yapıldı, LLM'in
+          gürültüsüne bırakılmadan. <span class="mono">TOP_K = 3</span> olduğundan
+          <em>kanıt ilk 3'te mi</em> satırı karar satırıdır: modelin gerçekten gördüğü bilgi budur.
+        </p>
+      </div>
+
+      <div class="tbl-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Ölçüt · 16 soru</th>
+              <th scope="col">e5-small (384)</th>
+              <th scope="col">qwen3-emb (1024)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Kanıt ilk 3'te <span class="mono">(karar)</span></td>
+              <td class="n"><span class="win">15/16 · %94</span></td>
+              <td class="n">14/16 · %88</td>
+            </tr>
+            <tr>
+              <td>Doğru dosya ilk 3'te</td>
+              <td class="n"><span class="win">14/16 · %88</span></td>
+              <td class="n">13/16 · %81</td>
+            </tr>
+            <tr>
+              <td>Kanıt ilk 1'de</td>
+              <td class="n">12/16 · %75</td>
+              <td class="n"><span class="win">13/16 · %81</span></td>
+            </tr>
+            <tr>
+              <td>MRR</td>
+              <td class="n">0.840</td>
+              <td class="n"><span class="win">0.854</span></td>
+            </tr>
+            <tr>
+              <td>16 soruyu embedleme</td>
+              <td class="n"><span class="win">0,08 sn</span></td>
+              <td class="n"><span class="lose">11,75 sn</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p class="note col">
+        Yaz okulu planı büyük modeli öneriyordu. Ölçüm aksini söyleyince plana değil ölçüme
+        uyuldu — ama Foundry yolu silinmedi: tek satır ayarla geri açılabiliyor ve bilgi tabanı
+        büyüdüğünde aynı kıyas tekrarlanabiliyor.
+      </p>
+    </div>
+  </section>
+
+  <!-- ============ TERMİNAL ============ -->
+  <section>
+    <div class="stack-lg">
+      <div class="stack col">
+        <span class="label">Çalışırken</span>
+        <h2>Komut satırından, uçak modunda.</h2>
+        <p>
+          Aşağıdaki döküm gerçek bir oturumdan alındı. Her cevabın altındaki kaynak
+          satırı, asistanın uydurmadığını, gerçek bir belgeye dayandığını gösteriyor.
+        </p>
+      </div>
+
+      <div class="term">
+        <div class="term-bar">
+          <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+          <span>python assistant.py</span>
+        </div>
+<pre><span class="d">Deniz Yildizi Resort &amp; Casino — Asistan
+Model yukleniyor (ilk sefer ~10-15 sn)...</span>
+Hazir. Bilgi tabani: <span class="hl">9 belge, 9 parca</span>.
+
+<span class="p">Soru&gt;</span> Odaya evcil hayvan getirebilir miyim?
+Evcil hayvan politikası gereği, tesise evcil hayvan kabul edilmemektedir.
+Dolayısıyla, odaya evcil hayvan getirmek mümkün değildir.
+  <span class="d">(kaynak: politikalar.txt, balayi.pdf, ulasim.txt)</span>
+
+<span class="p">Soru&gt;</span> Ucaktan indim, otele nasil ulasabilirim?
+Havalimanı transfer hizmeti tesis tarafından ya da rezervasyon acentesi
+aracılığıyla sağlanabilir. Transfer talebinizi rezervasyon sırasında
+belirtmeniz önerilir.
+  <span class="d">(kaynak: politikalar.txt, ulasim.txt, balayi.pdf)</span>
+
+<span class="p">Soru&gt;</span> Otelde bowling salonu var mi?
+<span class="hl">Bu konuda elimde bilgi yok, resepsiyona danışmanız önerilir.</span>
+  <span class="d">(kaynak: politikalar.txt, odalar.txt, otel_genel.txt)</span>
+
+<span class="p">Soru&gt;</span> q
+<span class="d">Gorusuruz!</span></pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ DÜRÜSTLÜK ============ -->
+  <section>
+    <div class="stack-lg">
+      <div class="stack col">
+        <span class="label">Sınırlar</span>
+        <h2>Neyi yapamadığı da burada yazıyor.</h2>
+        <p>
+          Kalan hatalar bilerek <em>güvenli</em> tarafta bırakıldı: sistem bilmediğinde
+          uydurmuyor, "bilgim yok" diyor ya da bağlama sadık kalıp eksik cevaplıyor.
+          Bedeli birkaç puanlık doğruluk, karşılığı misafire yanlış bilgi vermemek.
+        </p>
+        <p>
+          Asıl tavan üretim tarafında: 4 milyarlık bir model, 6 GB'lık bir kartta, Türkçe
+          günlük dilde zorlanabiliyor. Gerçek bir örnek — retrieval doğru parçayı getirdi,
+          saatler doğru, ama cümle bozuk:
+        </p>
+      </div>
+
+      <div class="card">
+        <div class="card-hd">
+          <span class="label">Gerçek hata · düzeltilmedi</span>
+          <span class="label mono">retrieval OK · üretim zayıf</span>
+        </div>
+        <div class="card-bd qa">
+          <p class="qa-q">Kahvaltıyı en geç kaçta yiyebilirim?</p>
+          <p class="qa-a" style="color: var(--muted)">
+            “Kahvaltıyu en geç çektiğiniz zaman yiyebilirsiniz. Otelde kahvaltı saatleri
+            07:00 ile 11:00 arasında olduğu için, bu saatlerin sonunda yiyebilirsiniz.”
+          </p>
+          <div class="srcs"><span class="src">yeme_icme.txt <b>0.805</b></span></div>
+        </div>
+      </div>
+
+      <div class="stack col">
+        <p class="note">
+          Değerlendirme metriği iki kez sıkılaştırıldı ve her ikisinde de raporlanan sayı
+          <em>düştü</em>. Önce tek başına "var" kabul anahtarı olan sorular temizlendi;
+          ardından bir kod incelemesi, "…restoran <em>var mı</em>?" sorusunda aynı kusurun
+          kaldığını gösterdi. Buradan çıkan kural artık koda yazılı:
+          <strong>sorunun içinde geçen bir kelime kabul anahtarı olamaz.</strong>
+          Headline doğruluk %88'den %84'e indi — sistem kötüleşmedi, ölçüm dürüstleşti.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ VERİ NOTU ============ -->
+  <section>
+    <div class="stack col">
+      <span class="label">Veri notu</span>
+      <h2>Bilgi tabanı nereden geliyor?</h2>
+      <p>
+        Belgeler, Kuzey Kıbrıs'ta gerçek bir tatil köyünün herkese açık bilgilerinden
+        uyarlandı ve anonimleştirildi: tesis adı ve alt marka isimleri değiştirildi,
+        gerçek sayılar (569 oda, 10 havuz, havalimanına 56,8 km) korundu. Amaç eğitim ve
+        portfolyo; hiçbir ticari bağ ya da temsil iddiası yok.
+      </p>
+    </div>
+  </section>
+</main>
+
+<footer class="wrap">
+  <div class="foot-row">
+    <div>
+      <strong style="font-family: Archivo, sans-serif;">Deniz Yıldızı Asistanı</strong><br>
+      Microsoft Foundry Local + RAG · Python 3.12 · yaz okulu projesi
+    </div>
+    <div class="mono" style="font-size: .8rem;">
+      ingest.py → db.search() → rag.answer() → assistant.py
+    </div>
+  </div>
+</footer>
