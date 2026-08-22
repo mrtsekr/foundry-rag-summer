@@ -10,10 +10,13 @@
     --surface:   #FBFCFC;
     --surface-2: #DFE6E7;
     --ink:       #0F2630;   /* derin deniz mürekkebi */
-    --muted:     #5C737C;   /* aksana meyilli nötr */
+    /* Bu iki deger OLCULEREK secildi: onceki tonlar (#5C737C, #0D7A84) zemine
+       karsi 4.24 ve 4.31 kontrast veriyordu — WCAG AA esigi olan 4.5'in altinda.
+       Ton korunarak esigi gecen EN ACIK varyantlar alindi (4.67 ve 4.70). */
+    --muted:     #576C75;   /* aksana meyilli nötr */
     --line:      #C6D2D5;
     --line-soft: #D9E1E3;
-    --accent:    #0D7A84;   /* tuzlu teal */
+    --accent:    #0C747D;   /* tuzlu teal */
     --accent-lite:#3FA8B0;  /* huzmenin parlak ucu */
     --accent-dim:#0D7A8422;
     --signal:    #B0335E;   /* begonvil — yalnızca ıska/ret */
@@ -103,7 +106,14 @@
   .num  { font-variant-numeric: tabular-nums; }
 
   a { color: var(--accent); text-underline-offset: .18em; text-decoration-thickness: 1px; }
-  a:focus-visible, .btn:focus-visible {
+  /* Klavyeyle gezenler icin tek ve tutarli odak gostergesi: en az 2px cevre.
+     Onceden yalnizca a ve .btn kapsaniyordu; .btn-ghost ve .kopyala tarayici
+     varsayilanina dusuyordu (ince, dusuk kontrast, temaya kor). */
+  a:focus-visible,
+  .btn:focus-visible,
+  .btn-ghost:focus-visible,
+  .kopyala:focus-visible,
+  .nav-links a:focus-visible {
     outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 2px;
   }
 
@@ -380,8 +390,10 @@
      grid-template-rows 0fr -> 1fr: yuksekligi bilinmeyen icerigi animasyonla
      acmanin duzgun yolu (max-height tahmini gerektirmez).
      Dar ekranda hover yok -> satir her zaman acik durur. */
+  /* VARSAYILAN: acik. Gizleme yalnizca hover'i olan cihazlarda devreye girer
+     (asagidaki @media). Boylece JS/hover yoksa kanit kaybolmuyor. */
   .dec-kanit {
-    display: grid; grid-template-rows: 0fr; opacity: 0;
+    display: grid; grid-template-rows: 1fr; opacity: 1;
     transition: grid-template-rows .3s ease, opacity .3s ease;
   }
   .dec-kanit > span {
@@ -390,8 +402,14 @@
     color: var(--accent); font-variant-numeric: tabular-nums;
   }
   .dec:has(.verdict.no) .dec-kanit > span { color: var(--signal); }
-  .dec:hover .dec-kanit, .dec:focus-within .dec-kanit { grid-template-rows: 1fr; opacity: 1; }
-  @media (max-width: 859px) { .dec-kanit { grid-template-rows: 1fr; opacity: 1; } }
+  /* Kanit satiri yalnizca GERCEK bir isaretleyici cihazi varsa gizlenir.
+     Onceden sadece genislige bakiyordu; genis ekranli dokunmatik cihazlarda
+     (tablet, dokunmatik dizustu) hover olmadigi icin kanit HIC gorunmuyordu.
+     "Onemli icerigi yalnizca hover'a bagilama" kuralinin ihlaliydi. */
+  @media (hover: hover) and (pointer: fine) {
+    .dec-kanit { grid-template-rows: 0fr; opacity: 0; }
+    .dec:hover .dec-kanit, .dec:focus-within .dec-kanit { grid-template-rows: 1fr; opacity: 1; }
+  }
   .dec h3 { font-size: 1.06rem; }
   .dec p { font-size: .95rem; }
   .verdict {
