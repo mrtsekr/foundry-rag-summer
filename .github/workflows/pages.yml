@@ -1,0 +1,64 @@
+# Tanitim sayfasini GitHub Pages'e yayimlar.
+#
+# Neden Actions, neden "branch'ten yayimla" degil: Pages'in dahili secenegi
+# yalnizca depo KOKUNU ya da /docs klasorunu yayimlayabiliyor. Bizim sayfa
+# site/index.html'de ve docs/ klasoru RAG korpusunu tutuyor. Actions ile
+# yalnizca istedigimiz dosyalari yayimliyoruz; boylece:
+#   - kisa adres calisiyor  (https://mrtsekr.github.io/foundry-rag-summer/)
+#   - rag.py, rag_store.db, loglar web uzerinden HIC servis edilmiyor
+#
+# Ilk kullanimdan once: Settings > Pages > Source = "GitHub Actions" secilmeli.
+
+name: Sayfayi yayimla
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "site/index.html"
+      - "site/kayitlar.json"
+      - ".github/workflows/pages.yml"
+  workflow_dispatch: # Actions sekmesinden elle de tetiklenebilir
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Ust uste gelen yayimlari sirala; yarim kalan bir yayimi iptal etme.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  yayimla:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.yayim.outputs.page_url }}
+    steps:
+      - name: Depoyu al
+        uses: actions/checkout@v4
+
+      - name: Pages yapilandirmasi
+        uses: actions/configure-pages@v5
+
+      - name: Yayimlanacak dosyalari hazirla
+        # Sayfa tek dosya ve veri ICINE gomulu; calismak icin baska hicbir
+        # seye ihtiyaci yok. kayitlar.json yine de yanina konuyor ki gomulu
+        # verinin kaynagi disaridan dogrulanabilsin.
+        run: |
+          mkdir -p _yayin
+          cp site/index.html   _yayin/index.html
+          cp site/kayitlar.json _yayin/kayitlar.json
+          echo "Yayimlanacaklar:"
+          ls -la _yayin
+
+      - name: Dosyalari yukle
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _yayin
+
+      - name: Pages'e yayimla
+        id: yayim
+        uses: actions/deploy-pages@v4

@@ -5,6 +5,12 @@ Bir otelin belgelerini (odalar, yeme-içme, spa, politikalar, ulaşım…) okur 
 misafir sorularını **yalnızca o belgelere dayanarak** yanıtlar. Bulut yok, API
 anahtarı yok, veri cihazdan çıkmaz.
 
+**Tanıtım sayfası:** <https://mrtsekr.github.io/foundry-rag-summer/> — mimari,
+ölçümler, alınan/reddedilen kararlar ve 21 gerçek çalıştırmada arama.
+Sayfa tek bir HTML dosyası; kayıtlar içine gömülü, sunucu istemez.
+Kendi bilgisayarında `python site/sunucu.py` ile açarsan aynı sayfa **canlı
+moda** geçer ve istediğin soruyu gerçekten modele sorabilirsin.
+
 | | |
 |---|---|
 | **Üretim (chat)** | [Microsoft Foundry Local](https://learn.microsoft.com/azure/ai-foundry/foundry-local/) + `qwen3-4b`, yerel GPU'da (RTX 3060 Laptop, 6 GB) |
