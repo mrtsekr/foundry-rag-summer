@@ -85,8 +85,9 @@ python ingest.py
 python assistant.py
 
 # 3) (opsiyonel) Kaliteyi ölç
-python eval.py          # cevap doğruluğu + retrieval isabeti
+python eval.py          # cevap doğruluğu + retrieval isabeti + uç durumlar
 python tune_topk.py     # TOP_K taraması (yalnız retrieval, hızlı)
+python bench_embed.py   # embedding arka uçlarını kıyasla (LLM çalışmaz)
 ```
 
 Kendi belgelerini eklemek için `docs/` klasörüne `.txt`, `.md` veya `.pdf` koy ve
@@ -102,13 +103,14 @@ Kendi belgelerini eklemek için `docs/` klasörüne `.txt`, `.md` veya `.pdf` ko
 | `docs/` | Bilgi tabanı belgeleri (9 belge, Türkçe otel içeriği) |
 | `ingest.py` | Belge okuma (`.txt`/`.md`/`.pdf`) → `chunk_text` → embedding → SQLite |
 | `db.py` | SQLite şeması, embedding BLOB dönüşümü, `search()` (retrieval) |
-| `rag_core.py` | `embed_texts()` (e5 ön-ekleriyle) + `cosine_similarity()` |
-| `llm.py` | Foundry Local + `qwen3-4b`'yi GPU'da yükler, üretir, tekrarı kırpar |
+| `rag_core.py` | `embed_texts()` — seçili arka uca göre (e5 ön-ekleri ya da Foundry) + `cosine_similarity()` |
+| `foundry.py` | Foundry Local'a tek giriş: paylaşılan manager, EP kaydı, GPU varyant seçimi |
+| `llm.py` | `qwen3-4b`'yi GPU'da yükler, üretir, tekrarı kırpar |
 | `rag.py` | Uçtan uca RAG: retrieval → bağlam → üretim (system prompt + few-shot) |
 | `assistant.py` | Etkileşimli komut satırı asistanı |
-| `eval.py` | 17 soruluk değerlendirme: cevap doğruluğu **ve** retrieval isabeti |
+| `eval.py` | 17 soruluk değerlendirme (cevap **ve** retrieval ayrı) + 5 uç durum testi |
 | `tune_topk.py` | Retrieval-only `TOP_K` taraması |
-| `bench_embed.py` | Embedding karşılaştırması: e5-small vs Foundry `qwen3-embedding-0.6b` |
+| `bench_embed.py` | Embedding arka uçlarının kıyası (LLM'siz, deterministik): e5-small vs `qwen3-embedding-0.6b` |
 | `bench_chunking.py` | Parçalama × embedding taraması (kıyasın kendi ayarımıza taraflılığını ölçer) |
 
 Öğrenme/tanı scriptleri: `hello_model.py` (Foundry testi), `embed_test.py`
@@ -148,7 +150,9 @@ başı) Foundry Local kataloğunda embedding modeli yoktu; retrieval bu yüzden
 `sentence-transformers` ile Python tarafında kuruldu. 31 Temmuz 2026'da katalog
 yeniden kontrol edildiğinde **artık var**: `qwen3-embedding-0.6b` (495 MB,
 `task=embeddings`) ve `qwen3-embedding-8b`, SDK'da `model.get_embedding_client()`
-ile erişilebiliyor. Yani mevcut kurulum artık bir zorunluluk değil, bir tercih.
+ile erişilebiliyor. Yani mevcut kurulum artık bir zorunluluk değil, bir tercih —
+ve bu tercih ölçülerek verildi. Foundry yolu bugün **kurulu ve çalışır** durumda:
+`config.EMBED_BACKEND` tek satırda `"st"` ↔ `"foundry"` arasında geçiş yapıyor.
 
 **Peki geçmeli miydik? Ölçtük: hayır.** `bench_embed.py`, aynı 31 parça ve 16 soru
 üzerinde üç sistemi yalnızca retrieval açısından karşılaştırır — kararı LLM'in
@@ -187,10 +191,41 @@ Sonuç dürüstçe şu: **e5-small yalnızca kendi ayarında önde.** Diğer ü�
 Qwen daha isabetli sıralıyor. Yani "büyük model kazanamadı" demek eksik olurdu —
 doğrusu, ilk kıyasın veri temsili bir modelin lehine hazırlanmıştı.
 
-Farklar yine de küçük (16 soruda 1–2 soruluk) ve `TOP_K=3` ile çalışan mevcut
-kurulumda iki model berabere. **Karar: e5-small kaldı** — 20 kat küçük, 1.5 kat
-hızlı ve dağıtılan ayarda eşit. Ama gerekçe artık "Qwen kazanamadı" değil,
-"bu ölçekte fark küçük ve maliyeti haklı çıkarmıyor."
+**Üçüncü ve belirleyici ölçüm: üretim ayarlarında, gerçekten bağlanmış haliyle.**
+Önceki iki kıyas ya e5'e göre ayarlanmış bir parçalamada yapılmıştı ya da Foundry
+yolu üretim koduna hiç bağlı değildi. Bu kez `rag_core.embed_texts()` Foundry
+istemcisine gerçekten gitti, `ingest.py` 1024 boyutlu vektörlerle yeniden
+çalıştırıldı ve ölçüm **dağıtılan ayarda** (9 parça) yapıldı:
+
+| | e5-small (384) | qwen3-emb (1024) |
+|---|---|---|
+| **Kanıt ilk 3'te** (karar metriği) | **15/16 · %94** | 14/16 · %88 |
+| Doğru dosya ilk 3'te | **14/16 · %88** | 13/16 · %81 |
+| Kanıt ilk 1'de | 12/16 · %75 | **13/16 · %81** |
+| MRR | 0.840 | **0.854** |
+| 16 soruyu embedleme | **0.08 sn** | 11.75 sn |
+
+Qwen ilk-1 ve MRR'de bir tık önde — ama bu üstünlük **ilk 3'ün içinde kalıyor**:
+`TOP_K=3` ile modele giden bağlam değişmiyor, dolayısıyla cevaba yansımıyor.
+Buna karşılık "Uçaktan indim, otele nasıl ulaşabilirim?" sorusunda doğru parçayı
+2. sıradan 5.'ye düşürüyor; yani ilk 3'ün **dışına** çıkarıyor ve uçtan uca
+`eval.py` turunda o soru ıskaya dönüşüyor (Foundry turu 14/17 · %82, aynı koşulda
+e5 turu 15/17 · %88).
+
+**Karar: `e5-small` kalıyor.** Karar metriğinde önde, sorgu başına ~0,73 sn daha
+hızlı (cevap süresi ~2,5 sn iken bu ~%30'luk bir gecikme farkı demek), 20 kat
+küçük ve GPU'daki sohbet modeliyle VRAM için yarışmıyor.
+
+Planın 7. sayfası `qwen3-embedding-0.6b` öneriyor olsa da, bu proje için doğru
+seçim ölçüme göre e5-small oldu; plana uymak için daha kötü bir sistem dağıtmanın
+anlamı yok. Foundry yolu yine de **silinmedi**: çalışır, ölçülmüş ve tek satırla
+geri açılabilir durumda. Belgeler uzayıp parça sayısı arttığında (Qwen'in uzun
+bağlamda güçlendiğini `bench_chunking.py` zaten gösterdi) kıyas aynı
+`bench_embed.py` ile tekrarlanabilir.
+
+Arka uç değiştirildiğinde `python ingest.py` yeniden çalıştırılmalıdır: vektör
+uzayı ve boyutu (384 ↔ 1024) değişir. Unutulursa `db.search()` bunu yakalar ve
+sessizce saçma sonuç döndürmek yerine ne yapılacağını söyleyen bir hata verir.
 
 **Asıl bulgu ise başka bir yerde:** her iki model de en iyi sonucu parçalama
 *yokken* veriyor (MRR 0.73 → 0.84). Bu belgeler zaten kısa (ortalama 718
@@ -249,6 +284,31 @@ eklemeli olduğu için model "bulunmuyor / bulunmamaktadır / bulunmaz" diyebili
 tam kelime araması bu doğru cevapları **yanlış** sayıyordu. Bu bir yazım hatası
 değil, tam bir stemmer yerine kullanılan hafif bir kök eşleşmesidir (`eval.py`).
 
+### Uç durumlar
+
+Doğruluk ölçümünün yanına ayrı bir **dayanıklılık** bölümü eklendi: sistem
+beklenmedik girdide ne yapıyor? `eval.py` beş uç durumu ayrı raporlar (5/5 geçiyor):
+
+| Girdi | Beklenen davranış |
+|---|---|
+| `""` (boş) | Retrieval ve üretim **hiç çalışmamalı**; yönlendirme mesajı dönmeli |
+| `"   "` (yalnız boşluk) | Aynı yol — `strip()` sonrası boş sayılmalı |
+| `"Bana otelden bahset."` | Çok genel soruya bağlamdaki gerçeklere dayanan cevap |
+| `"havuz"` | Tam cümle olmasa da doğru konuya gitmeli |
+| `"Bugün hava nasıl olacak?"` | Bilgi tabanı dışı: uydurmamalı, "bilgim yok" demeli |
+
+Bu sayı bilerek **ana yüzdelere karıştırılmadı**: ana set "doğru cevabı biliyor
+mu?", bu bölüm "beklenmedik girdide güvenli mi?" sorusunu ölçüyor. Beşi de kolay
+geçtiği için aynı tabloya konsaydı headline doğruluğu suni biçimde şişerdi.
+
+Boş sorgunun kapıda durdurulması kozmetik bir kontrol değil: boş metin de
+embed'lenebiliyor, `db.search()` yine de en benzer 3 parçayı döndürüyor (skorlar
+anlamsız) ve model bu rastgele bağlamla **bir şeyler yazıyordu**. Artık
+`rag.answer()` boş girdide retrieval'a hiç gitmiyor, kaynak listesi boş dönüyor —
+hem doğru davranış hem de bedava (GPU'ya hiç gidilmiyor). Aynı sebeple
+`assistant.py`'de boş Enter artık oturumu kapatmıyor; kazara basılan bir tuş
+GPU'da yüklü modeli düşürmesin diye çıkış yalnızca `q`/`çıkış` ile.
+
 ### Güvenli başarısızlık
 
 Kalan hatalar bu projede kasıtlı olarak **güvenli** tarafta bırakıldı: sistem
@@ -295,12 +355,11 @@ sızıntı ortadan kalktı.
 
 ## Sonraki adımlar
 
-- **Retrieval'ı da Foundry Local'a taşımak.** Parçalar büyüdüğü için ölçüm artık
-  `qwen3-embedding-0.6b` lehine (MRR 0.854 / 0.840); üstelik sistem uçtan uca tek
-  yerel çalışma zamanına iner. Bedeli `EMBED_DIM` değişikliği ve yeniden ingest.
 - **`eval.py`'da soru başına birden çok kabul edilebilir kaynak** tanımlamak —
   yukarıdaki casino örneğindeki yanlış ISKA'yı ortadan kaldırır.
-- **Uç durum testleri:** boş girdi ve "bana otelden bahset" gibi çok genel
-  sorular şu an değerlendirme setinde yok.
+- **Foundry embedding'i daha büyük bir bilgi tabanında yeniden ölçmek.** Bugünkü
+  9 parçalık korpusta e5-small önde çıktı, ama `bench_chunking.py` Qwen'in parça
+  sayısı arttıkça güçlendiğini gösteriyor. Arka uç zaten kurulu: tek satır
+  değiştirip `bench_embed.py`'yi çalıştırmak yeterli.
 - **Yeniden-sıralama (reranker)** ve basit bir web arayüzü (aynı `rag.answer()`
   üzerine) — ikisi de doğal sonraki adımlar.

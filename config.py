@@ -12,26 +12,67 @@ from pathlib import Path
 PROJECT_DIR = Path(__file__).resolve().parent
 
 # --- Embedding (retrieval) modeli ---
-# Embedding'i Python'da, sentence-transformers ile yapiyoruz; chat/uretim ise
-# Foundry Local'da kalir.
-# NEDEN: proje basladiginda (2026-07 basi) Foundry Local katalogunda embedding
-# modeli YOKTU. 2026-07-31'de tekrar bakildiginda katalogda artik VAR:
-#   qwen3-embedding-0.6b (task=embeddings, 495 MB) ve qwen3-embedding-8b;
-#   SDK tarafinda model.get_embedding_client() ile kullanilabiliyor.
-# Yani bu satirdaki tercih artik bir zorunluluk degil, bir SECIM: mevcut kurulum
-# olculmus ve calisiyor. Foundry embedding'e gecmek acik bir iyilestirme yolu
-# (bkz. README > Sonraki adimlar) ama EMBED_DIM ve yeniden ingest gerektirir.
-# Embedding modeli gecmisi:
+# IKI arka uc destekleniyor; asagidaki tek satirla secilir:
+#
+#   "st"      -> multilingual-e5-small, sentence-transformers (VARSAYILAN)
+#   "foundry" -> qwen3-embedding-0.6b, Foundry Local SDK
+#
+# NEDEN "st" VARSAYILAN — OLCULDU (bench_embed.py, uretim ayarlari, 9 parca /
+# 16 soru). Retrieval deterministiktir, yani bu sayilar tur tur oynamaz:
+#
+#                        e5-small(384)   qwen3-emb(1024)
+#   kanit ilk 3'te ***    15/16 (%94)     14/16 (%88)     <- KARAR SATIRI
+#   dogru dosya ilk 3te   14/16 (%88)     13/16 (%81)
+#   kanit ilk 1'de        12/16 (%75)     13/16 (%81)
+#   MRR                        0.840           0.854
+#   16 soruyu embedleme      0.08 sn        11.75 sn
+#
+# TOP_K=3 oldugu icin "ilk 3'te mi" karar satiridir: modelin gercekten GORDUGU
+# bilgi budur. qwen ilk-1 ve MRR'de bir tik onde ama bu ustunluk ilk 3'un
+# icinde kaliyor -> cevaba yansimiyor. Buna karsilik "Ucaktan indim, otele
+# nasil ulasabilirim?" sorusunda dogru parcayi 2. siradan 5.'ye dusuruyor:
+# ilk-3'un DISINA cikiyor ve uctan uca eval'de o soru iskaya donusuyor.
+# Ustelik sorgu basina ~0,73 sn ekliyor (cevap suresi ~2,5 sn iken %30 fazladan
+# gecikme), 20x daha buyuk ve GPU/VRAM ile yarisiyor.
+#
+# Yani plan (s.7) qwen3-embedding-0.6b'yi oneriyor olsa da, bu proje icin
+# dogru secim olculen sonuca gore e5-small. Foundry yolu SILINMEDI: calisir,
+# olculmus ve tek satirla acilabilir halde duruyor (ayni eval ile tekrar
+# kiyaslanabilsin diye).
+#
+# ARKA UCU DEGISTIRINCE "python ingest.py" TEKRAR CALISTIRILMALIDIR: vektor
+# boyutu (384 <-> 1024) ve vektor uzayi degisir, eski veritabani gecersiz olur.
+# db.search() bunu yakalar ve acik bir hata mesaji verir.
+#
+# Embedding modeli gecmisi (hepsi olculdu):
 #   1) all-MiniLM-L6-v2 (Ingilizce-merkezli) -> Turkce'de zayif retrieval
 #   2) paraphrase-multilingual-MiniLM-L12-v2 -> daha iyi ama dolayli sorularda iskaliyordu
-#   3) multilingual-e5-small -> retrieval icin ozel egitilmis, dolayli/parafraz
-#      sorularda belirgin daha iyi. Yine 384 boyut (sema degismedi).
-# DIKKAT: e5 modelleri metne ON-EK ister -> sorgu icin "query: ", belge parcasi
-# icin "passage: ". Bu on-ekler embed_texts() icinde otomatik eklenir.
-EMBED_MODEL = "intfloat/multilingual-e5-small"
-EMBED_DIM = 384  # e5-small'in urettigi vektor boyutu
-EMBED_QUERY_PREFIX = "query: "      # sorulari kodlarken bu on-ek eklenir
-EMBED_PASSAGE_PREFIX = "passage: "  # belge parcalarini kodlarken bu on-ek eklenir
+#   3) multilingual-e5-small -> retrieval icin ozel egitilmis, 384 boyut  <- SECILEN
+#   4) qwen3-embedding-0.6b (Foundry Local) -> 1024 boyut, olculdu, kazanamadi
+EMBED_BACKEND = "st"   # "st" | "foundry"
+
+# -- Arka uc: Foundry Local --
+# 495 MB'lik generic-cpu varyanti; sohbet modeli (qwen3-4b) GPU'da oldugu icin
+# embedding'in CPU'da kalmasi VRAM acisindan da isimize geliyor.
+FOUNDRY_EMBED_MODEL = "qwen3-embedding-0.6b"
+FOUNDRY_EMBED_DIM = 1024
+# Qwen3-Embedding SORGULAR icin gorev tanimli bir on-ek onerir; belgeler HAM
+# verilir. Olcumde ham sorgu 11/16, instruct'li sorgu 13/16 isabet vermisti.
+FOUNDRY_QUERY_INSTRUCT = (
+    "Instruct: Given a Turkish question about a hotel, retrieve the passage that answers it\n"
+    "Query: "
+)
+
+# -- Arka uc: sentence-transformers --
+# DIKKAT: e5 modelleri metne ON-EK ister -> sorgu "query: ", parca "passage: ".
+ST_EMBED_MODEL = "intfloat/multilingual-e5-small"
+ST_EMBED_DIM = 384
+ST_QUERY_PREFIX = "query: "
+ST_PASSAGE_PREFIX = "passage: "
+
+# -- Secilen arka ucun turetilmis degerleri (kodun geri kalani bunlari okur) --
+EMBED_MODEL = FOUNDRY_EMBED_MODEL if EMBED_BACKEND == "foundry" else ST_EMBED_MODEL
+EMBED_DIM = FOUNDRY_EMBED_DIM if EMBED_BACKEND == "foundry" else ST_EMBED_DIM
 
 # --- Chat / uretim (generation) modeli — Foundry Local uzerinde calisir ---
 # Donanim: RTX 3060 Laptop (6 GB VRAM). qwen3-4b (~2.63 GB) VRAM'e rahat sigar,

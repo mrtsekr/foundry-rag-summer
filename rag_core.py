@@ -3,8 +3,12 @@ Hafta 2 · Adim 2 — Retrieval'in matematigi: embedding + kosinus benzerligi
 Bu modul, projenin geri kalaninin kullanacagi yeniden-kullanilabilir
 yardimci fonksiyonlari icerir:
 
-  - get_embedder()      : embedding modelini bir kez yukleyip onbelleklar
-  - embed_texts(...)    : metin listesini vektor dizisine cevirir
+  - embed_texts(...)    : metin listesini vektor dizisine cevirir. HANGI modelle
+                          yapilacagini config.EMBED_BACKEND belirler:
+                            "foundry" -> qwen3-embedding-0.6b (Foundry Local)
+                            "st"      -> multilingual-e5-small (sentence-transformers)
+  - get_embedder()        : sentence-transformers modelini onbellekler
+  - get_embedding_client(): Foundry embedding istemcisini onbellekler
   - cosine_similarity() : iki vektorun ne kadar benzedigini [-1, 1] arasi
                           bir skorla verir (1 = ayni yon = cok benzer)
 
@@ -22,31 +26,80 @@ import config
 
 @lru_cache(maxsize=1)
 def get_embedder() -> SentenceTransformer:
-    """Embedding modelini yukler. lru_cache sayesinde model program boyunca
-    yalnizca BIR KEZ yuklenir; sonraki cagrilar ayni nesneyi geri verir."""
+    """sentence-transformers modelini yukler. lru_cache sayesinde model program
+    boyunca yalnizca BIR KEZ yuklenir; sonraki cagrilar ayni nesneyi geri verir."""
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    return SentenceTransformer(config.EMBED_MODEL, device=device)
+    return SentenceTransformer(config.ST_EMBED_MODEL, device=device)
 
 
-def embed_texts(texts: list[str], kind: str = "passage", normalize: bool = True) -> np.ndarray:
-    """Metin listesini (n adet) -> (n, EMBED_DIM) boyutlu float32 vektor dizisine
-    cevirir.
+@lru_cache(maxsize=1)
+def get_embedding_client():
+    """Foundry Local embedding istemcisini dondurur (model bir kez yuklenir).
 
-    kind: "passage" (belge parcasi) ya da "query" (kullanici sorusu). e5 modeli
-    bu ikisini farkli kodlar; dogru on-ek (config.EMBED_*_PREFIX) otomatik eklenir.
-    Ayni metni yanlis on-ekle kodlamak retrieval kalitesini dusurur.
-
-    normalize=True ise her vektor birim uzunluga (norm=1) getirilir; boylece
-    kosinus benzerligi basit bir nokta carpimina indirgenir.
+    Sohbet modeli GPU'da oldugu icin embedding modelini CPU'da birakiyoruz
+    (6 GB VRAM'in ~4.5 GB'ini qwen3-4b kullaniyor).
     """
-    prefix = config.EMBED_QUERY_PREFIX if kind == "query" else config.EMBED_PASSAGE_PREFIX
-    embedder = get_embedder()
-    vecs = embedder.encode(
+    import foundry  # gec import: "st" arka ucunda Foundry'ye hic dokunulmaz
+    model = foundry.load_model(config.FOUNDRY_EMBED_MODEL, gpu=False)
+    return model.get_embedding_client()
+
+
+def _normalize_rows(M: np.ndarray) -> np.ndarray:
+    """Satirlari birim uzunluga getirir; boylece kosinus = nokta carpimi olur."""
+    n = np.linalg.norm(M, axis=1, keepdims=True)
+    n[n == 0] = 1.0
+    return M / n
+
+
+def _embed_foundry(texts: list[str], kind: str, normalize: bool) -> np.ndarray:
+    """Foundry Local (qwen3-embedding-0.6b) ile vektorlestirir.
+
+    Qwen3-Embedding SORGUYA gorev tanimli bir on-ek ister, BELGEYI ham alir —
+    e5'in query:/passage: ikilisinden farkli, asimetrik bir sema.
+    """
+    if kind == "query":
+        texts = [config.FOUNDRY_QUERY_INSTRUCT + t for t in texts]
+
+    istemci = get_embedding_client()
+    cikti = []
+    for i in range(0, len(texts), 16):  # parti parti: tek istekte cok metin sismesin
+        yanit = istemci.generate_embeddings(texts[i:i + 16])
+        cikti.extend(d.embedding for d in yanit.data)
+
+    vecs = np.asarray(cikti, dtype=np.float32)
+    return _normalize_rows(vecs) if normalize else vecs
+
+
+def _embed_st(texts: list[str], kind: str, normalize: bool) -> np.ndarray:
+    """sentence-transformers (multilingual-e5-small) ile vektorlestirir."""
+    prefix = config.ST_QUERY_PREFIX if kind == "query" else config.ST_PASSAGE_PREFIX
+    vecs = get_embedder().encode(
         [prefix + t for t in texts],
         normalize_embeddings=normalize,
         convert_to_numpy=True,
     )
     return vecs.astype(np.float32)
+
+
+def embed_texts(texts: list[str], kind: str = "passage", normalize: bool = True) -> np.ndarray:
+    """Metin listesini (n adet) -> (n, EMBED_DIM) boyutlu float32 vektor dizisine
+    cevirir. Hangi modelin kullanilacagini config.EMBED_BACKEND belirler.
+
+    kind: "passage" (belge parcasi) ya da "query" (kullanici sorusu). Iki arka uc
+    de bu ayrimi kullanir ama FARKLI sekilde:
+      - st      : "query: " / "passage: " on-ekleri (simetrik)
+      - foundry : sorguya Instruct/Query on-eki, belgeye HIC on-ek yok (asimetrik)
+    Ayni metni yanlis kind ile kodlamak retrieval kalitesini dusurur.
+
+    normalize=True ise her vektor birim uzunluga (norm=1) getirilir; boylece
+    kosinus benzerligi basit bir nokta carpimina indirgenir.
+    """
+    if not texts:
+        return np.zeros((0, config.EMBED_DIM), dtype=np.float32)
+
+    if config.EMBED_BACKEND == "foundry":
+        return _embed_foundry(texts, kind, normalize)
+    return _embed_st(texts, kind, normalize)
 
 
 def cosine_similarity(a: np.ndarray, b: np.ndarray) -> float:

@@ -15,7 +15,7 @@ load_chat() modeli bir kez yukler (ilk cagri ~10-15 sn + ilk sefer EP/indirme).
 import re
 
 import config
-from foundry_local_sdk import Configuration, FoundryLocalManager
+import foundry
 
 # Uretim ayarlari (RAG icin)
 MAX_TOKENS = 300      # RAG cevaplari kisa; olasi runaway'i erken keser
@@ -30,43 +30,18 @@ _chat = None  # yuklenen sohbet istemcisi (tekil)
 _model = None
 
 
-def _pick_gpu_variant(model):
-    """CUDA GPU varyantini bul; yoksa herhangi bir GPU varyanti; o da yoksa None."""
-    cuda = [v for v in model.variants if "cuda-gpu" in v.id.lower()]
-    if cuda:
-        return cuda[0]
-    gpu = [v for v in model.variants
-           if getattr(getattr(v.info, "runtime", None), "device_type", None) == "GPU"]
-    return gpu[0] if gpu else None
-
-
 def load_chat():
     """qwen3-4b'yi GPU'da yukler ve ayarlanmis sohbet istemcisini dondurur.
-    Ikinci cagrida ayni istemciyi verir (yeniden yuklemez)."""
+    Ikinci cagrida ayni istemciyi verir (yeniden yuklemez).
+
+    Foundry baglantisi/EP kaydi/GPU varyant secimi foundry.py'ye tasindi:
+    embedding arka ucu da Foundry olabildigi icin manager tekili paylasilmali.
+    """
     global _chat, _model
     if _chat is not None:
         return _chat
 
-    cfg = Configuration(app_name="foundry_rag_summer")
-    FoundryLocalManager.initialize(cfg)
-    manager = FoundryLocalManager.instance
-
-    # EP'leri bu process'e kaydet (GPU varyantlari ancak bundan sonra gorunur).
-    manager.download_and_register_eps()
-
-    model = manager.catalog.get_model(config.CHAT_MODEL)
-    gpu_v = _pick_gpu_variant(model)
-    if gpu_v is not None:
-        model.select_variant(gpu_v)
-    else:
-        print("UYARI: GPU varyanti bulunamadi, CPU'da (yavas) calisabilir.")
-
-    if not model.is_cached:
-        print(f"{config.CHAT_MODEL} indiriliyor (ilk sefer)...")
-        model.download(lambda p: print(f"\r  {p:.0f}%", end="", flush=True))
-        print()
-
-    model.load()
+    model = foundry.load_model(config.CHAT_MODEL, gpu=True)
 
     chat = model.get_chat_client()
     chat.settings.max_tokens = MAX_TOKENS

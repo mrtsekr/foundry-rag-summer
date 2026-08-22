@@ -135,6 +135,21 @@ def search(conn, query: str, top_k: int = config.TOP_K) -> list[tuple[float, int
         "SELECT c.id, c.text, c.embedding, d.source "
         "FROM chunks c JOIN documents d ON c.doc_id = d.id;"
     ).fetchall()
+
+    # Arka uc degistiyse (or. e5-small 384 -> qwen3-embedding 1024) veritabanindaki
+    # vektorler artik baska bir uzaya aittir. Bunu burada acikca yakalamazsak numpy
+    # anlasilmaz bir boyut hatasi verir ya da (ayni boyutta farkli model olsaydi)
+    # sessizce SACMA sonuclar dondururdu.
+    if rows:
+        kayitli_boyut = len(rows[0][2]) // 4  # float32 -> 4 bayt
+        if kayitli_boyut != soru_vec.shape[0]:
+            raise RuntimeError(
+                f"Bilgi tabanindaki vektorler {kayitli_boyut} boyutlu, ama aktif embedding "
+                f"modeli ({config.EMBED_BACKEND} / {config.EMBED_MODEL}) {soru_vec.shape[0]} "
+                "boyut uretiyor.\nconfig.EMBED_BACKEND degistiyse bilgi tabani yeniden "
+                "kurulmalidir:  python ingest.py"
+            )
+
     puanli = [
         (cosine_similarity(soru_vec, blob_to_vector(blob)), cid, text, source)
         for (cid, text, blob, source) in rows
