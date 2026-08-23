@@ -49,7 +49,7 @@ def main() -> None:
         raise SystemExit("Bilgi tabani yok. Once calistir:  python ingest.py")
 
     print("Deniz Yildizi Resort & Casino — Asistan")
-    print("Model yukleniyor (ilk sefer ~10-15 sn)...")
+    print("Model yukleniyor (ilk sefer biraz surebilir)...")
     load_chat()  # modeli onceden yukle ki ilk soru hizli cevaplansin
 
     conn = db.connect()

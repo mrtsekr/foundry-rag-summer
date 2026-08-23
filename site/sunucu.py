@@ -214,7 +214,7 @@ def main() -> int:
     def _yukle():
         """Model ve embedding'i arka planda hazirlar, sonra _HAZIR'i acar."""
         try:
-            print("Model yukleniyor (ilk sefer ~10-15 sn)...")
+            print("Model yukleniyor (ilk sefer biraz surebilir)...")
             load_chat()
         except Exception as e:
             _YUKLEME_HATASI[0] = ("Model yuklenemedi: %s. Foundry Local kurulu "

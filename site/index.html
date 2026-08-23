@@ -307,6 +307,45 @@
 
 
 
+
+  /* Cip artik soruyu ANINDA sormuyor: o belgenin ornek sorularini aciyor.
+     Once tiklar tiklamaz soruyordu ve gezinen kullanici farkinda olmadan
+     gecmisi sisiriyordu. Ayrica bu sayede 21 sorunun belgelere nasil
+     dagildigi da goruluyor — "asistan neyi biliyor" sorusunun cevabi. */
+  .cip[aria-expanded="true"] {
+    color: var(--accent); border-color: var(--accent); background: var(--accent-dim);
+  }
+  .cip-say {
+    margin-left: .38rem; font-family: "JetBrains Mono", monospace;
+    font-size: .68rem; opacity: .7; font-variant-numeric: tabular-nums;
+  }
+  /* Bilgi tabani disi sorular: ayri bir cip. Projenin en cok onemsedigi
+     davranis bu, listenin icinde kaybolmasin. */
+  .cip-yok { border-style: dashed; }
+
+  .cip-panel { display: none; }
+  html.uyg .cip-panel:not([hidden]) {
+    display: flex; flex-direction: column; align-items: flex-start; gap: .1rem;
+    margin: -.35rem 0 .75rem; padding: .55rem .7rem .6rem;
+    border: 1px solid var(--line); border-radius: 10px; background: var(--surface);
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    html.uyg .cip-panel:not([hidden]) { animation: cipAc .18s ease both; }
+  }
+  @keyframes cipAc { from { opacity: 0; transform: translateY(-4px); } }
+  .cip-dosya {
+    font-size: .68rem; color: var(--muted); margin-bottom: .3rem;
+    letter-spacing: .02em;
+  }
+  .cip-soru {
+    width: 100%; text-align: left; font-family: inherit; font-size: .86rem;
+    color: var(--ink); background: transparent; border: 0; border-radius: 4px;
+    padding: .32rem .4rem; cursor: pointer;
+  }
+  .cip-soru:hover { background: var(--accent-dim); color: var(--accent); }
+  .cip-soru:active { background: var(--accent-dim); }
+  .cip-soru:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
   /* ---------- Deniz yildizi girisi ----------
      Projenin adi Deniz Yildizi; giris ekranindaki tek gorsel de o.
      Fotograf DEGIL, burada matematikle uretilmis bes kollu bir sekil:
@@ -1541,7 +1580,7 @@
           <span>python assistant.py</span>
         </div>
 <pre tabindex="0"><span class="d">Deniz Yildizi Resort &amp; Casino — Asistan
-Model yukleniyor (ilk sefer ~10-15 sn)...</span>
+Model yukleniyor (ilk sefer biraz surebilir)...</span>
 Hazir. Bilgi tabani: <span class="hl">9 belge, 9 parca</span>.
 
 <span class="p">Soru&gt;</span> Odaya evcil hayvan getirebilir miyim?
@@ -1621,21 +1660,32 @@ belirtmeniz önerilir.
         <div class="acilis-cizgi" aria-hidden="true"></div>
         <p class="acilis-alt" id="acilisAlt">
           <span class="mono">qwen3-4b</span> bu bilgisayarın GPU'suna yükleniyor.
-          İlk açılışta 10-15 saniye sürer, sonraki açılışlar daha hızlıdır.
+          İlk açılış biraz sürebilir; sonraki açılışlar daha hızlı.
         </p>
       </div>
 
       <div class="cipler" role="group" aria-label="Konu başlıkları — bilgi tabanındaki belgeler">
-          <button class="cip" type="button" data-soru="Kahvaltı kaçta başlar ve biter?" title="yeme_icme.txt">Yeme-içme</button>
-          <button class="cip" type="button" data-soru="Ocean Suite odasında jakuzi var mı?" title="odalar.txt">Odalar</button>
-          <button class="cip" type="button" data-soru="Otelde toplam kaç havuz var?" title="havuz_plaj.txt">Havuz & plaj</button>
-          <button class="cip" type="button" data-soru="Spa merkezinde Türk hamamı var mı?" title="spa.md">Spa</button>
-          <button class="cip" type="button" data-soru="Çocuğumla yapabileceğim aktiviteler neler?" title="aktiviteler.txt">Aktiviteler</button>
-          <button class="cip" type="button" data-soru="Ercan Havalimanı otele ne kadar uzakta?" title="ulasim.txt">Ulaşım</button>
-          <button class="cip" type="button" data-soru="Odaya evcil hayvan getirebilir miyim?" title="politikalar.txt">Politikalar</button>
-          <button class="cip" type="button" data-soru="Balayı ayrıcalığından yararlanmak için ne gerekiyor?" title="balayi.pdf">Balayı</button>
-          <button class="cip" type="button" data-soru="Otelde toplam kaç oda var?" title="otel_genel.txt">Otel geneli</button>
+          <button class="cip" type="button" id="cip0" aria-expanded="false" aria-controls="cp0" title="yeme_icme.txt">Yeme-içme<span class="cip-say">5</span></button>
+          <button class="cip" type="button" id="cip1" aria-expanded="false" aria-controls="cp1" title="odalar.txt">Odalar<span class="cip-say">2</span></button>
+          <button class="cip" type="button" id="cip2" aria-expanded="false" aria-controls="cp2" title="havuz_plaj.txt">Havuz &amp; plaj<span class="cip-say">2</span></button>
+          <button class="cip" type="button" id="cip3" aria-expanded="false" aria-controls="cp3" title="spa.md">Spa<span class="cip-say">1</span></button>
+          <button class="cip" type="button" id="cip4" aria-expanded="false" aria-controls="cp4" title="aktiviteler.txt">Aktiviteler<span class="cip-say">2</span></button>
+          <button class="cip" type="button" id="cip5" aria-expanded="false" aria-controls="cp5" title="ulasim.txt">Ulaşım<span class="cip-say">2</span></button>
+          <button class="cip" type="button" id="cip6" aria-expanded="false" aria-controls="cp6" title="politikalar.txt">Politikalar<span class="cip-say">2</span></button>
+          <button class="cip" type="button" id="cip7" aria-expanded="false" aria-controls="cp7" title="balayi.pdf">Balayı<span class="cip-say">1</span></button>
+          <button class="cip" type="button" id="cip8" aria-expanded="false" aria-controls="cp8" title="otel_genel.txt">Otel geneli<span class="cip-say">3</span></button>
+          <button class="cip cip-yok" type="button" id="cip9" aria-expanded="false" aria-controls="cp9">Bilgi tabanı dışı<span class="cip-say">3</span></button>
       </div>
+        <div class="cip-panel" id="cp0" role="region" aria-labelledby="cip0" hidden><span class="cip-dosya mono">yeme_icme.txt</span><button class="cip-soru" type="button" data-soru="Kahvaltı kaçta başlar ve biter?">Kahvaltı kaçta başlar ve biter?</button><button class="cip-soru" type="button" data-soru="Kahvaltıyı en geç kaçta yiyebilirim?">Kahvaltıyı en geç kaçta yiyebilirim?</button><button class="cip-soru" type="button" data-soru="Akşam à la carte İtalyan restoranı var mı?">Akşam à la carte İtalyan restoranı var mı?</button><button class="cip-soru" type="button" data-soru="Akşam et yemek istiyorum, uygun bir restoran var mı?">Akşam et yemek istiyorum, uygun bir restoran var mı?</button><button class="cip-soru" type="button" data-soru="Denize karşı bir şeyler içebileceğim sahil barı var mı?">Denize karşı bir şeyler içebileceğim sahil barı var mı?</button></div>
+        <div class="cip-panel" id="cp1" role="region" aria-labelledby="cip1" hidden><span class="cip-dosya mono">odalar.txt</span><button class="cip-soru" type="button" data-soru="Ocean Suite odasında jakuzi var mı?">Ocean Suite odasında jakuzi var mı?</button><button class="cip-soru" type="button" data-soru="Odalarda kasa var mı?">Odalarda kasa var mı?</button></div>
+        <div class="cip-panel" id="cp2" role="region" aria-labelledby="cip2" hidden><span class="cip-dosya mono">havuz_plaj.txt</span><button class="cip-soru" type="button" data-soru="Otelde aquapark var mı?">Otelde aquapark var mı?</button><button class="cip-soru" type="button" data-soru="Otel toplam kaç havuzu var?">Otel toplam kaç havuzu var?</button></div>
+        <div class="cip-panel" id="cp3" role="region" aria-labelledby="cip3" hidden><span class="cip-dosya mono">spa.md</span><button class="cip-soru" type="button" data-soru="Spa merkezinde Türk hamamı var mı?">Spa merkezinde Türk hamamı var mı?</button></div>
+        <div class="cip-panel" id="cp4" role="region" aria-labelledby="cip4" hidden><span class="cip-dosya mono">aktiviteler.txt</span><button class="cip-soru" type="button" data-soru="Otelde casino var mı?">Otelde casino var mı?</button><button class="cip-soru" type="button" data-soru="Çocuğumla yapabileceğim aktiviteler neler?">Çocuğumla yapabileceğim aktiviteler neler?</button></div>
+        <div class="cip-panel" id="cp5" role="region" aria-labelledby="cip5" hidden><span class="cip-dosya mono">ulasim.txt</span><button class="cip-soru" type="button" data-soru="Ercan Havalimanı otele ne kadar uzakta?">Ercan Havalimanı otele ne kadar uzakta?</button><button class="cip-soru" type="button" data-soru="Uçaktan indim, otele nasıl ulaşabilirim?">Uçaktan indim, otele nasıl ulaşabilirim?</button></div>
+        <div class="cip-panel" id="cp6" role="region" aria-labelledby="cip6" hidden><span class="cip-dosya mono">politikalar.txt</span><button class="cip-soru" type="button" data-soru="Odaya evcil hayvan getirebilir miyim?">Odaya evcil hayvan getirebilir miyim?</button><button class="cip-soru" type="button" data-soru="Balayı ayrıcalığından yararlanmak için ne gerekiyor?">Balayı ayrıcalığından yararlanmak için ne gerekiyor?</button></div>
+        <div class="cip-panel" id="cp7" role="region" aria-labelledby="cip7" hidden><span class="cip-dosya mono">balayi.pdf</span><button class="cip-soru" type="button" data-soru="Balayı ayrıcalığından yararlanmak için ne gerekiyor?">Balayı ayrıcalığından yararlanmak için ne gerekiyor?</button></div>
+        <div class="cip-panel" id="cp8" role="region" aria-labelledby="cip8" hidden><span class="cip-dosya mono">otel_genel.txt</span><button class="cip-soru" type="button" data-soru="Otelde toplam kaç oda var?">Otelde toplam kaç oda var?</button><button class="cip-soru" type="button" data-soru="Otelde casino var mı?">Otelde casino var mı?</button><button class="cip-soru" type="button" data-soru="Otel hangi yıl hizmete açıldı?">Otel hangi yıl hizmete açıldı?</button></div>
+        <div class="cip-panel" id="cp9" role="region" aria-labelledby="cip9" hidden><span class="cip-dosya">bu üç soru bilgi tabanında YOK — asistanın uydurmadığını burada görüyorsunuz</span><button class="cip-soru" type="button" data-soru="Otelde bowling salonu var mı?">Otelde bowling salonu var mı?</button><button class="cip-soru" type="button" data-soru="Bugün hava nasıl olacak?">Bugün hava nasıl olacak?</button><button class="cip-soru" type="button" data-soru="Otelde helikopter pisti var mı?">Otelde helikopter pisti var mı?</button></div>
 
       <div class="dny">
         <div class="dny-ara">
@@ -1647,7 +1697,7 @@ belirtmeniz önerilir.
           <button class="dny-temizle" type="button" id="dnyTemizle" hidden>temizle</button>
         </div>
         <ul class="dny-liste" id="dnyListe" role="listbox" aria-label="Kayıtlı sorular" hidden></ul>
-        <p class="dny-sayac" id="dnySayac">21 kayıtlı soru</p>
+        <p class="dny-sayac" id="dnySayac"></p>
       </div>
 
       <div class="dny-sonuc" id="dnySonuc" aria-live="polite"></div>
@@ -2155,7 +2205,9 @@ belirtmeniz önerilir.
         li.addEventListener("mousedown", function (e) { e.preventDefault(); calistir(k); });
         liste.appendChild(li);
       });
-      sayac.textContent = gosterilen.length
+      sayac.textContent = !sorgu
+        ? ""
+        : gosterilen.length
         ? gosterilen.length + " / " + kayitlar.length + (canli ? " \u00f6rnek soru" : " kay\u0131tl\u0131 soru")
         : (canli ? "\u00f6rneklerde e\u015fle\u015fme yok \u2014 yine de sorabilirsin"
                  : "e\u015fle\u015fen kay\u0131t yok");
@@ -2401,17 +2453,46 @@ belirtmeniz önerilir.
       sec(kayitlar[0]);   // sitede acilista bicimi goster
     }
 
-    /* Konu cipleri: tiklayinca o belgeye giden gercek soruyu yazip calistirir.
-       Kayitli modda kayittan gosterir, canli modda gercekten sorar. */
-    Array.prototype.forEach.call(document.querySelectorAll(".cip"), function (d) {
+    /* Konu cipleri: tiklayinca SORMAZ, o belgenin ornek sorularini acar.
+       Soru ancak listeden secilince calisir. Boylece gezinmek gecmisi
+       sismiyor ve 21 sorunun belgelere dagilimi da gorunur oluyor. */
+    var cipler = [].slice.call(document.querySelectorAll(".cip"));
+
+    function panel(c) { return document.getElementById(c.getAttribute("aria-controls")); }
+
+    function paneliKapat(c) {
+      c.setAttribute("aria-expanded", "false");
+      var pn = panel(c);
+      if (pn) pn.hidden = true;
+    }
+
+    cipler.forEach(function (c) {
+      c.addEventListener("click", function () {
+        var acikti = c.getAttribute("aria-expanded") === "true";
+        cipler.forEach(paneliKapat);          // ayni anda tek panel
+        if (acikti) return;
+        c.setAttribute("aria-expanded", "true");
+        var pn = panel(c);
+        if (pn) pn.hidden = false;
+      });
+    });
+
+    /* Panelden secilen soru: asil sorma islemi burada. Panel kapaniyor ki
+       cevap hemen gorunsun. */
+    Array.prototype.forEach.call(document.querySelectorAll(".cip-soru"), function (d) {
       d.addEventListener("click", function () {
         var soru = d.getAttribute("data-soru");
+        cipler.forEach(paneliKapat);
         giris.value = soru;
         temizle.hidden = false;
         if (canli) { canliSor(soru); return; }
         var t = suz(soru);
         if (t.length) sec(t[0]); else bosGoster();
       });
+    });
+
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape") cipler.forEach(paneliKapat);
     });
 
     /* Model hazir olana kadar /saglik'i yoklar. Sure bilinmiyor, o yuzden

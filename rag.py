@@ -97,7 +97,7 @@ def _demo():
     ]
 
     conn = db.connect()
-    print("Model yukleniyor (ilk cevap oncesi ~10-15 sn)...\n")
+    print("Model yukleniyor (ilk cevap biraz surebilir)...\n")
     for soru in sorular:
         print(f"SORU: {soru}")
         cevap, _ = answer(soru, conn=conn, goster=True)
