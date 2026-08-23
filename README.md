@@ -98,9 +98,23 @@ Komut satırı dışında iki kullanım biçimi var. İkisi de aynı `rag.answer
 üzerinde çalışır, ayrı bir kod yolu yoktur.
 
 **Masaüstü.** Depo kökündeki `Deniz Yildizi Asistani.bat` dosyasına çift tıkla.
-Sunucuyu başlatır, model yüklenene kadar bekler ve sayfayı Edge'in uygulama
-kipinde açar: adres çubuğu ve sekme yok, kendi penceresi ve görev çubuğu girişi
-var. Edge yoksa Chrome, o da yoksa varsayılan tarayıcı denenir.
+Sunucuyu başlatır ve sayfayı Edge'in uygulama kipinde açar: adres çubuğu ve
+sekme yok, kendi penceresi ve görev çubuğu girişi var. Edge yoksa Chrome, o da
+yoksa varsayılan tarayıcı denenir.
+
+Bu dosya **depo klasörünün içinde** durmalıdır; tek başına indirilip
+çalıştırılamaz, yanındaki `site/sunucu.py`'yi arar. Açılmadan önce üç ön koşulu
+denetler ve eksik olanı hemen söyler — beklemeye bırakmaz:
+
+| Eksik olan | Ne yapmalı |
+|-----------|-----------|
+| `site\sunucu.py` yok | Depoyu klonla, `.bat`'ı depo klasöründen çalıştır |
+| Python yok | Python 3.12 kur, `## Kurulum` adımlarını uygula |
+| `rag_store.db` yok | `python ingest.py` çalıştır |
+
+Model yüklenmesini beklemez: port açılır açılmaz pencereyi açar, bekleme
+sayfanın kendi açılış ekranında geçer. Sunucu 20 saniyede dinlemeye başlamazsa
+en olası sebep Foundry Local servisidir (`foundry service status`).
 
 Arayüz tanıtım sayfasının kendisidir ama `/uygulama` yolundan açılır ve o kipte
 tanıtım bölümleri gizlenir; geriye soru kutusu, cevap ve kaynaklar kalır. Ayrı
@@ -127,6 +141,20 @@ telefon boyutunda bir çerçevenin içinde açar (`site/telefon.html`). Çerçev
 tamamen CSS, içerideki sayfa taklit değil: aynı sunucu, aynı `/uygulama`, aynı
 model. Yalnızca görünüm alanı 393×852 gibi bir telefon ölçüsüne sabitleniyor,
 böylece mobil yerleşim kayıtta düzgün görünüyor.
+
+**Sunucunun verdiği adresler.** `python site/sunucu.py` çalışırken:
+
+| Adres | Ne gösterir |
+|-------|-------------|
+| `/` | Tanıtım sayfasının tamamı — ölçümler, kararlar, canlı deneme |
+| `/uygulama` | Yalnız asistan: tanıtım bölümleri gizli, soru kutusu ve cevap kalır |
+| `/telefon` | `/uygulama`'yı telefon çerçevesi içinde gösterir (sunum/kayıt için) |
+| `/saglik` | JSON: sunucu ayakta mı, model yüklendi mi, hangi modeller |
+| `/sor` | POST, JSON `{"soru": "..."}` — cevap, kaynaklar ve süre döner |
+
+Sayfa `/saglik`'i yoklar; sunucu ayaktaysa **canlı** kipe geçip gerçekten soru
+sorar, değilse kayıtlı 21 çalıştırmayı gösterir. Aynı dosya iki kipte de
+çalıştığı için GitHub Pages'te de açılır, orada kayıtlı kipte kalır.
 
 ---
 
@@ -167,7 +195,8 @@ Model ezberinden değil, getirilen belgeden cevaplar. Belgede yoksa uydurmaz,
 | `docs/` | Bilgi tabanı: 9 belge, Türkçe otel içeriği |
 | `bench/` | Ölçüm araçları: `tune_topk.py`, `bench_embed.py`, `bench_chunking.py` |
 | `tani/` | Tanı scriptleri: `compare_chat.py`, `diag_variants.py`, `diag_eps.py` |
-| `site/` | Tanıtım sayfası: `index.html`, `kayitlar.json`, `kayit_uret.py`, `sunucu.py` |
+| `site/` | Tanıtım sayfası: `index.html`, `kayitlar.json`, `kayit_uret.py`, `sunucu.py`, `telefon.html` |
+| `Deniz Yildizi Asistani.bat` | Masaüstü başlatıcı: ön koşulları denetler, sunucuyu açar, uygulamayı Edge'in uygulama kipinde başlatır |
 
 `tani/` altındakiler tek seferlik teşhis scriptleri ama duruyorlar, çünkü
 belgelenen VRAM ve süre sayılarını bunlar üretti.
