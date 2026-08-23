@@ -790,6 +790,36 @@
   .uyg-ad { font-family: Archivo, sans-serif; font-weight: 700; letter-spacing: -.01em; }
   .uyg-alt { font-family: "JetBrains Mono", monospace; font-size: .72rem; color: var(--muted); }
 
+
+  /* ---------- Basma geri bildirimi (apple-design §1) ----------
+     "Respond on pointer-down, not on release." Bes etkilesimli kontrolun
+     hicbirinde :active hali yoktu; tiklama ancak birakinca bir sey yapiyordu
+     ve arada gecen sure arayuzu olu hissettiriyor.
+     Hareket azaltmada olcek DEGISMIYOR; geri bildirim yine var ama tasima
+     yerine yalnizca yuzey/kenarlik uzerinden veriliyor (skill §14: "gentler,
+     non-vestibular equivalent" — geri bildirimi kaldirmak degil). */
+  .btn:active,
+  .btn-ghost:active,
+  .kopyala:active,
+  .dny-temizle:active { background: var(--accent-dim); border-color: var(--accent); }
+  .dny-liste li:active { background: var(--accent-dim); }
+  @media (prefers-reduced-motion: no-preference) {
+    .btn:active,
+    .btn-ghost:active,
+    .kopyala:active,
+    .dny-temizle:active { transform: scale(.97); transition: transform 100ms ease-out; }
+  }
+
+  /* ---------- prefers-reduced-transparency (apple-design §14) ----------
+     Saydamlik rahatsizlik ya da okuma guclugu yaratiyorsa: bulaniklik kalkar,
+     yuzey doluya cikar. Gezinme cubugu ve hero pili tek saydam yuzeylerimiz. */
+  @media (prefers-reduced-transparency: reduce) {
+    .site-nav { background: var(--ground); backdrop-filter: none; -webkit-backdrop-filter: none; }
+    .hero-pil { backdrop-filter: none; -webkit-backdrop-filter: none; background: var(--surface); }
+    .dalga { display: none; }
+  }
+
+
   /* ---------- Terminal + açıklama rayı ---------- */
   .term-grid { display: grid; gap: 1.1rem; grid-template-columns: 1fr; align-items: start; }
   @media (min-width: 860px) { .term-grid { grid-template-columns: minmax(0,1.9fr) minmax(0,1fr); } }
@@ -890,6 +920,19 @@
       from { opacity: 0; transform: translateY(20px); }
       to   { opacity: 1; transform: none; }
     }
+  }
+
+  /* ---------- prefers-contrast: more (apple-design §14) ----------
+     Neredeyse dolu zeminler ve tanimli kenarlik. Tent'ler (accent-dim,
+     signal-dim) zaten kontrasti dusuruyordu; yuksek kontrast isteyen
+     kullanicida yuzeye cikariliyor ve her kutu kenarlik kazaniyor. */
+  @media (prefers-contrast: more) {
+    .verdict, .btn, .kopyala.ok, .dny-rozet, .dny-ipucu {
+      background: var(--surface); border: 1px solid currentColor;
+    }
+    .card, .snippet, .stat, .dny-liste, .tbl-wrap { border-color: var(--ink); }
+    .dalga { display: none; }
+    .hero-doku { opacity: .35; }
   }
 </style>
 
