@@ -12,6 +12,10 @@ bir gelistirme sunucusu, internete acilmasi dusunulmedi.
     python site/sunucu.py           -> http://127.0.0.1:8000  (yalniz bu makine)
     python site/sunucu.py --ag      -> ayni Wi-Fi'daki telefondan da erisilir
 
+Sunucu once DINLEMEYE baslar, modeli arka planda yukler. Tarayici aninda
+acilabilir; /saglik "hazir" alaniyla durumu bildirir ve sayfa beklemeyi kendi
+temasinda gosterir. Siyah konsol beklemesi yok.
+
 Sayfa ayni koken uzerinden servis edildigi icin CORS'a hic girilmiyor.
 Sunucu kapaliyken index.html gomulu kayit havuzuna geri duser; yani bu
 dosya olmadan da sayfa calisir.
@@ -72,6 +76,11 @@ MANIFEST = {
 # denemenin zaten anlami olmadigi icin.
 _kilit = threading.Lock()
 
+# Model arka planda yukleniyor. Sunucu ANINDA dinlemeye basliyor ki tarayici
+# hemen acilabilsin; sayfa /saglik'i yoklayip kendi temasinda bekliyor.
+_HAZIR = threading.Event()
+_YUKLEME_HATASI = [None]
+
 
 def _json(handler: BaseHTTPRequestHandler, kod: int, govde: dict) -> None:
     ham = json.dumps(govde, ensure_ascii=False).encode("utf-8")
@@ -118,6 +127,8 @@ class Islem(BaseHTTPRequestHandler):
             # gorulurse arayuz canli moda geciyor.
             _json(self, 200, {
                 "canli": True,
+                "hazir": _HAZIR.is_set(),
+                "hata": _YUKLEME_HATASI[0],
                 "chat_modeli": config.CHAT_MODEL,
                 "embedding": config.EMBED_MODEL,
                 "top_k": config.TOP_K,
@@ -156,6 +167,12 @@ class Islem(BaseHTTPRequestHandler):
             })
             return
 
+        if not _HAZIR.is_set():
+            # Sayfa normalde bunu beklemez ama kullanici hazir olmadan
+            # Enter'a basabilir; sessizce bekletmek yerine acikca soyluyoruz.
+            _json(self, 503, {"hata": _YUKLEME_HATASI[0] or "Model henuz yukleniyor."})
+            return
+
         with _kilit:
             basla = time.perf_counter()
             try:
@@ -191,27 +208,35 @@ def main() -> int:
         print("index.html bulunamadi: %s" % INDEX)
         return 1
 
-    print("Model yukleniyor (ilk sefer ~10-15 sn)...")
-    try:
-        load_chat()
-    except Exception as e:
-        print("Model yuklenemedi: %s" % e)
-        print("Foundry Local kurulu ve calisir durumda mi?")
-        return 1
+    def _yukle():
+        """Model ve embedding'i arka planda hazirlar, sonra _HAZIR'i acar."""
+        try:
+            print("Model yukleniyor (ilk sefer ~10-15 sn)...")
+            load_chat()
+        except Exception as e:
+            _YUKLEME_HATASI[0] = ("Model yuklenemedi: %s. Foundry Local kurulu "
+                                  "ve calisir durumda mi?" % e)
+            print(_YUKLEME_HATASI[0])
+            return
 
-    # Embedding modeli sentence-transformers tarafinda TEMBEL yukleniyor: ilk
-    # arama onu da indirip kurdugu icin ilk canli soru 11,7 sn suruyordu
-    # (sonrakiler 2,5 sn). Bir kez bosa arama yapip o bedeli baslangica
-    # tasiyoruz; boylece sayfadan gelen ILK soru da normal hizda cevaplaniyor.
-    print("Embedding isindiriliyor...")
-    try:
-        conn = db.connect()
-        db.search(conn, "isinma", 1)
-        conn.close()
-    except Exception as e:
-        print("  (isindirma atlandi: %s)" % e)
+        # Embedding sentence-transformers tarafinda TEMBEL yukleniyor: ilk arama
+        # onu da kurdugu icin ilk canli soru 11,7 sn suruyordu (sonrakiler 2,5).
+        # Bir kez bosa arama yapip o bedeli buraya tasiyoruz.
+        print("Embedding isindiriliyor...")
+        try:
+            conn = db.connect()
+            db.search(conn, "isinma", 1)
+            conn.close()
+        except Exception as e:
+            print("  (isindirma atlandi: %s)" % e)
 
+        _HAZIR.set()
+        print("Model hazir.")
+
+    # Once soketi ac: tarayici aninda baglanabilsin, bekleme sayfanin kendi
+    # temasinda gecsin. Yukleme arka planda suruyor.
     sunucu = ThreadingHTTPServer((ADRES, PORT), Islem)
+    threading.Thread(target=_yukle, daemon=True).start()
     print()
     print("  Canli mod hazir:  http://127.0.0.1:%d" % PORT)
     if AG_KIPI:

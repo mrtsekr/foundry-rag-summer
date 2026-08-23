@@ -820,6 +820,72 @@
   }
 
 
+
+  /* ---------- Acilis beklemesi (uygulama kipi) ----------
+     Sunucu artik once dinliyor, modeli arka planda yukluyor. O yuzden pencere
+     aninda aciliyor ve bekleme siyah bir konsolda degil BURADA geciyor.
+     apple-design §1: geri bildirim etkilesim boyunca surmeli. */
+  .acilis { display: none; }
+  html.uyg.yukleniyor .acilis {
+    display: flex; flex-direction: column; gap: .55rem;
+    padding: 1.1rem 0;
+  }
+  html.uyg.yukleniyor .dny,
+  html.uyg.yukleniyor .dny-sonuc { display: none; }
+  .acilis-satir {
+    display: flex; align-items: center; gap: .6rem;
+    font-family: "JetBrains Mono", monospace; font-size: .88rem; color: var(--ink);
+  }
+  .acilis-alt { font-size: .78rem; color: var(--muted); max-width: 52ch; line-height: 1.5; }
+  /* Ilerleme cizgisi: sure bilinmiyor, o yuzden yuzde degil GIDIP GELEN bir
+     serit. Bir sey oldugunu soyler, yalan bir tahmin vermez. */
+  .acilis-cizgi {
+    height: 3px; border-radius: 999px; background: var(--line);
+    overflow: hidden; position: relative; max-width: 22rem;
+  }
+  .acilis-cizgi::after {
+    content: ""; position: absolute; inset: 0 auto 0 0; width: 38%;
+    border-radius: 999px; background: var(--accent);
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .acilis-cizgi::after { animation: acilisKay 1.4s ease-in-out infinite; }
+    @keyframes acilisKay {
+      0%   { transform: translateX(-100%); }
+      100% { transform: translateX(263%); }
+    }
+  }
+  /* Hareket istenmiyorsa serit sabit durur: hala "bir sey yukleniyor" der. */
+  .acilis-hata { color: var(--signal); font-size: .86rem; max-width: 56ch; line-height: 1.5; }
+
+
+  /* ---------- Konu cipleri ----------
+     Hizli baslangic: kullanici bos bir kutuya bakip soru dusunmek zorunda
+     kalmasin. Cipler bilgi tabanindaki DOKUZ BELGEDEN turuyor, elle
+     uydurulmus konu listesi degil; her biri o belgeye giden gercek bir soru
+     yaziyor. Yani ayni zamanda "bu asistan neyi biliyor" sorusunun cevabi.
+     Yalnizca uygulama kipinde gorunur; sitede zaten ornek soru listesi var. */
+  .cipler { display: none; }
+  html.uyg .cipler {
+    display: flex; flex-wrap: wrap; gap: .4rem;
+    margin-bottom: .75rem;
+  }
+  html.uyg.yukleniyor .cipler { display: none; }
+  .cip {
+    font-family: Archivo, sans-serif; font-size: .76rem; font-weight: 600;
+    color: var(--muted); background: var(--surface);
+    border: 1px solid var(--line); border-radius: 999px;
+    padding: .3rem .7rem; cursor: pointer;
+    transition: color .18s ease, border-color .18s ease, background .18s ease;
+  }
+  .cip:hover { color: var(--accent); border-color: var(--accent); }
+  /* apple-design §1: geri bildirim basildigi ANDA */
+  .cip:active { background: var(--accent-dim); border-color: var(--accent); }
+  @media (prefers-reduced-motion: no-preference) {
+    .cip:active { transform: scale(.97); transition: transform 100ms ease-out; }
+  }
+  @media (prefers-reduced-motion: reduce) { .cip { transition: none; } }
+  .cip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
   /* ---------- Terminal + açıklama rayı ---------- */
   .term-grid { display: grid; gap: 1.1rem; grid-template-columns: 1fr; align-items: start; }
   @media (min-width: 860px) { .term-grid { grid-template-columns: minmax(0,1.9fr) minmax(0,1fr); } }
@@ -1406,6 +1472,29 @@ belirtmeniz önerilir.
           <span id="dnyModNot">Bu sayfada <em>canlı model çalışmıyor</em>: kayıtta olmayan
           bir soruyu uyduramaz, uydurmaz.</span>
         </p>
+      </div>
+
+      <div class="acilis" role="status" aria-live="polite">
+        <div class="acilis-satir">
+          <span id="acilisMetin">Model yükleniyor…</span>
+        </div>
+        <div class="acilis-cizgi" aria-hidden="true"></div>
+        <p class="acilis-alt" id="acilisAlt">
+          <span class="mono">qwen3-4b</span> bu bilgisayarın GPU'suna yükleniyor.
+          İlk açılışta 10-15 saniye sürer, sonraki açılışlar daha hızlıdır.
+        </p>
+      </div>
+
+      <div class="cipler" role="group" aria-label="Konu başlıkları — bilgi tabanındaki belgeler">
+          <button class="cip" type="button" data-soru="Kahvaltı kaçta başlar ve biter?" title="yeme_icme.txt">Yeme-içme</button>
+          <button class="cip" type="button" data-soru="Ocean Suite odasında jakuzi var mı?" title="odalar.txt">Odalar</button>
+          <button class="cip" type="button" data-soru="Otelde toplam kaç havuz var?" title="havuz_plaj.txt">Havuz & plaj</button>
+          <button class="cip" type="button" data-soru="Spa merkezinde Türk hamamı var mı?" title="spa.md">Spa</button>
+          <button class="cip" type="button" data-soru="Çocuğumla yapabileceğim aktiviteler neler?" title="aktiviteler.txt">Aktiviteler</button>
+          <button class="cip" type="button" data-soru="Ercan Havalimanı otele ne kadar uzakta?" title="ulasim.txt">Ulaşım</button>
+          <button class="cip" type="button" data-soru="Odaya evcil hayvan getirebilir miyim?" title="politikalar.txt">Politikalar</button>
+          <button class="cip" type="button" data-soru="Balayı ayrıcalığından yararlanmak için ne gerekiyor?" title="balayi.pdf">Balayı</button>
+          <button class="cip" type="button" data-soru="Otelde toplam kaç oda var?" title="otel_genel.txt">Otel geneli</button>
       </div>
 
       <div class="dny">
@@ -2059,6 +2148,47 @@ belirtmeniz önerilir.
       sec(kayitlar[0]);   // sitede acilista bicimi goster
     }
 
+    /* Konu cipleri: tiklayinca o belgeye giden gercek soruyu yazip calistirir.
+       Kayitli modda kayittan gosterir, canli modda gercekten sorar. */
+    Array.prototype.forEach.call(document.querySelectorAll(".cip"), function (d) {
+      d.addEventListener("click", function () {
+        var soru = d.getAttribute("data-soru");
+        giris.value = soru;
+        temizle.hidden = false;
+        if (canli) { canliSor(soru); return; }
+        var t = suz(soru);
+        if (t.length) sec(t[0]); else bosGoster();
+      });
+    });
+
+    /* Model hazir olana kadar /saglik'i yoklar. Sure bilinmiyor, o yuzden
+       yuzde gostermiyoruz; yalnizca ne bekledigimizi yaziyoruz. Yukleme
+       hatasi gelirse sessizce beklemeye devam etmek yerine soyluyoruz. */
+    function beklemeyiSurdur() {
+      var metin = document.getElementById("acilisMetin");
+      var alt = document.getElementById("acilisAlt");
+      var basla = Date.now();
+      (function tik() {
+        fetch("/saglik").then(function (y) { return y.json(); }).then(function (d) {
+          if (d && d.hata) {
+            document.querySelector(".acilis-cizgi").style.display = "none";
+            metin.textContent = "Başlatılamadı";
+            alt.className = "acilis-hata";
+            alt.textContent = d.hata;
+            return;
+          }
+          if (d && d.hazir) {
+            document.documentElement.classList.remove("yukleniyor");
+            try { giris.focus(); } catch (e) {}
+            return;
+          }
+          var gecen = Math.round((Date.now() - basla) / 1000);
+          if (gecen >= 5) metin.textContent = "Model yükleniyor… " + gecen + " sn";
+          window.setTimeout(tik, 700);
+        }).catch(function () { window.setTimeout(tik, 1000); });
+      })();
+    }
+
     /* /saglik yoklamasi. Ayni koken oldugu icin Artifact'te de guvenli:
        orada 404 doner, yoklama duser, kayitli mod aynen kalir. */
     (function yokla() {
@@ -2075,6 +2205,13 @@ belirtmeniz önerilir.
           if (zaman) window.clearTimeout(zaman);
           if (!d || d.canli !== true) return;
           canli = true;
+
+          /* Sunucu ayakta ama model daha yukleniyor olabilir: pencere aninda
+             aciliyor. Hazir olana kadar bekleme ekranini gosterip yokluyoruz. */
+          if (uygulamaKipi && d.hazir !== true) {
+            document.documentElement.classList.add("yukleniyor");
+            beklemeyiSurdur();
+          }
           if (rozet) { rozet.textContent = "canl\u0131 \u2014 bu bilgisayarda \u00e7al\u0131\u015f\u0131yor"; rozet.className = "dny-rozet canli"; }
           if (modNot) {
             modNot.innerHTML = "Yerel sunucu ayakta, yani <em>canl\u0131 moddas\u0131n</em>: istedi\u011fin soruyu " +

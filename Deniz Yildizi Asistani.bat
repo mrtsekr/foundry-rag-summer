@@ -78,22 +78,21 @@ if "!DURUM!"=="1" (
   start "Deniz Yildizi - sunucu" /min "%PY%" "%~dp0site\sunucu.py"
 )
 
-rem ---------- 3) BEKLE ----------
-echo   Model yukleniyor. Ilk acilis 10-15 saniye surebilir.
+rem ---------- 3) PORT ACILSIN (model DEGIL) ----------
+rem Sunucu once dinlemeye baslar, modeli arka planda yukler. Bu yuzden
+rem burada modeli beklemiyoruz; port acilir acilmaz pencereyi aciyoruz ve
+rem beklemeyi sayfa kendi temasinda gosteriyor. Siyah konsolda bekleme yok.
 set /a SAYAC=0
 :bekle
 call :saglik
 if "!DURUM!"=="1" goto hazir
 set /a SAYAC+=1
-if !SAYAC! GEQ 60 goto zaman_asimi
-rem Her 5 saniyede bir isaret: pencere donmus gibi gorunmesin.
-set /a KALAN=SAYAC %% 5
-if !KALAN!==0 echo     ... !SAYAC! saniye
+if !SAYAC! GEQ 20 goto zaman_asimi
 timeout /t 1 /nobreak >nul
 goto bekle
 
 :hazir
-echo   Hazir. Uygulama aciliyor...
+echo   Uygulama aciliyor...
 
 set "EDGE=C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"
 if not exist "%EDGE%" set "EDGE=C:\Program Files\Microsoft\Edge\Application\msedge.exe"
@@ -112,7 +111,7 @@ exit /b 0
 
 :zaman_asimi
 echo.
-echo   Sunucu 60 saniyede hazir olmadi.
+echo   Sunucu 20 saniyede dinlemeye baslamadi.
 echo.
 echo   En olasi sebep: Foundry Local kurulu degil ya da servisi calismiyor.
 echo   Kontrol:  foundry service status
