@@ -302,6 +302,66 @@
     .hero-pil { backdrop-filter: blur(8px) saturate(130%); }
   }
 
+
+  /* ---------- Hero manzarasi ----------
+     Karikaturize bir tatil koyu cizimi. FOTOGRAF DEGIL: gercek bir oteli
+     temsil etmedigi icin anonimlik kuralina takilmiyor. Satir ici SVG, dis
+     dosya yok. Renkler token'dan.
+
+     Kaydirdikca UC KATMAN FARKLI HIZDA soner; derinlik hissi bundan geliyor.
+     Hareketi kullanici suruyor, kendiliginden donen bir animasyon degil —
+     apple-design §14'un uyardigi sey o. Hareket istenmiyorsa hic kipirdamaz.
+
+     Opaklikler bilerek cok dusuk: metnin arkasinda duruyor ve okumayi
+     bozmamasi gerekiyor. Kontrast olcumleri metin/zemin ciftleri uzerinden
+     yapildi, manzara onlarin arkasinda ve zemini degistirmiyor. */
+  /* Kendi bandi: hero ile olcum seridi arasinda bir ufuk. Metnin arkasinda
+     olmadigi icin opaklik yukseltilebildi ve cizim gercekten okunuyor. */
+  .manzara {
+    position: relative; width: 100%; height: 230px;
+    margin: 0 0 clamp(-2rem, -4vw, -3rem);
+    pointer-events: none; overflow: hidden;
+    opacity: var(--mz-op, 1);
+  }
+  .mz-svg { width: 100%; height: 100%; display: block; }
+
+  .mz-uzak   { fill: var(--line); opacity: .85; }
+  .mz-gunes  { fill: var(--accent); opacity: .3; }
+  .mz-bina   { fill: none; stroke: var(--accent); stroke-width: 1.8; opacity: .8; }
+  .mz-kat    { fill: var(--accent); opacity: .4; }
+  .mz-govde  { fill: none; stroke: var(--accent); stroke-width: 2.4; stroke-linecap: round; opacity: .75; }
+  .mz-yaprak { fill: none; stroke: var(--accent); stroke-width: 2; stroke-linecap: round; opacity: .68; }
+  .mz-havuz  { fill: var(--accent); opacity: .22; }
+  .mz-sezlong{ fill: var(--accent); opacity: .5; }
+  .mz-kiyi   { fill: none; stroke: var(--line); stroke-width: 1.8; opacity: 1; }
+
+  /* Katmanlarin sonme hizi: uzak yavas, yakin hizli. --mz degeri 0 (tepe) ile
+     1 (manzara tamamen gecildi) arasinda; JS yaziyor. */
+  .mz-k1 { opacity: calc(1 - var(--mz, 0) * .75); }
+  .mz-k2 { opacity: calc(1 - var(--mz, 0) * 1.05); }
+  .mz-k3 { opacity: calc(1 - var(--mz, 0) * 1.35); }
+  @media (prefers-reduced-motion: no-preference) {
+    .mz-k2 { transform: translateY(calc(var(--mz, 0) * 14px)); }
+    .mz-k3 { transform: translateY(calc(var(--mz, 0) * 30px)); }
+  }
+  /* Hareket istenmiyorsa katmanlar sabit ve esit soluk durur. */
+  @media (prefers-reduced-motion: reduce) {
+    .mz-k1, .mz-k2, .mz-k3 { opacity: .6; transform: none; }
+  }
+  /* Metnin ustune binmesin diye alt kenara dogru zemine karisir. */
+  .manzara::after {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background:
+      linear-gradient(to bottom, var(--ground) 0%, transparent 30%,
+                      transparent 74%, var(--ground) 100%),
+      linear-gradient(to right, var(--ground) 0%, transparent 12%,
+                      transparent 88%, var(--ground) 100%);
+  }
+  html.uyg .manzara { display: none; }
+  @media (prefers-reduced-transparency: reduce) { .manzara { display: none; } }
+  @media (prefers-contrast: more) { .manzara { display: none; } }
+  @media (max-width: 620px) { .manzara { height: 150px; } }
+
   /* ---------- Instrument card ---------- */
   .card {
     background: var(--surface);
@@ -1036,7 +1096,7 @@
   <!-- ============ HERO ============ -->
   <section class="hero">
     <div class="hero-doku" aria-hidden="true"><span></span></div>
-    <div class="hero-grid">
+          <div class="hero-grid">
       <div class="stack">
         <span class="label hero-pil giris" style="--gec: 0ms">Tamamen çevrimdışı · Türkçe · tek dizüstü bilgisayar</span>
         <h1 class="giris" style="--gec: 120ms">Bilmediğini <span class="kicker">bilen</span> bir otel asistanı.</h1>
@@ -1072,6 +1132,8 @@
       </div>
     </div>
   </section>
+
+  <div class="manzara" aria-hidden="true"><svg class="mz-svg" viewBox="0 0 1200 420" preserveAspectRatio="xMaxYMax slice" aria-hidden="true" focusable="false"><g class="mz-k mz-k1"><path class="mz-uzak" d="M0 300 q 90 -54 190 -30 q 70 17 120 -14 q 66 -41 150 -6 q 54 22 104 4 L 1200 268 L 1200 420 L 0 420 Z"/><circle class="mz-gunes" cx="905" cy="120" r="34"/></g><g class="mz-k mz-k2"><rect class="mz-bina" x="700" y="196" width="210" height="128" rx="4"/><rect class="mz-bina" x="922" y="150" width="104" height="174" rx="4"/><path class="mz-govde" d="M 974 150 L 974 128"/><circle class="mz-sezlong" cx="974" cy="125" r="3.5"/><rect class="mz-kat" x="714" y="220" width="84" height="4" rx="2"/><rect class="mz-kat" x="812" y="220" width="84" height="4" rx="2"/><rect class="mz-kat" x="714" y="248" width="84" height="4" rx="2"/><rect class="mz-kat" x="812" y="248" width="84" height="4" rx="2"/><rect class="mz-kat" x="714" y="276" width="84" height="4" rx="2"/><rect class="mz-kat" x="812" y="276" width="84" height="4" rx="2"/><rect class="mz-kat" x="714" y="304" width="84" height="4" rx="2"/><rect class="mz-kat" x="812" y="304" width="84" height="4" rx="2"/><rect class="mz-kat" x="933" y="178" width="38" height="4" rx="2"/><rect class="mz-kat" x="979" y="178" width="38" height="4" rx="2"/><rect class="mz-kat" x="933" y="206" width="38" height="4" rx="2"/><rect class="mz-kat" x="979" y="206" width="38" height="4" rx="2"/><rect class="mz-kat" x="933" y="234" width="38" height="4" rx="2"/><rect class="mz-kat" x="979" y="234" width="38" height="4" rx="2"/><rect class="mz-kat" x="933" y="262" width="38" height="4" rx="2"/><rect class="mz-kat" x="979" y="262" width="38" height="4" rx="2"/><rect class="mz-kat" x="933" y="290" width="38" height="4" rx="2"/><rect class="mz-kat" x="979" y="290" width="38" height="4" rx="2"/><rect class="mz-bina" x="1038" y="240" width="86" height="84" rx="4"/><rect class="mz-kat" x="1048" y="262" width="66" height="4" rx="2"/><rect class="mz-kat" x="1048" y="288" width="66" height="4" rx="2"/></g><g class="mz-k mz-k3"><path class="mz-govde" d="M 120.0 372.0 q 4.6 -46.0 9.2 -89.7"/><path class="mz-yaprak" d="M 129.2 282.3 q -29.1 -16.6 -52.9 -18.4"/><path class="mz-yaprak" d="M 129.2 282.3 q -19.0 -35.2 -34.5 -39.1"/><path class="mz-yaprak" d="M 129.2 282.3 q 1.3 -41.4 2.3 -46.0"/><path class="mz-yaprak" d="M 129.2 282.3 q 21.5 -31.0 39.1 -34.5"/><path class="mz-yaprak" d="M 129.2 282.3 q 29.1 -12.4 52.9 -13.8"/><path class="mz-govde" d="M 196.0 380.0 q 1.6 -36.0 3.2 -70.2"/><path class="mz-yaprak" d="M 199.2 309.8 q -22.8 -13.0 -41.4 -14.4"/><path class="mz-yaprak" d="M 199.2 309.8 q -14.8 -27.5 -27.0 -30.6"/><path class="mz-yaprak" d="M 199.2 309.8 q 1.0 -32.4 1.8 -36.0"/><path class="mz-yaprak" d="M 199.2 309.8 q 16.8 -24.3 30.6 -27.0"/><path class="mz-yaprak" d="M 199.2 309.8 q 22.8 -9.7 41.4 -10.8"/><path class="mz-govde" d="M 1132.0 366.0 q 6.0 -40.0 12.0 -78.0"/><path class="mz-yaprak" d="M 1144.0 288.0 q -25.3 -14.4 -46.0 -16.0"/><path class="mz-yaprak" d="M 1144.0 288.0 q -16.5 -30.6 -30.0 -34.0"/><path class="mz-yaprak" d="M 1144.0 288.0 q 1.1 -36.0 2.0 -40.0"/><path class="mz-yaprak" d="M 1144.0 288.0 q 18.7 -27.0 34.0 -30.0"/><path class="mz-yaprak" d="M 1144.0 288.0 q 25.3 -10.8 46.0 -12.0"/><rect class="mz-havuz" x="300" y="330" width="330" height="52" rx="26"/><path class="mz-sezlong" d="M 326 328 l 26 0 l -4 -13 l -18 0 Z"/><path class="mz-sezlong" d="M 372 328 l 26 0 l -4 -13 l -18 0 Z"/><path class="mz-sezlong" d="M 418 328 l 26 0 l -4 -13 l -18 0 Z"/><path class="mz-kiyi" d="M0 400 q 150 -14 300 0 t 300 0 t 300 0 t 300 0"/><path class="mz-kiyi" d="M0 414 q 170 -12 340 0 t 340 0 t 340 0"/></g></svg></div>
 
   <!-- ============ ÖLÇÜMLER ============ -->
   <section id="olcum">
@@ -1828,6 +1890,31 @@ belirtmeniz önerilir.
         sirada = false;
       });
     });
+  })();
+
+  /* ---- Hero manzarasinin kaydirinca sonmesi ----
+     --mz: 0 (sayfanin tepesi) -> 1 (manzara gecildi). Uc katman bu degeri
+     farkli carpanlarla kullaniyor, derinlik oradan geliyor. Hareket
+     kullanicinin parmagina bagli; kendiliginden donen bir sey yok. */
+  (function () {
+    var mz = document.querySelector(".manzara");
+    if (!mz) return;
+    var sirada = false;
+    function guncelle() {
+      // Band ekranin ustune dogru cikip gozden kaybolurken soner.
+      var r = mz.getBoundingClientRect();
+      var oran = Math.min(1, Math.max(0, 1 - (r.bottom / (window.innerHeight * 0.9))));
+      mz.style.setProperty("--mz", oran.toFixed(3));
+      // Tamamen sonduyse boyamayi tumden birak.
+      mz.style.setProperty("--mz-op", oran >= 1 ? "0" : "1");
+      sirada = false;
+    }
+    window.addEventListener("scroll", function () {
+      if (sirada) return;
+      sirada = true;
+      requestAnimationFrame(guncelle);
+    }, { passive: true });
+    guncelle();
   })();
 
   /* ---- Bolumlerin kaydirinca belirmesi ----
