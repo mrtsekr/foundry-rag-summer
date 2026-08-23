@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Telefon önizlemesi — Deniz Yıldızı Asistanı</title>
+<!-- Simge index.html ile ayni deniz yildizi: dis dosya yok. -->
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20600%20600'%3E%3Cpath%20fill='%230B6971'%20d='M%20230.6%20204.5%20C%20243.0%20141.8%20279.0%2061.5%20300.0%2050.0%20C%20321.0%2061.5%20357.0%20141.8%20369.4%20204.5%20C%20432.9%20196.9%20520.3%20206.3%20537.8%20222.7%20C%20533.3%20246.3%20468.1%20305.3%20412.2%20336.5%20C%20439.1%20394.5%20457.2%20480.6%20446.9%20502.3%20C%20423.2%20505.3%20346.9%20461.5%20300.0%20418.0%20C%20253.1%20461.5%20176.8%20505.3%20153.1%20502.3%20C%20142.8%20480.6%20160.9%20394.5%20187.8%20336.5%20C%20131.9%20305.3%2066.7%20246.3%2062.2%20222.7%20C%2079.7%20206.3%20167.1%20196.9%20230.6%20204.5%20Z'/%3E%3C/svg%3E">
+<!--
+  TELEFON ÖNİZLEMESİ — kayıt/sunum için.
+
+  Gerçek uygulamayı (/uygulama) telefon boyutunda bir çerçevenin içinde
+  gösterir. İçerideki şey taklit değil: aynı sunucu, aynı sayfa, aynı model.
+  Yalnızca görünüm alanı telefon genişliğine sabitleniyor, böylece mobil
+  yerleşim ekran kaydında düzgün görünüyor.
+
+  Bu dosya tanıtım sayfası DEĞİL; site/index.html'in tek dosya kuralı buraya
+  işlemiyor. Yerel sunucu olmadan çalışmaz, çünkü iframe /uygulama'yı ister.
+  Çerçeve tamamen CSS: hiçbir görsel dosyası yok.
+-->
+<style>
+  :root {
+    --zemin: #16181a;
+    --zemin-2: #1e2124;
+    --cerceve: #0b0c0d;
+    --metin: #e8eaec;
+    --sonuk: #9aa2a8;
+    --cizgi: #33383d;
+    --vurgu: #4db6bd;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh;
+    display: flex; flex-direction: column; align-items: center; gap: 1.2rem;
+    padding: 2rem 1rem 3rem;
+    background: var(--zemin); color: var(--metin);
+    font: 14px/1.5 "Segoe UI", system-ui, sans-serif;
+  }
+
+  header { text-align: center; }
+  h1 { margin: 0 0 .3rem; font-size: 1.05rem; font-weight: 600; letter-spacing: .01em; }
+  .alt { margin: 0; color: var(--sonuk); font-size: .82rem; }
+
+  .kumanda { display: flex; flex-wrap: wrap; gap: .4rem; justify-content: center; }
+  .kumanda button {
+    font: inherit; font-size: .8rem;
+    color: var(--sonuk); background: var(--zemin-2);
+    border: 1px solid var(--cizgi); border-radius: 999px;
+    padding: .35rem .8rem; cursor: pointer;
+    transition: color .15s, border-color .15s;
+  }
+  .kumanda button:hover { color: var(--metin); border-color: var(--sonuk); }
+  .kumanda button[aria-pressed="true"] {
+    color: #08292b; background: var(--vurgu); border-color: var(--vurgu); font-weight: 600;
+  }
+  .kumanda button:focus-visible { outline: 2px solid var(--vurgu); outline-offset: 2px; }
+
+  /* ---- Telefon çerçevesi: yalnızca CSS ---- */
+  .telefon {
+    position: relative;
+    padding: 12px;
+    background: var(--cerceve);
+    border-radius: 44px;
+    box-shadow: 0 0 0 2px #2c3033, 0 26px 60px rgba(0, 0, 0, .55);
+  }
+  /* Yan tuşlar — sadece siluet, işlevleri yok. */
+  .telefon::before, .telefon::after {
+    content: ""; position: absolute; right: -3px;
+    width: 3px; background: #2c3033; border-radius: 0 3px 3px 0;
+  }
+  .telefon::before { top: 132px; height: 62px; }
+  .telefon::after  { top: 208px; height: 62px; }
+
+  .ekran {
+    position: relative; overflow: hidden;
+    border-radius: 34px; background: #fff;
+  }
+  .ekran iframe { display: block; width: 100%; height: 100%; border: 0; }
+
+  /* Ada/çentik: tıklamayı engellememeli. */
+  .ada {
+    position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
+    width: 96px; height: 26px; border-radius: 999px;
+    background: #0b0c0d; pointer-events: none; z-index: 2;
+  }
+
+  .not {
+    max-width: 34rem; text-align: center; color: var(--sonuk); font-size: .8rem;
+  }
+  .uyari {
+    display: none; max-width: 30rem; text-align: center;
+    padding: .9rem 1rem; border: 1px solid #7a3b3b; border-radius: 10px;
+    background: #241a1a; color: #f0cfcf; font-size: .85rem;
+  }
+  .uyari code { color: #ffd9d9; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .kumanda button { transition: none; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Telefon önizlemesi</h1>
+  <p class="alt">İçerideki uygulama gerçek: aynı sunucu, aynı model. Yalnızca ekran genişliği telefona sabitlendi.</p>
+</header>
+
+<div class="uyari" id="uyari">
+  Yerel sunucu görünmüyor. Bu sayfa uygulamayı çerçeve içinde gösterebilmek için
+  sunucuya ihtiyaç duyar. Depo klasöründe şunu çalıştırın:
+  <br><code>python site/sunucu.py</code><br>
+  sonra <code>http://127.0.0.1:8000/telefon</code> adresini açın.
+</div>
+
+<div class="kumanda" id="kumanda" role="group" aria-label="Cihaz boyutu"></div>
+
+<div class="telefon">
+  <div class="ada" aria-hidden="true"></div>
+  <div class="ekran" id="ekran">
+    <iframe id="cerceve" title="Deniz Yıldızı Asistanı — telefon görünümü"
+            src="/uygulama" allow="clipboard-write"></iframe>
+  </div>
+</div>
+
+<p class="not" id="olcu"></p>
+
+<script>
+  // Yaygin uc boyut. Degerler CSS pikseli: sayfanin kirilma noktalari
+  // (780px) bunlarin hepsinde mobil yerlesimi veriyor.
+  var CIHAZ = [
+    { ad: "iPhone 15",  g: 393, y: 852 },
+    { ad: "Pixel 8",    g: 412, y: 915 },
+    { ad: "iPhone SE",  g: 375, y: 667 },
+  ];
+
+  var ekran = document.getElementById("ekran");
+  var kumanda = document.getElementById("kumanda");
+  var olcu = document.getElementById("olcu");
+  var cerceve = document.getElementById("cerceve");
+  var secili = 0;
+
+  function uygula(i) {
+    secili = i;
+    var c = CIHAZ[i];
+    ekran.style.width = c.g + "px";
+    ekran.style.height = c.y + "px";
+    olcu.textContent = c.ad + " · " + c.g + " × " + c.y + " CSS pikseli";
+    Array.prototype.forEach.call(kumanda.children, function (d, j) {
+      if (j < CIHAZ.length) d.setAttribute("aria-pressed", j === i ? "true" : "false");
+    });
+  }
+
+  CIHAZ.forEach(function (c, i) {
+    var d = document.createElement("button");
+    d.type = "button";
+    d.textContent = c.ad;
+    d.setAttribute("aria-pressed", "false");
+    d.addEventListener("click", function () { uygula(i); });
+    kumanda.appendChild(d);
+  });
+
+  var yenile = document.createElement("button");
+  yenile.type = "button";
+  yenile.textContent = "yenile";
+  yenile.addEventListener("click", function () {
+    // src'yi yeniden atamak iframe'i bastan yukler.
+    cerceve.src = cerceve.src;
+  });
+  kumanda.appendChild(yenile);
+
+  uygula(0);
+
+  // Sunucu yoksa bos beyaz bir dikdortgen birakmak yerine soyluyoruz.
+  fetch("/saglik").then(function (y) {
+    if (!y.ok) throw new Error("yok");
+  }).catch(function () {
+    document.getElementById("uyari").style.display = "block";
+  });
+</script>
+
+</body>
+</html>

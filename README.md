@@ -121,6 +121,13 @@ ekrana ekle" dersen simgesiyle ve tam ekran açılır.
 ağdaki herkese açar. İnternet yine devrede değil, belgeler makineden çıkmıyor;
 yalnızca soru ve cevap yerel ağda dolaşıyor.
 
+**Telefon görünümünü bilgisayarda göstermek.** Sunum ya da ekran kaydı için
+elinde telefon olmayabilir. `http://127.0.0.1:8000/telefon` adresi uygulamayı
+telefon boyutunda bir çerçevenin içinde açar (`site/telefon.html`). Çerçeve
+tamamen CSS, içerideki sayfa taklit değil: aynı sunucu, aynı `/uygulama`, aynı
+model. Yalnızca görünüm alanı 393×852 gibi bir telefon ölçüsüne sabitleniyor,
+böylece mobil yerleşim kayıtta düzgün görünüyor.
+
 ---
 
 ## Mimari

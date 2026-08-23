@@ -119,6 +119,23 @@ class Islem(BaseHTTPRequestHandler):
             self.wfile.write(ham)
             return
 
+        # /telefon: uygulamayi telefon boyutunda bir cerceve icinde gosterir.
+        # Kayit/sunum icin; icerideki sey taklit degil, ayni /uygulama.
+        if yol in ("/telefon", "/telefon/"):
+            tel = INDEX.parent / "telefon.html"
+            try:
+                ham = tel.read_bytes()
+            except OSError:
+                self.send_error(404, "telefon.html bulunamadi")
+                return
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html; charset=utf-8")
+            self.send_header("Content-Length", str(len(ham)))
+            self.send_header("Cache-Control", "no-store")
+            self.end_headers()
+            self.wfile.write(ham)
+            return
+
         if yol == "/manifest.webmanifest":
             _json(self, 200, MANIFEST)
             return
