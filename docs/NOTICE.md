@@ -25,5 +25,5 @@ Bu belgeler yalnızca eğitim ve gösterim amacıyla bulunuyor. Herhangi bir ote
 ticari bağı yoktur, resmî bir bilgi kaynağı değildir ve hiçbir tesis adına bilgi
 vermez.
 
-Depoyu kendi amacın için kullanacaksan bu klasörü kendi belgelerinle değiştir.
-`python ingest.py` bilgi tabanını yeniden kurar.
+Depo başka bir amaçla kullanılacaksa bu klasör kendi belgeleriyle
+değiştirilmelidir; `python ingest.py` bilgi tabanını yeniden kurar.

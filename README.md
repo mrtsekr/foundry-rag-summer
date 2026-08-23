@@ -11,7 +11,20 @@ retrieval, üretim) hazır bir çerçeveye sarılmadan elle kurmak ve her ayarı
 **Tanıtım sayfası:** <https://mrtsekr.github.io/foundry-rag-summer/>
 Aynı içeriğin görsel hâli: mimari şeması, ölçüm grafikleri ve 21 gerçek
 çalıştırmada arama. Tek HTML dosyası, sunucu istemez. `python site/sunucu.py`
-ile açarsan sayfa canlı moda geçer ve istediğin soruyu gerçekten modele sorarsın.
+ile açıldığında sayfa canlı moda geçer ve sorular gerçekten modele sorulur.
+
+### Sonuçlar
+
+| Ölçüm | Sonuç |
+|---|---|
+| Retrieval isabeti | **%94** (15/16) — çalıştırmalar arası sabit |
+| Cevap doğruluğu | **%84** ortalama (13-16 / 17, dört çalıştırma) |
+| Uç durumlar | **5 / 5** — boş sorgu, tek kelime, konu dışı soru dâhil |
+| Cevap süresi | ortalama **1,33 sn** (medyan 1,14 · 21 gerçek çalıştırma) |
+| Ağ trafiği | **yok** — `HF_HUB_OFFLINE=1` ile doğrulandı |
+
+Ayrıntılı tablolar, reddedilen denemeler ve bu sayıların nasıl elde edildiği
+[Değerlendirme](#değerlendirme) bölümünde.
 
 | | |
 |---|---|
@@ -89,16 +102,17 @@ python bench/bench_embed.py     # embedding arka uçlarını kıyasla (LLM çal�
 python bench/bench_chunking.py  # parçalama × embedding taraması
 ```
 
-Kendi belgelerini eklemek için `docs/` klasörüne `.txt`, `.md` veya `.pdf` koy,
-`python ingest.py` komutunu tekrar çalıştır.
+Bilgi tabanına yeni belge eklemek için `docs/` klasörüne `.txt`, `.md` veya
+`.pdf` konur ve `python ingest.py` yeniden çalıştırılır. Uygulama arayüzünden
+belge eklemek de mümkün; aşağıya bakınız.
 
 ## Masaüstü ve telefon
 
 Komut satırı dışında iki kullanım biçimi var. İkisi de aynı `rag.answer()`
 üzerinde çalışır, ayrı bir kod yolu yoktur.
 
-**Masaüstü.** Depo kökündeki `Deniz Yildizi Asistani.bat` dosyasına çift tıkla.
-Sunucuyu başlatır ve sayfayı Edge'in uygulama kipinde açar: adres çubuğu ve
+**Masaüstü.** Depo kökündeki `Deniz Yildizi Asistani.bat` dosyasına çift
+tıklamak yeterlidir. Sunucuyu başlatır ve sayfayı Edge'in uygulama kipinde açar: adres çubuğu ve
 sekme yok, kendi penceresi ve görev çubuğu girişi var. Edge yoksa Chrome, o da
 yoksa varsayılan tarayıcı denenir.
 
@@ -106,11 +120,11 @@ Bu dosya **depo klasörünün içinde** durmalıdır; tek başına indirilip
 çalıştırılamaz, yanındaki `site/sunucu.py`'yi arar. Açılmadan önce üç ön koşulu
 denetler ve eksik olanı hemen söyler — beklemeye bırakmaz:
 
-| Eksik olan | Ne yapmalı |
-|-----------|-----------|
-| `site\sunucu.py` yok | Depoyu klonla, `.bat`'ı depo klasöründen çalıştır |
-| Python yok | Python 3.12 kur, `## Kurulum` adımlarını uygula |
-| `rag_store.db` yok | `python ingest.py` çalıştır |
+| Eksik olan | Çözüm |
+|-----------|-------|
+| `site\sunucu.py` yok | Depo klonlanmalı; `.bat` depo klasörünün içinden çalıştırılmalı |
+| Python yok | Python 3.12 kurulmalı, `## Kurulum` adımları uygulanmalı |
+| `rag_store.db` yok | `python ingest.py` çalıştırılmalı |
 
 Model yüklenmesini beklemez: port açılır açılmaz pencereyi açar, bekleme
 sayfanın kendi açılış ekranında geçer. Sunucu 20 saniyede dinlemeye başlamazsa
@@ -127,9 +141,9 @@ Telefon desteği, telefonun aynı ağ üzerinden bu bilgisayara bağlanması dem
 python site/sunucu.py --ag
 ```
 
-Sunucu açılışta telefonun yazacağı adresi gösterir
-(`http://<bu-makinenin-ip>:8000/uygulama`). Telefon tarayıcısında açıp "Ana
-ekrana ekle" dersen simgesiyle ve tam ekran açılır.
+Sunucu açılışta telefonun kullanacağı adresi gösterir
+(`http://<bu-makinenin-ip>:8000/uygulama`). Telefon tarayıcısında açılıp "Ana
+ekrana ekle" seçilirse uygulama kendi simgesiyle ve tam ekran çalışır.
 
 `--ag` varsayılan değildir ve olmamalıdır: `0.0.0.0`'a bağlanmak asistanı o
 ağdaki herkese açar. İnternet yine devrede değil, belgeler makineden çıkmıyor;
@@ -301,7 +315,7 @@ olur.
 Proje başlarken Foundry Local tarafında kullanılabilecek bir embedding modeli
 bulunamadı ve retrieval Python tarafında kuruldu. Bunun bir sebebi de arama
 biçimiydi: SDK'da modeller takma adla çekiliyor (`catalog.get_model(alias)`), yani
-takma adını bilmediğin bir model senin için görünmez oluyor. Temmuz sonunda
+takma adı bilinmeyen bir model listede hiç görünmüyor. Temmuz sonunda
 SDK üzerinden yeniden bakıldığında `qwen3-embedding-0.6b` (495 MB) ve
 `qwen3-embedding-8b` erişilebilir çıktı.
 

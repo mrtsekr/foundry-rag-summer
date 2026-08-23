@@ -399,6 +399,8 @@
     border-left: 2px solid var(--line); padding-left: .6rem;
   }
 
+
+
   /* ---------- Deniz yildizi girisi ----------
      Projenin adi Deniz Yildizi; giris ekranindaki tek gorsel de o.
      Fotograf DEGIL, burada matematikle uretilmis bes kollu bir sekil:
@@ -1244,6 +1246,23 @@
     .card, .snippet, .stat, .dny-liste, .tbl-wrap { border-color: var(--ink); }
     .dalga { display: none; }
     .hero-doku { opacity: .35; }
+  }
+  /* ---------- Dokunmatik ekranda hedef buyutme ----------
+     Olculdu: cipler 26px yuksekligindeydi. Uygulama kipinde ana gezinme
+     onlar ve telefonda parmakla vuruluyor; 26px hem Apple HIG'in 44pt hem
+     Material'in 48dp esiginin altinda. Fare ile sorun degil, bu yuzden
+     yalnizca KABA isaretcide (parmak) buyutuyoruz — masaustunde sik yerlesim
+     korunuyor. Yazi boyutu degismiyor, yalnizca dokunulabilir alan. */
+  @media (pointer: coarse) {
+    .cip { padding: .55rem .85rem; }
+    .cip-soru { padding: .6rem .5rem; }
+    .cip-panel .cip-soru + .cip-soru { margin-top: .1rem; }
+    .yukle-dugme { padding: .5rem .9rem; }
+    .yukle-sil { padding: .6rem .5rem; }
+    .dny-temizle, .dny-iptal { padding: .55rem .8rem; }
+    .gecmis-oge { padding: .6rem .5rem; }
+    /* Kaynak satiri: acilir dugme de parmakla vurulacak kadar yuksek olsun. */
+    button.dny-bas { padding: .3rem 0; }
   }
 </style>
 
