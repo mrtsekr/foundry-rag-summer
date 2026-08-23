@@ -34,6 +34,9 @@ import sys
 import threading
 import time
 import socket
+import os
+import tempfile
+from urllib.parse import unquote
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
@@ -41,6 +44,7 @@ SITE_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(SITE_DIR.parent))  # proje kokundeki modulleri gor
 
 import config  # noqa: E402
+import ingest  # noqa: E402
 import db  # noqa: E402
 import rag  # noqa: E402
 from llm import load_chat  # noqa: E402
@@ -76,6 +80,14 @@ MANIFEST = {
 # guvenligine bel baglamamak icin, hem de 6 GB'lik kartta paralel uretim
 # denemenin zaten anlami olmadigi icin.
 _kilit = threading.Lock()
+
+# Veritabanina yazma icin AYRI kilit: yukleme sohbet modelini kullanmiyor
+# (embedding ayri bir model), bu yuzden suren bir cevabi bekletmesin.
+_yazma_kilidi = threading.Lock()
+
+# Yukleme sinirlari. 2 MB duz metinde yaklasik 1100 sayfa eder; bunun
+# uzerini kabul etmek CPU'da embedding'i dakikalara cikarir.
+YUKLEME_SINIRI = 2 * 1024 * 1024
 
 # Model arka planda yukleniyor. Sunucu ANINDA dinlemeye basliyor ki tarayici
 # hemen acilabilsin; sayfa /saglik'i yoklayip kendi temasinda bekliyor.
@@ -151,14 +163,125 @@ class Islem(BaseHTTPRequestHandler):
                 "chat_modeli": config.CHAT_MODEL,
                 "embedding": config.EMBED_MODEL,
                 "top_k": config.TOP_K,
+                "belge": _sayilar()[0],
+                "parca": _sayilar()[1],
+                "yuklenenler": _yuklenen_liste(),
             })
             return
 
         self.send_error(404, "yok")
 
+    # ---------------- Belge yukleme ----------------
+    def _yukle(self):
+        """Kullanicinin gonderdigi belgeyi parcalayip bilgi tabanina ekler.
+
+        Govde ham dosya baytlari; ad "X-Dosya-Adi" basliginda (yuzde kodlu)
+        geliyor. Coklu-parca (multipart) cozmuyoruz: tek dosya icin gereksiz
+        karmasiklik ve stdlib'de cgi modulu artik onerilmiyor.
+        """
+        ad = unquote(self.headers.get("X-Dosya-Adi") or "")
+        ad = os.path.basename(ad).strip()
+        if not ad:
+            _json(self, 400, {"hata": "Dosya adı gelmedi."})
+            return
+
+        uzanti = os.path.splitext(ad)[1].lower()
+        if uzanti not in ingest.SUPPORTED:
+            _json(self, 400, {"hata": "Yalnızca %s destekleniyor."
+                              % ", ".join(sorted(ingest.SUPPORTED))})
+            return
+
+        try:
+            uzunluk = int(self.headers.get("Content-Length") or 0)
+        except ValueError:
+            uzunluk = 0
+        if uzunluk <= 0:
+            _json(self, 400, {"hata": "Dosya boş."})
+            return
+        if uzunluk > YUKLEME_SINIRI:
+            _json(self, 413, {"hata": "Dosya %d MB sınırını aşıyor."
+                              % (YUKLEME_SINIRI // (1024 * 1024))})
+            return
+
+        ham = self.rfile.read(uzunluk)
+
+        # ingest.read_document dosya yolu bekliyor; gecici bir dosyaya yazip
+        # URETIMDEKI okuyucunun aynisini kullaniyoruz ki davranis ayrilmasin.
+        gecici = None
+        try:
+            with tempfile.NamedTemporaryFile(delete=False, suffix=uzanti) as f:
+                f.write(ham)
+                gecici = Path(f.name)
+            metin = ingest.read_document(gecici)
+        except Exception as e:
+            _json(self, 400, {"hata": "Dosya okunamadı: %s" % e})
+            return
+        finally:
+            if gecici is not None:
+                try:
+                    os.remove(gecici)
+                except OSError:
+                    pass
+
+        parcalar = ingest.chunk_text(metin or "")
+        if not parcalar:
+            # Taranmis (goruntu) PDF'te metin katmani yoktur. Sessizce bos
+            # belge eklemek en kotusu olurdu: asistan sonra "bilgim yok" der
+            # ve kullanici nedenini anlamaz.
+            _json(self, 400, {"hata": "Bu dosyadan metin çıkmadı. Taranmış "
+                                      "(görüntü) PDF ise OCR yok; metin tabanlı "
+                                      "bir dosya deneyin."})
+            return
+
+        if not _HAZIR.is_set():
+            _json(self, 503, {"hata": _YUKLEME_HATASI[0] or "Model henüz yükleniyor."})
+            return
+
+        basla = time.perf_counter()
+        try:
+            with _yazma_kilidi:
+                conn = db.connect()
+                db.init_db(conn)
+                db.add_texts(conn, source=ad, texts=parcalar, yuklenen=True)
+                belge, parca = db.count(conn)
+                liste = db.yuklenen_belgeler(conn)
+                conn.close()
+        except Exception as e:
+            _json(self, 500, {"hata": "Belge eklenemedi: %s" % e})
+            return
+        sure = time.perf_counter() - basla
+
+        _json(self, 200, {
+            "ad": ad, "parca": len(parcalar), "sure": round(sure, 2),
+            "belge": belge, "toplam_parca": parca,
+            "yuklenenler": [{"ad": a2, "parca": n} for a2, n in liste],
+        })
+
+    def _sifirla(self):
+        """Kullanicinin ekledigi belgeleri siler; depoyla gelen korpus kalir."""
+        try:
+            with _yazma_kilidi:
+                conn = db.connect()
+                db.init_db(conn)
+                silinen = db.yuklenenleri_sil(conn)
+                belge, parca = db.count(conn)
+                conn.close()
+        except Exception as e:
+            _json(self, 500, {"hata": "Silinemedi: %s" % e})
+            return
+        _json(self, 200, {"silinen": silinen, "belge": belge, "toplam_parca": parca,
+                          "yuklenenler": []})
+
     # ---------------- POST ----------------
     def do_POST(self):
-        if self.path.split("?", 1)[0] != "/sor":
+        yol = self.path.split("?", 1)[0]
+        if yol == "/yukle":
+            self._yukle()
+            return
+        if yol == "/sifirla":
+            self._sifirla()
+            return
+        if yol != "/sor":
             self.send_error(404, "yok")
             return
 
@@ -167,14 +290,14 @@ class Islem(BaseHTTPRequestHandler):
         except ValueError:
             uzunluk = 0
         if uzunluk <= 0 or uzunluk > 8192:
-            _json(self, 400, {"hata": "Gecersiz istek govdesi."})
+            _json(self, 400, {"hata": "Geçersiz istek gövdesi."})
             return
 
         try:
             istek = json.loads(self.rfile.read(uzunluk).decode("utf-8"))
             soru = (istek.get("soru") or "").strip()
         except (ValueError, UnicodeDecodeError):
-            _json(self, 400, {"hata": "JSON cozulemedi."})
+            _json(self, 400, {"hata": "JSON çözülemedi."})
             return
 
         # Bos sorguyu rag.answer zaten kapida yakaliyor; burada da erken donup
@@ -189,7 +312,7 @@ class Islem(BaseHTTPRequestHandler):
         if not _HAZIR.is_set():
             # Sayfa normalde bunu beklemez ama kullanici hazir olmadan
             # Enter'a basabilir; sessizce bekletmek yerine acikca soyluyoruz.
-            _json(self, 503, {"hata": _YUKLEME_HATASI[0] or "Model henuz yukleniyor."})
+            _json(self, 503, {"hata": _YUKLEME_HATASI[0] or "Model henüz yükleniyor."})
             return
 
         with _kilit:
@@ -197,7 +320,7 @@ class Islem(BaseHTTPRequestHandler):
             try:
                 cevap, hits = rag.answer(soru)
             except Exception as e:  # modeli/DB'yi sessizce yutma, durumu bildir
-                _json(self, 500, {"hata": "Cevap uretilemedi: %s" % e})
+                _json(self, 500, {"hata": "Cevap üretilemedi: %s" % e})
                 return
             sure = time.perf_counter() - basla
 
@@ -214,6 +337,30 @@ class Islem(BaseHTTPRequestHandler):
             "kaynaklar": kaynaklar,
             "sure": round(sure, 2),
         })
+
+
+def _sayilar():
+    """(belge, parca) sayisi. Veritabani yoksa (0, 0)."""
+    try:
+        conn = db.connect()
+        db.init_db(conn)
+        n = db.count(conn)
+        conn.close()
+        return n
+    except Exception:
+        return (0, 0)
+
+
+def _yuklenen_liste():
+    """Kullanicinin ekledigi belgeler; sayfa listeyi buradan tazeliyor."""
+    try:
+        conn = db.connect()
+        db.init_db(conn)
+        liste = db.yuklenen_belgeler(conn)
+        conn.close()
+        return [{"ad": a, "parca": n} for a, n in liste]
+    except Exception:
+        return []
 
 
 def main() -> int:

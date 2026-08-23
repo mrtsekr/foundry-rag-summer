@@ -37,13 +37,14 @@ def connect(db_path=config.DB_PATH) -> sqlite3.Connection:
 
 
 def init_db(conn: sqlite3.Connection) -> None:
-    """Tablolar yoksa olusturur (varsa dokunmaz)."""
+    """Tablolar yoksa olusturur (varsa dokunmaz) ve eksik sutunu tamamlar."""
     conn.executescript(
         """
         CREATE TABLE IF NOT EXISTS documents (
             id       INTEGER PRIMARY KEY AUTOINCREMENT,
             source   TEXT NOT NULL,          -- belgenin adi/yolu
-            added_at TEXT NOT NULL           -- eklenme zamani (ISO 8601)
+            added_at TEXT NOT NULL,          -- eklenme zamani (ISO 8601)
+            yuklenen INTEGER NOT NULL DEFAULT 0   -- 1 = kullanici ekledi
         );
 
         CREATE TABLE IF NOT EXISTS chunks (
@@ -57,6 +58,12 @@ def init_db(conn: sqlite3.Connection) -> None:
         );
         """
     )
+    # Daha once kurulmus bir veritabaninda 'yuklenen' sutunu yoktur; CREATE
+    # TABLE IF NOT EXISTS onu eklemez. Eksikse burada tamamliyoruz ki eski
+    # rag_store.db'ler yeniden kurulmak zorunda kalmasin.
+    sutunlar = {r[1] for r in conn.execute("PRAGMA table_info(documents);")}
+    if "yuklenen" not in sutunlar:
+        conn.execute("ALTER TABLE documents ADD COLUMN yuklenen INTEGER NOT NULL DEFAULT 0;")
     conn.commit()
 
 
@@ -76,12 +83,16 @@ def blob_to_vector(blob: bytes) -> np.ndarray:
 # --------------------------------------------------------------------------
 # Yazma
 # --------------------------------------------------------------------------
-def add_document(conn: sqlite3.Connection, source: str) -> int:
-    """Bir belge kaydi ekler ve yeni belgenin id'sini dondurur."""
+def add_document(conn: sqlite3.Connection, source: str, yuklenen: bool = False) -> int:
+    """Bir belge kaydi ekler ve yeni belgenin id'sini dondurur.
+
+    yuklenen=True: belgeyi kullanici uygulamadan ekledi. Depoyla gelen
+    korpustan ayirt edilebilsin diye isaretleniyor.
+    """
     now = datetime.now(timezone.utc).isoformat(timespec="seconds")
     cur = conn.execute(
-        "INSERT INTO documents (source, added_at) VALUES (?, ?);",
-        (source, now),
+        "INSERT INTO documents (source, added_at, yuklenen) VALUES (?, ?, ?);",
+        (source, now, 1 if yuklenen else 0),
     )
     conn.commit()
     return cur.lastrowid
@@ -97,10 +108,10 @@ def add_chunk(conn, doc_id: int, ord: int, text: str, embedding: np.ndarray) -> 
     return cur.lastrowid
 
 
-def add_texts(conn, source: str, texts: list[str]) -> int:
+def add_texts(conn, source: str, texts: list[str], yuklenen: bool = False) -> int:
     """Kolaylik: bir kaynak + metin parcalari listesini tek seferde embed'leyip
     veritabanina yazar. Belge id'sini dondurur."""
-    doc_id = add_document(conn, source)
+    doc_id = add_document(conn, source, yuklenen=yuklenen)
     vecs = embed_texts(texts)  # (n, EMBED_DIM), normalize edilmis
     for i, (text, vec) in enumerate(zip(texts, vecs)):
         add_chunk(conn, doc_id, i, text, vec)
@@ -114,6 +125,25 @@ def all_chunks(conn) -> list[tuple[int, str, np.ndarray]]:
     """Tum parcalari (id, text, vektor) uclusu listesi olarak dondurur."""
     rows = conn.execute("SELECT id, text, embedding FROM chunks;").fetchall()
     return [(cid, text, blob_to_vector(blob)) for (cid, text, blob) in rows]
+
+
+def yuklenen_belgeler(conn) -> list[tuple[str, int]]:
+    """Kullanicinin ekledigi belgeleri (ad, parca_sayisi) olarak dondurur."""
+    rows = conn.execute(
+        "SELECT d.source, COUNT(c.id) "
+        "FROM documents d LEFT JOIN chunks c ON c.doc_id = d.id "
+        "WHERE d.yuklenen = 1 GROUP BY d.id ORDER BY d.id;"
+    ).fetchall()
+    return [(src, n) for (src, n) in rows]
+
+
+def yuklenenleri_sil(conn) -> int:
+    """Kullanicinin ekledigi TUM belgeleri siler, kac belge silindigini
+    dondurur. Parcalar ON DELETE CASCADE ile birlikte gider; depoyla gelen
+    korpus dokunulmadan kalir."""
+    cur = conn.execute("DELETE FROM documents WHERE yuklenen = 1;")
+    conn.commit()
+    return cur.rowcount
 
 
 def count(conn) -> tuple[int, int]:

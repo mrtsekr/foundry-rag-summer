@@ -346,6 +346,59 @@
   .cip-soru:active { background: var(--accent-dim); }
   .cip-soru:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 
+
+  /* ---------- Belge yukleme (yalnizca canli kip) ----------
+     Yukleme yerel sunucuyu gerektirir; kayitli kipte ve Pages'te gizli. */
+  .yukle { display: none; }
+  html.uyg .yukle.acik {
+    display: flex; flex-direction: column; gap: .5rem;
+    margin-bottom: .8rem;
+  }
+  .yukle-alan {
+    display: flex; flex-wrap: wrap; align-items: center; gap: .55rem;
+    padding: .55rem .7rem;
+    border: 1px dashed var(--line); border-radius: 10px;
+    background: var(--surface);
+    transition: border-color .18s ease, background .18s ease;
+  }
+  .yukle-alan.uzerinde { border-color: var(--accent); background: var(--accent-dim); }
+  @media (prefers-reduced-motion: reduce) { .yukle-alan { transition: none; } }
+  .yukle-dugme {
+    font-family: Archivo, sans-serif; font-size: .76rem; font-weight: 600;
+    color: var(--muted); background: transparent;
+    border: 1px solid var(--line); border-radius: 999px;
+    padding: .3rem .8rem; cursor: pointer;
+  }
+  .yukle-dugme:hover { color: var(--accent); border-color: var(--accent); }
+  .yukle-dugme:active { background: var(--accent-dim); }
+  .yukle-dugme:focus-within, .yukle-dugme:focus-visible {
+    outline: 2px solid var(--accent); outline-offset: 2px;
+  }
+  .yukle-dugme input { position: absolute; width: 1px; height: 1px;
+                       opacity: 0; pointer-events: none; }
+  .yukle-ipucu { font-size: .74rem; color: var(--muted); flex: 1 1 12rem; min-width: 0; }
+  .yukle-durum { font-size: .76rem; color: var(--muted); }
+  .yukle-durum.hata { color: var(--signal); }
+  .yukle-liste {
+    display: flex; flex-wrap: wrap; align-items: center; gap: .4rem;
+    font-size: .74rem; color: var(--muted);
+  }
+  .yukle-etiket {
+    font-family: "JetBrains Mono", monospace; font-size: .7rem;
+    border: 1px solid var(--line); border-radius: 999px; padding: .12rem .5rem;
+  }
+  .yukle-sil {
+    font-family: Archivo, sans-serif; font-size: .7rem; cursor: pointer;
+    background: transparent; border: 0; color: var(--muted);
+    text-decoration: underline; text-underline-offset: 2px; padding: .1rem .2rem;
+  }
+  .yukle-sil:hover { color: var(--signal); }
+  .yukle-sil:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .yukle-not {
+    font-size: .72rem; color: var(--muted); line-height: 1.45;
+    border-left: 2px solid var(--line); padding-left: .6rem;
+  }
+
   /* ---------- Deniz yildizi girisi ----------
      Projenin adi Deniz Yildizi; giris ekranindaki tek gorsel de o.
      Fotograf DEGIL, burada matematikle uretilmis bes kollu bir sekil:
@@ -1702,6 +1755,17 @@ belirtmeniz önerilir.
         <div class="cip-panel" id="cp8" role="region" aria-labelledby="cip8" hidden><span class="cip-dosya mono">otel_genel.txt</span><button class="cip-soru" type="button" data-soru="Otelde toplam kaç oda var?">Otelde toplam kaç oda var?</button><button class="cip-soru" type="button" data-soru="Otelde casino var mı?">Otelde casino var mı?</button><button class="cip-soru" type="button" data-soru="Otel hangi yıl hizmete açıldı?">Otel hangi yıl hizmete açıldı?</button></div>
         <div class="cip-panel" id="cp9" role="region" aria-labelledby="cip9" hidden><span class="cip-dosya">bu üç soru bilgi tabanında YOK — asistanın uydurmadığını burada görüyorsunuz</span><button class="cip-soru" type="button" data-soru="Otelde bowling salonu var mı?">Otelde bowling salonu var mı?</button><button class="cip-soru" type="button" data-soru="Bugün hava nasıl olacak?">Bugün hava nasıl olacak?</button><button class="cip-soru" type="button" data-soru="Otelde helikopter pisti var mı?">Otelde helikopter pisti var mı?</button></div>
 
+      <div class="yukle" id="dnyYukle">
+        <div class="yukle-alan" id="dnyYukleAlan">
+          <label class="yukle-dugme">Belge ekle
+            <input type="file" id="dnyDosya" accept=".txt,.md,.pdf">
+          </label>
+          <span class="yukle-ipucu">.txt, .md veya metin tabanlı .pdf — sürükleyip bırakabilirsiniz</span>
+          <span class="yukle-durum" id="dnyYukleDurum" role="status"></span>
+        </div>
+        <div class="yukle-liste" id="dnyYukleListe"></div>
+      </div>
+
       <div class="dny">
         <div class="dny-ara">
           <span class="dny-onek" aria-hidden="true">Soru&gt;</span>
@@ -2529,6 +2593,110 @@ belirtmeniz önerilir.
       sec(kayitlar[0]);   // sitede acilista bicimi goster
     }
 
+    /* ---- Belge yukleme ----
+       Yalnizca canli kipte aciliyor. Eklenen belge sunucuda "yuklenen" diye
+       isaretleniyor; boylece tek tikla depoyla gelen korpusa donulebiliyor
+       ve eval.py'nin olctugu temel kalici olarak bozulmuyor. */
+    var yukleKutu   = document.getElementById("dnyYukle");
+    var yukleAlan   = document.getElementById("dnyYukleAlan");
+    var dosyaGiris  = document.getElementById("dnyDosya");
+    var yukleDurum  = document.getElementById("dnyYukleDurum");
+    var yukleListe  = document.getElementById("dnyYukleListe");
+    var uyariVerildi = false;
+
+    function yuklemeyiAc() {
+      if (yukleKutu) yukleKutu.classList.add("acik");
+    }
+
+    function listeyiTazele(liste, yeni) {
+      if (!yukleListe) return;
+      if (!liste || !liste.length) { yukleListe.innerHTML = ""; return; }
+      var toplam = liste.reduce(function (a, x) { return a + x.parca; }, 0);
+      var notGoster = yeni && !uyariVerildi;
+      yukleListe.innerHTML =
+        '<span>Eklenen:</span>' +
+        liste.map(function (x) {
+          return '<span class="yukle-etiket">' + kacir(x.ad) + ' · ' + x.parca + '</span>';
+        }).join("") +
+        '<button class="yukle-sil" type="button" id="dnyYukleSil">' +
+          'hepsini kaldır</button>' +
+        (!notGoster ? '' :
+          '<span class="yukle-not">' + toplam + ' parça eklendi. Ölçüldü: ilgisiz ' +
+          'sayfalar eklendikçe mevcut belgelerdeki dolaylı soruların isabeti ' +
+          'düşüyor. "Hepsini kaldır" depoyla gelen korpusa geri döner.</span>');
+      if (notGoster) uyariVerildi = true;
+      var sil = document.getElementById("dnyYukleSil");
+      if (sil) sil.addEventListener("click", sifirla);
+    }
+
+    function yukleDurumYaz(metin, hata) {
+      if (!yukleDurum) return;
+      yukleDurum.textContent = metin || "";
+      yukleDurum.className = "yukle-durum" + (hata ? " hata" : "");
+    }
+
+    function dosyaYukle(dosya) {
+      if (!dosya || mesgul) return;
+      mesgul = true;
+      yukleDurumYaz("\u201c" + dosya.name + "\u201d ekleniyor\u2026", false);
+      fetch("/yukle", {
+        method: "POST",
+        headers: { "X-Dosya-Adi": encodeURIComponent(dosya.name) },
+        body: dosya
+      }).then(function (y) {
+        return y.json().then(function (d) { return { ok: y.ok, d: d }; });
+      }).then(function (c) {
+        mesgul = false;
+        if (!c.ok || c.d.hata) { yukleDurumYaz(c.d.hata || "Eklenemedi.", true); return; }
+        yukleDurumYaz(c.d.ad + " \u00b7 " + c.d.parca + " par\u00e7a \u00b7 " +
+                      String(c.d.sure).replace(".", ",") + " sn", false);
+        listeyiTazele(c.d.yuklenenler, true);
+      }).catch(function (e) {
+        mesgul = false;
+        yukleDurumYaz("Eklenemedi: " + (e.message || e), true);
+      });
+    }
+
+    function sifirla() {
+      if (mesgul) return;
+      mesgul = true;
+      yukleDurumYaz("kald\u0131r\u0131l\u0131yor\u2026", false);
+      fetch("/sifirla", { method: "POST" }).then(function (y) {
+        return y.json();
+      }).then(function (d) {
+        mesgul = false;
+        if (d.hata) { yukleDurumYaz(d.hata, true); return; }
+        uyariVerildi = false;
+        listeyiTazele([], false);
+        yukleDurumYaz(d.silinen + " belge kald\u0131r\u0131ld\u0131.", false);
+      }).catch(function (e) {
+        mesgul = false;
+        yukleDurumYaz("Kald\u0131r\u0131lamad\u0131: " + (e.message || e), true);
+      });
+    }
+
+    if (dosyaGiris) dosyaGiris.addEventListener("change", function () {
+      if (this.files && this.files[0]) dosyaYukle(this.files[0]);
+      this.value = "";      // ayni dosya tekrar secilebilsin
+    });
+
+    if (yukleAlan) {
+      ["dragenter", "dragover"].forEach(function (o) {
+        yukleAlan.addEventListener(o, function (e) {
+          e.preventDefault(); yukleAlan.classList.add("uzerinde");
+        });
+      });
+      ["dragleave", "drop"].forEach(function (o) {
+        yukleAlan.addEventListener(o, function (e) {
+          e.preventDefault(); yukleAlan.classList.remove("uzerinde");
+        });
+      });
+      yukleAlan.addEventListener("drop", function (e) {
+        var f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+        if (f) dosyaYukle(f);
+      });
+    }
+
     /* Konu cipleri: tiklayinca SORMAZ, o belgenin ornek sorularini acar.
        Soru ancak listeden secilince calisir. Boylece gezinmek gecmisi
        sismiyor ve 21 sorunun belgelere dagilimi da gorunur oluyor. */
@@ -2615,6 +2783,8 @@ belirtmeniz önerilir.
           if (zaman) window.clearTimeout(zaman);
           if (!d || d.canli !== true) return;
           canli = true;
+          /* Yukleme yalnizca canli kipte anlamli: yerel sunucu gerekiyor. */
+          if (uygulamaKipi) { yuklemeyiAc(); listeyiTazele(d.yuklenenler, false); }
 
           /* Sunucu ayakta ama model daha yukleniyor olabilir: pencere aninda
              aciliyor. Hazir olana kadar bekleme ekranini gosterip yokluyoruz. */

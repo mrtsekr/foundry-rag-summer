@@ -143,6 +143,37 @@ sunucu, aynı model, çalışan bir asistan. Çerçeve tamamen CSS, görsel dosy
 yok. Duyarlı yerleşimin dar ekranda bozulmadığı elde cihaz olmadan böyle
 denetlenebiliyor.
 
+**Uygulamadan belge eklemek.** Canlı kipte `/uygulama` ekranında bir yükleme
+alanı var: `.txt`, `.md` ya da metin tabanlı `.pdf` seçilebiliyor veya
+sürükleyip bırakılabiliyor (üst sınır 2 MB). Belge üretimdeki aynı
+`chunk_text` ile parçalanıp aynı modelle gömülüyor ve **anında**
+sorulabiliyor — yeniden kurma, yeniden başlatma ya da tazelenecek bir indeks
+yok, çünkü `db.search()` parçaları her sorguda canlı okuyor. Kısa bir belge
+için ölçülen ekleme süresi 0,07 sn.
+
+Bunun bir bedeli var ve ölçüldü. Bilgi tabanına 33 sayfalık **ilgisiz** bir
+belge (71 parça) eklendiğinde:
+
+| | 16 soruluk retrieval | eklenen belgenin kendi olguları |
+|---|---|---|
+| yalnızca depodaki 9 belge | **15/16** | — |
+| + kısa belge (1 parça) | 15/16 | 3/3 |
+| + 33 sayfa | **13/16** | **5/5** |
+
+Yüklenen belgenin içine gömülü beş olgunun beşi de doğru parçayla bulunuyor;
+bozulan, *mevcut* korpusun retrieval'ı. `TOP_K`'yı büyütmek kurtarmıyor —
+3'ten 20'ye kadar düz 13/16, yani doğru parçalar 20. sıranın da altında
+kalıyor. Düşenler `eval.py`'de "dolaylı/parafraz" diye etiketlenmiş sorular;
+README'nin baştan beri söylediği zayıf nokta orası.
+
+Bu yüzden uygulamadan eklenen belgeler veritabanında `yuklenen = 1` diye
+işaretleniyor ve arayüzdeki **"hepsini kaldır"** depoyla gelen korpusa geri
+dönüyor. `eval.py`'nin ölçtüğü temel böylece tekrarlanabilir kalıyor.
+
+Metin çıkmayan dosya (taranmış, görüntü tabanlı PDF) sessizce eklenmiyor;
+açıkça reddediliyor. Aksi hâlde asistan sonradan "bilgim yok" der ve
+kullanıcı nedenini anlayamazdı.
+
 **Sunucunun verdiği adresler.** `python site/sunucu.py` çalışırken:
 
 | Adres | Ne gösterir |
@@ -152,6 +183,8 @@ denetlenebiliyor.
 | `/telefon` | `/uygulama`'yı sabit telefon ölçülerinde çerçeveler; mobil yerleşimi cihazsız denetlemek için |
 | `/saglik` | JSON: sunucu ayakta mı, model yüklendi mi, hangi modeller |
 | `/sor` | POST, JSON `{"soru": "..."}` — cevap, kaynaklar ve süre döner |
+| `/yukle` | POST, ham dosya gövdesi + `X-Dosya-Adi` başlığı — belgeyi bilgi tabanına ekler |
+| `/sifirla` | POST — uygulamadan eklenen belgeleri siler, depoyla gelen korpusu bırakır |
 
 Sayfa `/saglik`'i yoklar; sunucu ayaktaysa **canlı** kipe geçip gerçekten soru
 sorar, değilse kayıtlı 21 çalıştırmayı gösterir. Aynı dosya iki kipte de
@@ -439,6 +472,11 @@ sızıntı bitti.
 - **Değerlendirme seti küçük** (17 soru) ve elle hazırlandı. İstatistiksel güven
   aralığı iddia etmiyor, yön gösteriyor.
 - **Oturum hafızası yok.** Her soru bağımsız, çok turlu diyalog kurulmadı.
+- **Eklenen belge mevcut korpusun isabetini düşürüyor.** Uygulamadan belge
+  yüklenebiliyor ama ölçüldü: 33 sayfalık ilgisiz bir belge 16 soruluk
+  retrieval'ı 15/16'dan 13/16'ya indiriyor ve `TOP_K` büyütmek bunu
+  kurtarmıyor. Tek aşamalı retrieval'ın sınırı; çözümü bir yeniden sıralama
+  adımı. Manşet sayılar depoyla gelen dokuz belge için geçerlidir.
 - **İptal yalnızca istemci tarafında.** Uygulamadaki "iptal" düğmesi ve 60
   saniyelik zaman aşımı isteği bırakır, arayüzü kurtarır; ama sunucudaki üretimi
   durdurmaz. Model o soruyu bitirene kadar `_kilit`'i tuttuğu için bir sonraki
