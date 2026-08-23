@@ -1,5 +1,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Sekme simgesi sayfanin kendi deniz yildizi: dis dosya yok. -->
+  <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20600%20600'%3E%3Cpath%20fill='%230B6971'%20d='M%20230.6%20204.5%20C%20243.0%20141.8%20279.0%2061.5%20300.0%2050.0%20C%20321.0%2061.5%20357.0%20141.8%20369.4%20204.5%20C%20432.9%20196.9%20520.3%20206.3%20537.8%20222.7%20C%20533.3%20246.3%20468.1%20305.3%20412.2%20336.5%20C%20439.1%20394.5%20457.2%20480.6%20446.9%20502.3%20C%20423.2%20505.3%20346.9%20461.5%20300.0%20418.0%20C%20253.1%20461.5%20176.8%20505.3%20153.1%20502.3%20C%20142.8%20480.6%20160.9%20394.5%20187.8%20336.5%20C%20131.9%20305.3%2066.7%20246.3%2062.2%20222.7%20C%2079.7%20206.3%20167.1%20196.9%20230.6%20204.5%20Z'/%3E%3C/svg%3E">
 <title>Deniz Yıldızı Asistanı</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -303,64 +305,78 @@
   }
 
 
-  /* ---------- Hero manzarasi ----------
-     Karikaturize bir tatil koyu cizimi. FOTOGRAF DEGIL: gercek bir oteli
-     temsil etmedigi icin anonimlik kuralina takilmiyor. Satir ici SVG, dis
-     dosya yok. Renkler token'dan.
 
-     Kaydirdikca UC KATMAN FARKLI HIZDA soner; derinlik hissi bundan geliyor.
-     Hareketi kullanici suruyor, kendiliginden donen bir animasyon degil —
-     apple-design §14'un uyardigi sey o. Hareket istenmiyorsa hic kipirdamaz.
 
-     Opaklikler bilerek cok dusuk: metnin arkasinda duruyor ve okumayi
-     bozmamasi gerekiyor. Kontrast olcumleri metin/zemin ciftleri uzerinden
-     yapildi, manzara onlarin arkasinda ve zemini degistirmiyor. */
-  /* Kendi bandi: hero ile olcum seridi arasinda bir ufuk. Metnin arkasinda
-     olmadigi icin opaklik yukseltilebildi ve cizim gercekten okunuyor. */
-  .manzara {
-    position: relative; width: 100%; height: 230px;
-    margin: 0 0 clamp(-2rem, -4vw, -3rem);
-    pointer-events: none; overflow: hidden;
-    opacity: var(--mz-op, 1);
+  /* ---------- Deniz yildizi girisi ----------
+     Projenin adi Deniz Yildizi; giris ekranindaki tek gorsel de o.
+     Fotograf DEGIL, burada matematikle uretilmis bes kollu bir sekil:
+     aramadan indirilmis bir gorsel baskasinin telifli isi olurdu ve depo
+     MIT ile aciliyor. Ayrica dis dosya yok, tek dosya kurali duruyor.
+
+     Sayfanin geri kalaninda hicbir gorsel yok: tema kendini renk ve
+     tipografiyle surduruyor, resimle degil.
+
+     Yuklenirken CIZILIYOR (stroke-dashoffset), sonra dolgu ve noktalar
+     siralanarak beliriyor. Kaydirinca soner. Ikisi de tek seferlik ya da
+     kullanicinin surdugu hareket; kendiliginden donen bir dongu yok. */
+  .dy {
+    position: absolute; z-index: 0; pointer-events: none;
+    left: clamp(-5rem, -4vw, -1rem); top: 58%;
+    width: clamp(20rem, 34vw, 32rem); aspect-ratio: 1;
+    translate: 0 -50%;
+    rotate: calc(-14deg + var(--dy, 0) * 12deg);
+    scale: calc(1 - var(--dy, 0) * .07);
+    opacity: calc(1 - var(--dy, 0) * 1.2);
   }
-  .mz-svg { width: 100%; height: 100%; display: block; }
+  .dy-svg { width: 100%; height: 100%; display: block; overflow: visible; }
 
-  .mz-uzak   { fill: var(--line); opacity: .85; }
-  .mz-gunes  { fill: var(--accent); opacity: .3; }
-  .mz-bina   { fill: none; stroke: var(--accent); stroke-width: 1.8; opacity: .8; }
-  .mz-kat    { fill: var(--accent); opacity: .4; }
-  .mz-govde  { fill: none; stroke: var(--accent); stroke-width: 2.4; stroke-linecap: round; opacity: .75; }
-  .mz-yaprak { fill: none; stroke: var(--accent); stroke-width: 2; stroke-linecap: round; opacity: .68; }
-  .mz-havuz  { fill: var(--accent); opacity: .22; }
-  .mz-sezlong{ fill: var(--accent); opacity: .5; }
-  .mz-kiyi   { fill: none; stroke: var(--line); stroke-width: 1.8; opacity: 1; }
+  /* Opaklik carpani. Koyu temada --accent daha parlak; ayni degerler orada
+     metnin uzerinde tel kafes gibi duruyordu, olculerek dusuruldu. */
+  .dy { --dy-c: 1; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .dy { --dy-c: .85; } }
+  :root[data-theme="dark"] .dy { --dy-c: .85; }
+  :root[data-theme="light"] .dy { --dy-c: 1; }
 
-  /* Katmanlarin sonme hizi: uzak yavas, yakin hizli. --mz degeri 0 (tepe) ile
-     1 (manzara tamamen gecildi) arasinda; JS yaziyor. */
-  .mz-k1 { opacity: calc(1 - var(--mz, 0) * .75); }
-  .mz-k2 { opacity: calc(1 - var(--mz, 0) * 1.05); }
-  .mz-k3 { opacity: calc(1 - var(--mz, 0) * 1.35); }
+  /* Hedef opaklikler bilerek cok dusuk: sekil METNIN ARKASINDA duruyor ve
+     okumayi bozmamasi gerekiyor. Kontrast olcumleri metin/zemin ciftleri
+     uzerinden yapildi; bu katman zemini degistirmiyor. */
+  .dy-dolgu { fill: var(--accent); --hedef: calc(.13 * var(--dy-c)); }
+  .dy-cizgi { fill: none; stroke: var(--accent); stroke-width: 2.4;
+              stroke-linejoin: round; --hedef: calc(.24 * var(--dy-c)); }
+  .dy-goze  { fill: none; stroke: var(--accent); stroke-width: 2;
+              --hedef: calc(.20 * var(--dy-c)); }
+  .dy-madre { fill: var(--accent); --hedef: calc(.24 * var(--dy-c)); }
+  .dy-ayak  { fill: var(--accent); --hedef: calc(.20 * var(--dy-c)); }
+
   @media (prefers-reduced-motion: no-preference) {
-    .mz-k2 { transform: translateY(calc(var(--mz, 0) * 14px)); }
-    .mz-k3 { transform: translateY(calc(var(--mz, 0) * 30px)); }
+    .dy-dolgu, .dy-ic > * { opacity: 0; animation: dyBelir .8s ease forwards; }
+    .dy-dolgu { animation-delay: 1.35s; }
+    /* Once govde cizilir, sonra ic ayrintilar kollar boyunca siralanir. */
+    .dy-ic > * { animation-duration: .5s; animation-delay: calc(1.5s + var(--g, 0) * 24ms); }
+    .dy-cizgi {
+      opacity: var(--hedef);
+      stroke-dasharray: 1; stroke-dashoffset: 1;
+      animation: dyCiz 1.9s cubic-bezier(.22, 1, .36, 1) .25s forwards;
+    }
   }
-  /* Hareket istenmiyorsa katmanlar sabit ve esit soluk durur. */
+  /* Hareket istenmiyorsa cizim yok: sekil dogrudan son halinde durur. */
   @media (prefers-reduced-motion: reduce) {
-    .mz-k1, .mz-k2, .mz-k3 { opacity: .6; transform: none; }
+    .dy-dolgu, .dy-cizgi, .dy-ic > * { opacity: var(--hedef); }
+    .dy { rotate: -14deg; scale: 1; }
   }
-  /* Metnin ustune binmesin diye alt kenara dogru zemine karisir. */
-  .manzara::after {
-    content: ""; position: absolute; inset: 0; pointer-events: none;
-    background:
-      linear-gradient(to bottom, var(--ground) 0%, transparent 30%,
-                      transparent 74%, var(--ground) 100%),
-      linear-gradient(to right, var(--ground) 0%, transparent 12%,
-                      transparent 88%, var(--ground) 100%);
+  @keyframes dyBelir { to { opacity: var(--hedef); } }
+  @keyframes dyCiz   { to { stroke-dashoffset: 0; } }
+
+  /* Dar ekranda hero tek sutun: sekil metnin tam arkasina gecer, bu yuzden
+     hem kuculuyor hem daha da soluyor. */
+  @media (max-width: 780px) {
+    .dy {
+      left: 50%; top: 27%; translate: -50% -50%; width: min(24rem, 78vw);
+      opacity: calc(.72 - var(--dy, 0) * .9);
+    }
   }
-  html.uyg .manzara { display: none; }
-  @media (prefers-reduced-transparency: reduce) { .manzara { display: none; } }
-  @media (prefers-contrast: more) { .manzara { display: none; } }
-  @media (max-width: 620px) { .manzara { height: 150px; } }
+  html.uyg .dy { display: none; }
+  @media (prefers-reduced-transparency: reduce) { .dy { display: none; } }
 
   /* ---------- Instrument card ---------- */
   .card {
@@ -725,9 +741,12 @@
   .dny-sonuc .qa-a { white-space: pre-wrap; }
 
   .dny-kaynaklar { display: flex; flex-direction: column; gap: .5rem; }
-  .dny-kaynak {
+  .dny-kaynak { display: block; }
+  .dny-bas {
     display: grid; grid-template-columns: minmax(0, 11rem) 1fr auto;
     align-items: center; gap: .65rem;
+    width: 100%; text-align: left;
+    background: transparent; border: 0; padding: 0; font: inherit; color: inherit;
   }
   .dny-dosya {
     font-size: .78rem; color: var(--muted);
@@ -745,7 +764,7 @@
   .dny-kaynak:first-child .dny-bar i { opacity: 1; }
   .dny-kaynak:first-child .dny-skor { color: var(--accent); }
   @media (max-width: 560px) {
-    .dny-kaynak { grid-template-columns: 1fr auto; }
+    .dny-bas { grid-template-columns: 1fr auto; }
     .dny-bar { grid-column: 1 / -1; order: 3; }
   }
 
@@ -946,6 +965,65 @@
   @media (prefers-reduced-motion: reduce) { .cip { transition: none; } }
   .cip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
+
+  /* ---------- Kaynak metni ve gecmis ----------
+     Kaynak satirina tiklayinca modele GIDEN metin aciliyor. RAG'in tum savi
+     "cevap su parcadan geldi"; onu gostermemek savi kanitsiz birakiyordu. */
+  button.dny-bas { cursor: pointer; }
+  button.dny-bas:hover .dny-dosya { color: var(--accent); }
+  button.dny-bas:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+  .dny-ac {
+    display: grid; grid-template-rows: 0fr; opacity: 0;
+    transition: grid-template-rows .28s ease, opacity .28s ease;
+  }
+  .dny-kaynak.acik .dny-ac { grid-template-rows: 1fr; opacity: 1; }
+  @media (prefers-reduced-motion: reduce) { .dny-ac { transition: none; } }
+  .dny-ac > div { overflow: hidden; min-height: 0; }
+  .dny-govde {
+    border-left: 2px solid var(--line); padding: .1rem 0 .3rem .7rem; margin-top: .35rem;
+  }
+  .dny-metin {
+    font-size: .84rem; line-height: 1.55; color: var(--muted);
+    white-space: pre-wrap; max-height: 15rem; overflow-y: auto;
+  }
+  .dny-metin-not {
+    display: block; margin-top: .35rem;
+    font-family: "JetBrains Mono", monospace; font-size: .68rem; color: var(--muted);
+  }
+  .dny-ok {
+    font-family: "JetBrains Mono", monospace; font-size: .7rem; color: var(--muted);
+    transition: transform .2s ease; display: inline-block;
+  }
+  .dny-kaynak.acik .dny-ok { transform: rotate(90deg); }
+  @media (prefers-reduced-motion: reduce) { .dny-ok { transition: none; } }
+
+  /* Gecmis: yalnizca uygulama kipinde. Sitede tek cevap gosterilir, orada
+     kayitli havuzu gezmek zaten listeyle yapiliyor. */
+  .gecmis { display: none; }
+  html.uyg .gecmis:not(:empty) {
+    display: flex; flex-direction: column; gap: .5rem;
+    margin-top: clamp(1rem, 3vw, 1.5rem);
+    padding-top: .9rem; border-top: 1px solid var(--line-soft);
+  }
+  .gecmis-bas {
+    font-family: Archivo, sans-serif; font-size: .69rem; font-weight: 600;
+    letter-spacing: .13em; text-transform: uppercase; color: var(--muted);
+  }
+  .gecmis-oge {
+    display: flex; align-items: baseline; gap: .6rem; width: 100%;
+    text-align: left; cursor: pointer;
+    background: transparent; border: 0; border-radius: 2px;
+    padding: .4rem .5rem; font-family: inherit;
+  }
+  .gecmis-oge:hover { background: var(--accent-dim); }
+  .gecmis-oge:active { background: var(--accent-dim); }
+  .gecmis-oge:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .gecmis-soru { flex: 1 1 auto; font-size: .9rem; color: var(--ink); }
+  .gecmis-sure {
+    flex: none; font-family: "JetBrains Mono", monospace; font-size: .72rem;
+    color: var(--muted); font-variant-numeric: tabular-nums;
+  }
+
   /* ---------- Terminal + açıklama rayı ---------- */
   .term-grid { display: grid; gap: 1.1rem; grid-template-columns: 1fr; align-items: start; }
   @media (min-width: 860px) { .term-grid { grid-template-columns: minmax(0,1.9fr) minmax(0,1fr); } }
@@ -1096,6 +1174,7 @@
   <!-- ============ HERO ============ -->
   <section class="hero">
     <div class="hero-doku" aria-hidden="true"><span></span></div>
+    <div class="dy" aria-hidden="true"><svg class="dy-svg" viewBox="0 0 600 600" aria-hidden="true" focusable="false"><path class="dy-dolgu" d="M 230.6 204.5 C 243.0 141.8 279.0 61.5 300.0 50.0 C 321.0 61.5 357.0 141.8 369.4 204.5 C 432.9 196.9 520.3 206.3 537.8 222.7 C 533.3 246.3 468.1 305.3 412.2 336.5 C 439.1 394.5 457.2 480.6 446.9 502.3 C 423.2 505.3 346.9 461.5 300.0 418.0 C 253.1 461.5 176.8 505.3 153.1 502.3 C 142.8 480.6 160.9 394.5 187.8 336.5 C 131.9 305.3 66.7 246.3 62.2 222.7 C 79.7 206.3 167.1 196.9 230.6 204.5 Z"/><path class="dy-cizgi" pathLength="1" d="M 230.6 204.5 C 243.0 141.8 279.0 61.5 300.0 50.0 C 321.0 61.5 357.0 141.8 369.4 204.5 C 432.9 196.9 520.3 206.3 537.8 222.7 C 533.3 246.3 468.1 305.3 412.2 336.5 C 439.1 394.5 457.2 480.6 446.9 502.3 C 423.2 505.3 346.9 461.5 300.0 418.0 C 253.1 461.5 176.8 505.3 153.1 502.3 C 142.8 480.6 160.9 394.5 187.8 336.5 C 131.9 305.3 66.7 246.3 62.2 222.7 C 79.7 206.3 167.1 196.9 230.6 204.5 Z"/><g class="dy-ic"><circle class="dy-goze" cx="300" cy="300" r="40"/><circle class="dy-madre" cx="326" cy="277" r="8"/><circle class="dy-ayak" style="--g:0" cx="300.0" cy="145.0" r="4.2"/><circle class="dy-ayak" style="--g:1" cx="300.0" cy="120.0" r="3.6"/><circle class="dy-ayak" style="--g:2" cx="300.0" cy="94.9" r="2.9"/><circle class="dy-ayak" style="--g:3" cx="300.0" cy="69.8" r="2.2"/><circle class="dy-ayak" style="--g:4" cx="447.4" cy="252.1" r="4.2"/><circle class="dy-ayak" style="--g:5" cx="471.2" cy="244.4" r="3.6"/><circle class="dy-ayak" style="--g:6" cx="495.1" cy="236.6" r="2.9"/><circle class="dy-ayak" style="--g:7" cx="518.9" cy="228.9" r="2.2"/><circle class="dy-ayak" style="--g:8" cx="391.1" cy="425.4" r="4.2"/><circle class="dy-ayak" style="--g:9" cx="405.8" cy="445.7" r="3.6"/><circle class="dy-ayak" style="--g:10" cx="420.6" cy="465.9" r="2.9"/><circle class="dy-ayak" style="--g:11" cx="435.3" cy="486.2" r="2.2"/><circle class="dy-ayak" style="--g:12" cx="208.9" cy="425.4" r="4.2"/><circle class="dy-ayak" style="--g:13" cx="194.2" cy="445.7" r="3.6"/><circle class="dy-ayak" style="--g:14" cx="179.4" cy="465.9" r="2.9"/><circle class="dy-ayak" style="--g:15" cx="164.7" cy="486.2" r="2.2"/><circle class="dy-ayak" style="--g:16" cx="152.6" cy="252.1" r="4.2"/><circle class="dy-ayak" style="--g:17" cx="128.8" cy="244.4" r="3.6"/><circle class="dy-ayak" style="--g:18" cx="104.9" cy="236.6" r="2.9"/><circle class="dy-ayak" style="--g:19" cx="81.1" cy="228.9" r="2.2"/></g></svg></div>
           <div class="hero-grid">
       <div class="stack">
         <span class="label hero-pil giris" style="--gec: 0ms">Tamamen çevrimdışı · Türkçe · tek dizüstü bilgisayar</span>
@@ -1133,7 +1212,6 @@
     </div>
   </section>
 
-  <div class="manzara" aria-hidden="true"><svg class="mz-svg" viewBox="0 0 1200 420" preserveAspectRatio="xMaxYMax slice" aria-hidden="true" focusable="false"><g class="mz-k mz-k1"><path class="mz-uzak" d="M0 300 q 90 -54 190 -30 q 70 17 120 -14 q 66 -41 150 -6 q 54 22 104 4 L 1200 268 L 1200 420 L 0 420 Z"/><circle class="mz-gunes" cx="905" cy="120" r="34"/></g><g class="mz-k mz-k2"><rect class="mz-bina" x="700" y="196" width="210" height="128" rx="4"/><rect class="mz-bina" x="922" y="150" width="104" height="174" rx="4"/><path class="mz-govde" d="M 974 150 L 974 128"/><circle class="mz-sezlong" cx="974" cy="125" r="3.5"/><rect class="mz-kat" x="714" y="220" width="84" height="4" rx="2"/><rect class="mz-kat" x="812" y="220" width="84" height="4" rx="2"/><rect class="mz-kat" x="714" y="248" width="84" height="4" rx="2"/><rect class="mz-kat" x="812" y="248" width="84" height="4" rx="2"/><rect class="mz-kat" x="714" y="276" width="84" height="4" rx="2"/><rect class="mz-kat" x="812" y="276" width="84" height="4" rx="2"/><rect class="mz-kat" x="714" y="304" width="84" height="4" rx="2"/><rect class="mz-kat" x="812" y="304" width="84" height="4" rx="2"/><rect class="mz-kat" x="933" y="178" width="38" height="4" rx="2"/><rect class="mz-kat" x="979" y="178" width="38" height="4" rx="2"/><rect class="mz-kat" x="933" y="206" width="38" height="4" rx="2"/><rect class="mz-kat" x="979" y="206" width="38" height="4" rx="2"/><rect class="mz-kat" x="933" y="234" width="38" height="4" rx="2"/><rect class="mz-kat" x="979" y="234" width="38" height="4" rx="2"/><rect class="mz-kat" x="933" y="262" width="38" height="4" rx="2"/><rect class="mz-kat" x="979" y="262" width="38" height="4" rx="2"/><rect class="mz-kat" x="933" y="290" width="38" height="4" rx="2"/><rect class="mz-kat" x="979" y="290" width="38" height="4" rx="2"/><rect class="mz-bina" x="1038" y="240" width="86" height="84" rx="4"/><rect class="mz-kat" x="1048" y="262" width="66" height="4" rx="2"/><rect class="mz-kat" x="1048" y="288" width="66" height="4" rx="2"/></g><g class="mz-k mz-k3"><path class="mz-govde" d="M 120.0 372.0 q 4.6 -46.0 9.2 -89.7"/><path class="mz-yaprak" d="M 129.2 282.3 q -29.1 -16.6 -52.9 -18.4"/><path class="mz-yaprak" d="M 129.2 282.3 q -19.0 -35.2 -34.5 -39.1"/><path class="mz-yaprak" d="M 129.2 282.3 q 1.3 -41.4 2.3 -46.0"/><path class="mz-yaprak" d="M 129.2 282.3 q 21.5 -31.0 39.1 -34.5"/><path class="mz-yaprak" d="M 129.2 282.3 q 29.1 -12.4 52.9 -13.8"/><path class="mz-govde" d="M 196.0 380.0 q 1.6 -36.0 3.2 -70.2"/><path class="mz-yaprak" d="M 199.2 309.8 q -22.8 -13.0 -41.4 -14.4"/><path class="mz-yaprak" d="M 199.2 309.8 q -14.8 -27.5 -27.0 -30.6"/><path class="mz-yaprak" d="M 199.2 309.8 q 1.0 -32.4 1.8 -36.0"/><path class="mz-yaprak" d="M 199.2 309.8 q 16.8 -24.3 30.6 -27.0"/><path class="mz-yaprak" d="M 199.2 309.8 q 22.8 -9.7 41.4 -10.8"/><path class="mz-govde" d="M 1132.0 366.0 q 6.0 -40.0 12.0 -78.0"/><path class="mz-yaprak" d="M 1144.0 288.0 q -25.3 -14.4 -46.0 -16.0"/><path class="mz-yaprak" d="M 1144.0 288.0 q -16.5 -30.6 -30.0 -34.0"/><path class="mz-yaprak" d="M 1144.0 288.0 q 1.1 -36.0 2.0 -40.0"/><path class="mz-yaprak" d="M 1144.0 288.0 q 18.7 -27.0 34.0 -30.0"/><path class="mz-yaprak" d="M 1144.0 288.0 q 25.3 -10.8 46.0 -12.0"/><rect class="mz-havuz" x="300" y="330" width="330" height="52" rx="26"/><path class="mz-sezlong" d="M 326 328 l 26 0 l -4 -13 l -18 0 Z"/><path class="mz-sezlong" d="M 372 328 l 26 0 l -4 -13 l -18 0 Z"/><path class="mz-sezlong" d="M 418 328 l 26 0 l -4 -13 l -18 0 Z"/><path class="mz-kiyi" d="M0 400 q 150 -14 300 0 t 300 0 t 300 0 t 300 0"/><path class="mz-kiyi" d="M0 414 q 170 -12 340 0 t 340 0 t 340 0"/></g></svg></div>
 
   <!-- ============ ÖLÇÜMLER ============ -->
   <section id="olcum">
@@ -1573,6 +1651,7 @@ belirtmeniz önerilir.
       </div>
 
       <div class="dny-sonuc" id="dnySonuc" aria-live="polite"></div>
+      <div class="gecmis" id="dnyGecmis"></div>
 
       <figure class="fig sadece-site">
   <div class="fig-ust"><span class="fig-ad">Benzerlik skorlarının dağılımı</span><span class="fig-kaynak">21 çalıştırma · 63 skor</span></div>
@@ -1606,6 +1685,12 @@ belirtmeniz önerilir.
     </div>
   </section>
 
+  <!-- Bilgi tabanindaki dokuz belgenin METNI. Kaynak satirlari acilinca
+     modele gerçekten giden metin gosteriliyor: "uydurmuyor" iddiasi
+     boylece kanitlanabilir hale geliyor. Bu korpusta parca = belge
+     oldugu icin bir kez gomulmesi yetiyor (7 KB), 21 kaydin icinde
+     tekrarlanmiyor. -->
+  <script type="application/json" id="dnyBelgeler">{"aktiviteler.txt":"Aktiviteler ve Eğlence\n\nDeniz Yıldızı Resort & Casino gün boyu ve akşam çeşitli aktiviteler sunar.\n\nÇocuklar ve aileler için mini kulüp, çocuk kulübü ve oyun parkı bulunur. Ailelerin çocuklarıyla birlikte keyifli vakit geçirebileceği düzenli etkinlikler yapılır.\n\nSpor aktiviteleri arasında voleybol, tenis, futsal (halı saha), badminton, yoga ve pilates yer alır.\n\nAkşam eğlencesi için tesiste sinema, disko ve gece kulübü bulunur; ayrıca canlı müzik programları düzenlenir. Zaman zaman ünlü sanatçıların konserleri gibi özel etkinlikler de gerçekleştirilir.\n\nTesiste ayrıca büyük bir casino (kumarhane) bulunur; canlı oyun masaları, VIP oyun odaları ve oyun makineleri mevcuttur.\n","balayi.pdf":"Balayi Paketleri\nDeniz  Yildizi  Resort  &  Casino,  balayi  ciftlerine  ozel  paketler  sunar.  Balayi  ayricaliklarindan\nyararlanmak icin son 6 ay icinde alinmis evlilik cuzdaninin ibraz edilmesi gerekir.\nStandart Balayi Paketi ucretsizdir ve sunlari icerir: transfer indirimi, odada balayi susslemesi,\nmeyve ve sarap ikrami ve spa indirimi.\nRomance  Paketi  ucretli  bir  ust  pakettir;  sampanya  ikrami  ve  ozel  pavilyon  gibi  ayricaliklar\nsunar.\nLuxury Paketi ise en kapsamli ucretli pakettir; her gun meyve ve tatli ikrami ile masaj hizmeti\nicerir.\nBalayi paketleri ve detayli bilgi icin rezervasyon sirasinda resepsiyona bilgi verebilirsiniz.","havuz_plaj.txt":"Havuzlar ve Plaj\n\nDeniz Yıldızı Resort & Casino'da toplam 10 adet açık ve kapalı yüzme havuzu bulunur. Havuz kenarlarında şezlong, şemsiye ve havlu misafirlere ücretsiz sağlanır.\n\nTesiste bir aquapark (su parkı) yer alır ve çeşitli kaydıraklarıyla hem çocuklara hem yetişkinlere eğlence sunar.\n\nOtel denize sıfır konumdadır ve özel kum plajına sahiptir. Plaja ulaşım için tesis içinde plaj servisi (shuttle) verilir. Plajda da şezlong, şemsiye ve havlu ücretsizdir.\n\nSu sporları arasında jet ski, parasailing (paraşüt) ve dalış kursu gibi seçenekler bulunur; bu su sporları ücrete tabidir.\n","odalar.txt":"Odalar ve Konaklama\n\nDeniz Yıldızı Resort & Casino'da 13 farklı oda tipi bulunur. Başlıca oda tipleri şunlardır:\n\nPanoramic Suite 60 metrekaredir ve 270 derece panoramik manzara sunar; çift kişilik yatak ve kanepe içerir.\n\nCorner Suite 60 metrekaredir, bahçe manzaralıdır ve bir kanepe barındırır.\n\nOcean Suite 60 metrekaredir; özel jakuzisi ve balkonu vardır.\n\nDeluxe Bahçe Manzaralı oda 45 metrekaredir ve balkon ya da terasa sahiptir.\n\nDeluxe Deniz Manzaralı oda 45 metrekaredir ve kısmi deniz görünümü sunar.\n\nBunların yanında yedi ek oda ve suit tipi daha mevcuttur.\n\nTüm odalarda LCD televizyon, merkezi klima, minibar, kasa, kablosuz internet, uydu yayını, saç kurutma makinesi, terlik ve çay/kahve seti standart olarak bulunur. Odalarda özel banyo yer alır.\n\nNot: Twin (iki tek yataklı) odalarda üçüncü kişi (triple) konaklaması yapılamaz.\n","otel_genel.txt":"Deniz Yıldızı Resort & Casino Hakkında\n\nDeniz Yıldızı Resort & Casino, Kuzey Kıbrıs'ın Bafra bölgesinde, denize sıfır konumda yer alan beş yıldızlı bir tatil köyüdür. Tesis 2018 yılında hizmete açılmıştır ve 125.000 metrekarelik bir alan üzerine kuruludur. Toplam 569 oda ile hizmet verir.\n\nOtel \"Ultra Her Şey Dahil\" konseptinde çalışır ve lüks, romantik, spa, iş-kongre ve aile dostu bir tatil için tasarlanmıştır. Güler yüzlü personeli ve kaliteli hizmet anlayışıyla tanınır.\n\nResepsiyon 24 saat hizmet verir. Tesisin ortak alanlarında ücretsiz kablosuz internet (Wi-Fi) mevcuttur. Otel bünyesinde geniş bir casino, kongre merkezi ve toplantı salonları bulunur.\n\nGiriş (check-in) saati 15:00, çıkış (check-out) saati 11:00'dir.\n\nBölgedeki başlıca noktalar: Salamis Antik Kenti yaklaşık 24 kilometre, Doğu Akdeniz Üniversitesi yaklaşık 28 kilometre, Othello Kalesi yaklaşık 28 kilometre uzaklıktadır.\n","politikalar.txt":"Otel Politikaları ve Kurallar\n\nGiriş (check-in) saati 15:00, çıkış (check-out) saati 11:00'dir.\n\nEvcil hayvan politikası: Tesise evcil hayvan kabul edilmemektedir.\n\n18 yaşından küçük misafirlerin konaklaması için yasal vasi izni gereklidir.\n\nTwin (iki tek yataklı) odalarda üçüncü kişi (triple) konaklaması yapılamaz.\n\nSpa merkezine 16 yaş altı misafirler ebeveyn eşliği olmadan kabul edilmez.\n\nBalayı çiftleri için özel not: Balayı ayrıcalıklarından yararlanmak isteyen çiftlerin, son 6 ay içinde alınmış evlilik cüzdanını ibraz etmesi gerekir.\n\nÖdeme ve fatura işlemleriniz ile diğer talepleriniz için 24 saat açık olan resepsiyona başvurabilirsiniz.\n","spa.md":"# Spa ve Wellness\n\n## Spa Merkezi\n\nDeniz Yıldızı Resort & Casino bünyesinde kapsamlı bir spa merkezi yer alır. Spa merkezinde masaj terapileri, cilt ve vücut bakımları, Türk hamamı, sauna, buhar odası ve dinlenme alanı bulunur. Ayrıca kapalı havuz, çeşitli bakım üniteleri, masaj odaları ve özel spa suitleri mevcuttur.\n\nMasaj, cilt bakımı ve benzeri spa hizmetleri ücrete tabidir ve randevu ile çalışır. Randevu için resepsiyona ya da spa merkezine başvurabilirsiniz.\n\n## Yaş Sınırı\n\nSpa merkezine 16 yaş altı misafirler ebeveyn eşliği olmadan kabul edilmez.\n\n## Fitness\n\nTesiste spor ve wellness aktiviteleri için fitness olanakları da bulunur.\n","ulasim.txt":"Ulaşım ve Transfer\n\nDeniz Yıldızı Resort & Casino, Kuzey Kıbrıs'ın Bafra bölgesindedir. En yakın havalimanı Ercan Havalimanı olup tesise uzaklığı yaklaşık 56,8 kilometredir.\n\nHavalimanı transfer hizmeti tesis tarafından ya da rezervasyon acentesi aracılığıyla sağlanabilir. Transfer talebinizi rezervasyon sırasında belirtmeniz önerilir.\n\nTesise otomobille gelen misafirler için otopark imkânı bulunur.\n\nBölgedeki yakın noktalar: Salamis Antik Kenti yaklaşık 24,4 kilometre, Doğu Akdeniz Üniversitesi yaklaşık 27,8 kilometre ve Othello Kalesi yaklaşık 27,9 kilometre uzaklıktadır.\n","yeme_icme.txt":"Yeme ve İçme\n\nAna restoran açık büfe hizmet verir. Kahvaltı 07:00 ile 11:00 arasında, öğle yemeği 12:30 ile 14:30 arasında, akşam yemeği ise 19:00 ile 21:30 arasında servis edilir. Ana restorandaki öğünler Ultra Her Şey Dahil konsepti kapsamında ücretsizdir.\n\nTesiste altı adet à la carte restoran bulunur ve bunlar akşamları 19:00 ile 23:00 arasında hizmet verir. À la carte restoranlar rezervasyon ile çalışır ve ücrete tabidir. Mutfak seçenekleri şunlardır:\n\n- İtalyan mutfağı à la carte restoranı\n- Steakhouse (et restoranı)\n- Asya mutfağı restoranı\n- Deniz ürünleri restoranı\n- Türk mutfağı restoranı\n- Meksika mutfağı restoranı\n\nTesiste çok sayıda bar bulunur; bunlar arasında lobi barı, çeşitli havuz barları, bir sahil barı ve vitamin bar yer alır.\n\nUltra Her Şey Dahil konsepti kapsamında, tesisin belirlediği markalar dahilinde yerli ve yabancı alkollü ve alkolsüz içecekler 24 saat ücretsiz sunulur.\n"}</script>
   <script type="application/json" id="dnyVeri">{"uretim":{"belge":9,"parca":9,"chat_modeli":"qwen3-4b","embedding":"intfloat/multilingual-e5-small","top_k":3},"kayitlar":[{"soru":"Kahvaltı kaçta başlar ve biter?","cevap":"Kahvaltı 07:00 ile 11:00 arasında servis edilir.","kaynaklar":[{"dosya":"yeme_icme.txt","skor":0.81},{"dosya":"politikalar.txt","skor":0.795},{"dosya":"ulasim.txt","skor":0.772}],"sure":0.99},{"soru":"Kahvaltıyı en geç kaçta yiyebilirim?","cevap":"Kahvaltıyı en geç **11:00** da yiyebilirim.","kaynaklar":[{"dosya":"yeme_icme.txt","skor":0.81},{"dosya":"politikalar.txt","skor":0.793},{"dosya":"ulasim.txt","skor":0.792}],"sure":0.98},{"soru":"Akşam à la carte İtalyan restoranı var mı?","cevap":"Evet, akşam à la carte İtalyan restoranı tesiste bulunur.","kaynaklar":[{"dosya":"yeme_icme.txt","skor":0.857},{"dosya":"politikalar.txt","skor":0.796},{"dosya":"aktiviteler.txt","skor":0.778}],"sure":1.49},{"soru":"Akşam et yemek istiyorum, uygun bir restoran var mı?","cevap":"Aşağıdaki restoranlardan birinin akşam et yemek istiyorsan uygun olabilir:\n\n- **Steakhouse (et restoranı)**\n\nBu restoran, akşam yemeğine uygun bir seçenek olabilir.","kaynaklar":[{"dosya":"yeme_icme.txt","skor":0.851},{"dosya":"politikalar.txt","skor":0.825},{"dosya":"spa.md","skor":0.813}],"sure":1.53},{"soru":"Denize karşı bir şeyler içebileceğim sahil barı var mı?","cevap":"Tesiste sahil barı mevcuttur ve bu bar, denize karşı bir şeyler içebileceğiniz bir yerdir.","kaynaklar":[{"dosya":"ulasim.txt","skor":0.818},{"dosya":"otel_genel.txt","skor":0.814},{"dosya":"yeme_icme.txt","skor":0.809}],"sure":1.09},{"soru":"Ocean Suite odasında jakuzi var mı?","cevap":"Evet, Ocean Suite odasında jakuzi mevcuttur.","kaynaklar":[{"dosya":"odalar.txt","skor":0.855},{"dosya":"politikalar.txt","skor":0.804},{"dosya":"otel_genel.txt","skor":0.801}],"sure":0.9},{"soru":"Otelde toplam kaç oda var?","cevap":"Otelde toplam 569 oda var.","kaynaklar":[{"dosya":"odalar.txt","skor":0.86},{"dosya":"otel_genel.txt","skor":0.828},{"dosya":"politikalar.txt","skor":0.825}],"sure":0.86},{"soru":"Odalarda kasa var mı?","cevap":"Evet, odalarda kasa mevcuttur.","kaynaklar":[{"dosya":"odalar.txt","skor":0.825},{"dosya":"politikalar.txt","skor":0.813},{"dosya":"otel_genel.txt","skor":0.808}],"sure":0.86},{"soru":"Otelde aquapark var mı?","cevap":"Deniz Yıldızı Resort & Casino'da tesisin belirlediği markalar dahilinde yerli ve yabancı alkollü ve alkolsüz içecekler 24 saat ücretsiz sunulur.","kaynaklar":[{"dosya":"havuz_plaj.txt","skor":0.855},{"dosya":"otel_genel.txt","skor":0.835},{"dosya":"yeme_icme.txt","skor":0.833}],"sure":3.42},{"soru":"Otel toplam kaç havuzu var?","cevap":"Deniz Yıldızı Resort & Casino'da toplam **10 adet açık ve kapalı yüzme havuzu** bulunur.","kaynaklar":[{"dosya":"havuz_plaj.txt","skor":0.847},{"dosya":"odalar.txt","skor":0.827},{"dosya":"politikalar.txt","skor":0.825}],"sure":1.14},{"soru":"Spa merkezinde Türk hamamı var mı?","cevap":"Evet, Spa merkezinde Türk hamamı mevcuttur.","kaynaklar":[{"dosya":"spa.md","skor":0.861},{"dosya":"politikalar.txt","skor":0.836},{"dosya":"balayi.pdf","skor":0.803}],"sure":0.91},{"soru":"Otelde casino var mı?","cevap":"Evet, Deniz Yıldızı Resort & Casino'da casino mevcuttur.","kaynaklar":[{"dosya":"otel_genel.txt","skor":0.868},{"dosya":"odalar.txt","skor":0.857},{"dosya":"aktiviteler.txt","skor":0.84}],"sure":0.98},{"soru":"Çocuğumla yapabileceğim aktiviteler neler?","cevap":"Ailelerin çocuklarıyla birlikte keyifli vakit geçirebileceği düzenli etkinlikler yapılır. Bu etkinlikler arasında:\n\n- Mini kulüp\n- Çocuk kulübü\n- Oyun parkı\n\nbulunur. Bu aktiviteler sayesinde çocuklarınızla keyifli zamanlar geçirebilirsiniz.","kaynaklar":[{"dosya":"aktiviteler.txt","skor":0.836},{"dosya":"politikalar.txt","skor":0.797},{"dosya":"balayi.pdf","skor":0.785}],"sure":1.89},{"soru":"Ercan Havalimanı otele ne kadar uzakta?","cevap":"Ercan Havalimanı, Deniz Yıldızı Resort & Casino otele yaklaşık **56,8 kilometre** uzaklıktadır.","kaynaklar":[{"dosya":"ulasim.txt","skor":0.866},{"dosya":"otel_genel.txt","skor":0.786},{"dosya":"politikalar.txt","skor":0.775}],"sure":1.22},{"soru":"Uçaktan indim, otele nasıl ulaşabilirim?","cevap":"Havayolu transfer hizmeti tesis tarafından ya da rezervasyon acentesi aracılığıyla sağlanabilir. Transfer talebinizi rezervasyon sırasında belirtmeniz önerilir.","kaynaklar":[{"dosya":"ulasim.txt","skor":0.813},{"dosya":"politikalar.txt","skor":0.797},{"dosya":"otel_genel.txt","skor":0.788}],"sure":1.43},{"soru":"Odaya evcil hayvan getirebilir miyim?","cevap":"Evcil hayvan politikası gereğine göre, tesise evcil hayvan kabul edilmemektedir. Dolayısıyla, odaya evcil hayvan getirebilirsiniz ancak bu durum resepsiyonun yetkilileriyle paylaşılmalıdır.","kaynaklar":[{"dosya":"politikalar.txt","skor":0.806},{"dosya":"balayi.pdf","skor":0.775},{"dosya":"ulasim.txt","skor":0.774}],"sure":1.7},{"soru":"Otel hangi yıl hizmete açıldı?","cevap":"Otel, 2018 yılında hizmete açılmıştır.","kaynaklar":[{"dosya":"politikalar.txt","skor":0.815},{"dosya":"otel_genel.txt","skor":0.806},{"dosya":"yeme_icme.txt","skor":0.803}],"sure":2.15},{"soru":"Balayı ayrıcalığından yararlanmak için ne gerekiyor?","cevap":"Balayı ayrıcalığından yararlanmak isteyen çiftlerin, son 6 ay içinde alınmış evlilik cuzdanını ibraz etmesi gerekir.","kaynaklar":[{"dosya":"politikalar.txt","skor":0.822},{"dosya":"balayi.pdf","skor":0.805},{"dosya":"yeme_icme.txt","skor":0.789}],"sure":1.38},{"soru":"Otelde bowling salonu var mı?","cevap":"Otelde bowling salonu bulunmamaktadır.","kaynaklar":[{"dosya":"politikalar.txt","skor":0.824},{"dosya":"odalar.txt","skor":0.821},{"dosya":"aktiviteler.txt","skor":0.819}],"sure":0.85},{"soru":"Bugün hava nasıl olacak?","cevap":"Bugün hava durumu, bu bilgide yer almamaktadır. Lütfen resepsiyona danışmanızı öneririm.","kaynaklar":[{"dosya":"yeme_icme.txt","skor":0.791},{"dosya":"politikalar.txt","skor":0.789},{"dosya":"ulasim.txt","skor":0.777}],"sure":1.22},{"soru":"Otelde helikopter pisti var mı?","cevap":"Bu konuda elimde bilgi yok, resepsiyona danisabilirsiniz.","kaynaklar":[{"dosya":"otel_genel.txt","skor":0.81},{"dosya":"politikalar.txt","skor":0.808},{"dosya":"ulasim.txt","skor":0.803}],"sure":1.01}]}</script>
 
   <!-- ============ KURULUM ============ -->
@@ -1892,21 +1977,20 @@ belirtmeniz önerilir.
     });
   })();
 
-  /* ---- Hero manzarasinin kaydirinca sonmesi ----
-     --mz: 0 (sayfanin tepesi) -> 1 (manzara gecildi). Uc katman bu degeri
-     farkli carpanlarla kullaniyor, derinlik oradan geliyor. Hareket
-     kullanicinin parmagina bagli; kendiliginden donen bir sey yok. */
+  /* ---- Deniz yildizinin kaydirinca sonmesi ----
+     --dy: 0 (sayfanin tepesi) -> 1 (giris ekrani gecildi). Doner, kuculur
+     ve soner. Hareketi tumuyle kullanici suruyor. */
   (function () {
-    var mz = document.querySelector(".manzara");
-    if (!mz) return;
+    var dy = document.querySelector(".dy");
+    var hero = document.querySelector(".hero");
+    if (!dy || !hero) return;
     var sirada = false;
     function guncelle() {
-      // Band ekranin ustune dogru cikip gozden kaybolurken soner.
-      var r = mz.getBoundingClientRect();
-      var oran = Math.min(1, Math.max(0, 1 - (r.bottom / (window.innerHeight * 0.9))));
-      mz.style.setProperty("--mz", oran.toFixed(3));
-      // Tamamen sonduyse boyamayi tumden birak.
-      mz.style.setProperty("--mz-op", oran >= 1 ? "0" : "1");
+      var h = hero.offsetHeight || 1;
+      var oran = Math.min(1, Math.max(0, window.scrollY / (h * 0.8)));
+      dy.style.setProperty("--dy", oran.toFixed(3));
+      // Tamamen sonduyse bosuna boyanmasin.
+      dy.style.visibility = oran >= 1 ? "hidden" : "";
       sirada = false;
     }
     window.addEventListener("scroll", function () {
@@ -1963,6 +2047,15 @@ belirtmeniz önerilir.
     try { veri = JSON.parse(kutu.textContent); } catch (e) { return; }
     var kayitlar = (veri && veri.kayitlar) || [];
     if (!kayitlar.length) return;
+
+    /* Belge metinleri: kaynak satiri acilinca modele giden metni gosteriyoruz.
+       Canli modda sunucu gercek PARCA metnini yolluyor ve o yeglenir; kayitli
+       modda elimizde yalnizca belgenin tamami var, etiketi de oyle diyor. */
+    var belgeler = {};
+    try {
+      var bk = document.getElementById("dnyBelgeler");
+      if (bk) belgeler = JSON.parse(bk.textContent) || {};
+    } catch (e) { belgeler = {}; }
 
     var canli = false;   // /saglik tutarsa true olur
 
@@ -2083,14 +2176,83 @@ belirtmeniz önerilir.
 
     /* Tek kart cizici. "etiket" cevabin NEREDEN geldigini soyler; kayitli ile
        canli cikti hicbir zaman ayni etiketi tasimaz. */
+    /* Kaynak satirlarini acip kapatir. Sonuc her cizildiginde yeniden baglanir
+       cunku satirlar innerHTML ile yeniden uretiliyor. */
+    function kaynaklariBagla() {
+      Array.prototype.forEach.call(sonuc.querySelectorAll("button.dny-bas"), function (d) {
+        d.addEventListener("click", function () {
+          var satir = d.parentNode;
+          var acik = satir.classList.toggle("acik");
+          d.setAttribute("aria-expanded", acik ? "true" : "false");
+        });
+      });
+    }
+
+    /* Soru gecmisi (yalnizca uygulama kipinde). Sitede tek cevap gosteriliyor;
+       orada kayitli havuzu gezmek zaten listeyle yapiliyor. */
+    var gecmis = [];
+    var gecmisKutu = document.getElementById("dnyGecmis");
+
+    function gecmiseEkle(kayit) {
+      if (!uygulamaKipi || !gecmisKutu) return;
+      // Ayni soru ust uste sorulduysa tekrar eklemeyelim.
+      gecmis = gecmis.filter(function (g) { return g.soru !== kayit.soru; });
+      gecmis.unshift(kayit);
+      if (gecmis.length > 12) gecmis.pop();
+      gecmisiCiz();
+    }
+
+    function gecmisiCiz() {
+      if (!gecmisKutu) return;
+      if (gecmis.length < 2) { gecmisKutu.innerHTML = ""; return; }
+      var satir = gecmis.slice(1).map(function (g, i) {
+        return '<button class="gecmis-oge" type="button" data-i="' + (i + 1) + '">' +
+                 '<span class="gecmis-soru">' + kacir(g.soru) + '</span>' +
+                 '<span class="gecmis-sure">' + Number(g.sure).toFixed(2).replace(".", ",") + ' sn</span>' +
+               '</button>';
+      }).join("");
+      gecmisKutu.innerHTML = '<span class="gecmis-bas">Bu oturumda sorulanlar</span>' + satir;
+      Array.prototype.forEach.call(gecmisKutu.querySelectorAll(".gecmis-oge"), function (d) {
+        d.addEventListener("click", function () {
+          var g = gecmis[parseInt(d.getAttribute("data-i"), 10)];
+          if (!g) return;
+          giris.value = g.soru;
+          temizle.hidden = false;
+          kartCiz(g.etiket, g.soru, g.cevap, g.kaynaklar, g.sure);
+          // Tekrar en uste tasi: son bakilan hep tepede dursun.
+          gecmiseEkle(g);
+        });
+      });
+    }
+
     function kartCiz(etiket, soru, cevap, kaynaklar, sure) {
       var ipucu = ipucuKur(soru, cevap, kaynaklar);
       var satirlar = (kaynaklar || []).map(function (kay) {
         var yuzde = Math.max(0, Math.min(100, kay.skor * 100));
+        // Canli modda sunucudan gelen PARCA metni; yoksa gomulu belge metni.
+        var parca = kay.metin || belgeler[kay.dosya] || "";
+        var not = kay.metin ? "modele giden parça" : "belgenin tamamı";
+        var ic = parca
+          ? '<div class="dny-ac"><div><div class="dny-govde">' +
+              '<div class="dny-metin">' + kacir(parca) + '</div>' +
+              '<span class="dny-metin-not">' + not + ' · ' + kacir(kay.dosya) + '</span>' +
+            '</div></div></div>'
+          : "";
+        // Baslik acilabiliyorsa GERCEK bir <button>: Enter/Space, odak halkasi ve
+        // "genisletildi" duyurusu tarayicidan geliyor. Panel dugmenin KARDESI,
+        // icinde degil; yoksa metnin tamami dugmenin erisilebilir adi olurdu.
+        var etiketli = parca
+          ? '<button class="dny-bas" type="button" aria-expanded="false">'
+          : '<div class="dny-bas">';
         return '<div class="dny-kaynak">' +
-                 '<span class="dny-dosya mono">' + kacir(kay.dosya) + '</span>' +
-                 '<span class="dny-bar"><i style="width:' + yuzde.toFixed(1) + '%"></i></span>' +
-                 '<span class="dny-skor mono">' + Number(kay.skor).toFixed(3) + '</span>' +
+                 etiketli +
+                   '<span class="dny-dosya mono">' +
+                     (parca ? '<span class="dny-ok" aria-hidden="true">›</span> ' : '') +
+                     kacir(kay.dosya) + '</span>' +
+                   '<span class="dny-bar"><i style="width:' + yuzde.toFixed(1) + '%"></i></span>' +
+                   '<span class="dny-skor mono">' + Number(kay.skor).toFixed(3) + '</span>' +
+                 (parca ? '</button>' : '</div>') +
+                 ic +
                '</div>';
       }).join("");
       var tk = (veri.uretim && veri.uretim.top_k) || (kaynaklar || []).length;
@@ -2106,6 +2268,9 @@ belirtmeniz önerilir.
             (satirlar ? '<div class="dny-kaynaklar">' + satirlar + '</div>' : '') +
           '</div>' +
         '</div>' + ipucu;
+      kaynaklariBagla();
+      gecmiseEkle({ etiket: etiket, soru: soru, cevap: cevap,
+                    kaynaklar: kaynaklar, sure: sure });
     }
 
     /* Yalnizca CANLI modda ve yalnizca model "bilgim yok" dediginde cikar.
@@ -2225,6 +2390,7 @@ belirtmeniz önerilir.
 
     temizle.addEventListener("click", function () {
       giris.value = ""; temizle.hidden = true; sonuc.innerHTML = "";
+      gecmis = []; gecmisiCiz();
       ac(false); giris.focus();
     });
 

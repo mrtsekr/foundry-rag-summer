@@ -33,6 +33,7 @@ import json
 import sys
 import threading
 import time
+import socket
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
@@ -183,8 +184,10 @@ class Islem(BaseHTTPRequestHandler):
             sure = time.perf_counter() - basla
 
         # hits: (skor, id, metin, kaynak_dosya)
-        kaynaklar = [{"dosya": kaynak, "skor": round(float(skor), 3)}
-                     for skor, _id, _metin, kaynak in hits]
+        # Parca METNI de gonderiliyor: sayfa "cevap su metinden geldi" iddiasini
+        # gostererek kanitlayabilsin. RAG'in tum savi bu, gizlemenin anlami yok.
+        kaynaklar = [{"dosya": kaynak, "skor": round(float(skor), 3), "metin": metin}
+                     for skor, _id, metin, kaynak in hits]
 
         _json(self, 200, {
             "canli": True,
@@ -233,6 +236,24 @@ def main() -> int:
         _HAZIR.set()
         print("Model hazir.")
 
+    # Port zaten dolu mu? Windows'ta ThreadingHTTPServer.allow_reuse_address
+    # aciktir ve ayni adrese IKINCI bir soket baglanabilir. O zaman iki sunucu
+    # birden dinler, istekler hangisine gidecegi belli olmaz ve kullanici
+    # farkinda olmadan ESKI surumle konusur. Bunu yasadik; bu yuzden once
+    # baglanmayi deneyip acikca soyluyoruz.
+    _yoklama = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    _yoklama.settimeout(0.35)
+    _dolu = _yoklama.connect_ex(("127.0.0.1", PORT)) == 0
+    _yoklama.close()
+    if _dolu:
+        print("HATA: %d numarali port zaten kullaniliyor." % PORT)
+        print("      Asistan buyuk ihtimalle baska bir pencerede zaten acik:")
+        print("      http://127.0.0.1:%d/uygulama" % PORT)
+        print()
+        print("      Yeniden baslatmak isterseniz once onu kapatin.")
+        print("      Kim tuttugunu gormek icin:  netstat -ano | findstr :%d" % PORT)
+        return 1
+
     # Once soketi ac: tarayici aninda baglanabilsin, bekleme sayfanin kendi
     # temasinda gecsin. Yukleme arka planda suruyor.
     sunucu = ThreadingHTTPServer((ADRES, PORT), Islem)
@@ -242,7 +263,6 @@ def main() -> int:
     if AG_KIPI:
         # Telefonun yazacagi adresi bulup gosterelim; kullanici ipconfig'e
         # bakmak zorunda kalmasin.
-        import socket
         try:
             _s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             _s.connect(("8.8.8.8", 80))       # paket gitmez, yalnizca yerel IP'yi ogrenir
