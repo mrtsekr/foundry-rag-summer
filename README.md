@@ -92,6 +92,35 @@ python bench/bench_chunking.py  # parçalama × embedding taraması
 Kendi belgelerini eklemek için `docs/` klasörüne `.txt`, `.md` veya `.pdf` koy,
 `python ingest.py` komutunu tekrar çalıştır.
 
+## Masaüstü ve telefon
+
+Komut satırı dışında iki kullanım biçimi var. İkisi de aynı `rag.answer()`
+üzerinde çalışır, ayrı bir kod yolu yoktur.
+
+**Masaüstü.** Depo kökündeki `Deniz Yildizi Asistani.bat` dosyasına çift tıkla.
+Sunucuyu başlatır, model yüklenene kadar bekler ve sayfayı Edge'in uygulama
+kipinde açar: adres çubuğu ve sekme yok, kendi penceresi ve görev çubuğu girişi
+var. Edge yoksa Chrome, o da yoksa varsayılan tarayıcı denenir.
+
+Arayüz tanıtım sayfasının kendisidir ama `/uygulama` yolundan açılır ve o kipte
+tanıtım bölümleri gizlenir; geriye soru kutusu, cevap ve kaynaklar kalır. Ayrı
+bir HTML tutulmadı, çünkü iki sürüm zamanla birbirinden kayar.
+
+**Telefon.** Model telefonda çalışamaz; `qwen3-4b` bu bilgisayarın GPU'sunda.
+Telefon desteği, telefonun aynı ağ üzerinden bu bilgisayara bağlanması demektir:
+
+```bash
+python site/sunucu.py --ag
+```
+
+Sunucu açılışta telefonun yazacağı adresi gösterir
+(`http://<bu-makinenin-ip>:8000/uygulama`). Telefon tarayıcısında açıp "Ana
+ekrana ekle" dersen simgesiyle ve tam ekran açılır.
+
+`--ag` varsayılan değildir ve olmamalıdır: `0.0.0.0`'a bağlanmak asistanı o
+ağdaki herkese açar. İnternet yine devrede değil, belgeler makineden çıkmıyor;
+yalnızca soru ve cevap yerel ağda dolaşıyor.
+
 ---
 
 ## Mimari

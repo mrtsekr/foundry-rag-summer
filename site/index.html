@@ -1,3 +1,5 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Deniz Yıldızı Asistanı</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -758,6 +760,36 @@
   .g-cizgi   { stroke: var(--line-soft); stroke-width: 1; }
   .g-tarama  { stroke: var(--signal); stroke-width: 2.2; }
 
+
+  /* ---------- Uygulama kipi ----------
+     Ayni dosya iki yerde kullaniliyor:
+       /           -> tanitim sayfasi (GitHub Pages'te de bu)
+       /uygulama   -> sunucu.py ile acilan masaustu kipi
+     Ikinci durumda tanitim bolumleri gizlenip yalnizca sor-cevap arayuzu
+     kaliyor. Ayri bir dosya yapmadik: iki surumun birbirinden kaymasi
+     (bir tarafta duzeltilen hatanin digerinde kalmasi) zamanla kaciniIlmaz. */
+  html.uyg body { display: flex; flex-direction: column; min-height: 100vh; }
+  html.uyg .site-nav,
+  html.uyg .dalga,
+  html.uyg footer,
+  html.uyg main section:not(#deneyin),
+  html.uyg .sadece-site,
+  html.uyg .dny-ust .label { display: none; }
+  html.uyg main { flex: 1 1 auto; }
+  html.uyg #deneyin { border-top: 0; padding-block: clamp(1rem, 3vw, 1.6rem); }
+  html.uyg #deneyin .stack-lg { gap: clamp(.9rem, 2vw, 1.3rem); }
+
+  /* Uygulama kipinde ince bir baslik seridi: hangi programda oldugunu ve
+     hangi modda calistigini soyler. Sitede gorunmez. */
+  .uyg-bar { display: none; }
+  html.uyg .uyg-bar {
+    display: flex; flex-wrap: wrap; align-items: center; gap: .5rem .9rem;
+    padding: .7rem 0 .9rem; border-bottom: 1px solid var(--line-soft);
+    margin-bottom: clamp(.9rem, 2vw, 1.3rem);
+  }
+  .uyg-ad { font-family: Archivo, sans-serif; font-weight: 700; letter-spacing: -.01em; }
+  .uyg-alt { font-family: "JetBrains Mono", monospace; font-size: .72rem; color: var(--muted); }
+
   /* ---------- Terminal + açıklama rayı ---------- */
   .term-grid { display: grid; gap: 1.1rem; grid-template-columns: 1fr; align-items: start; }
   @media (min-width: 860px) { .term-grid { grid-template-columns: minmax(0,1.9fr) minmax(0,1fr); } }
@@ -1314,14 +1346,18 @@ belirtmeniz önerilir.
        Veri sayfaya GOMULU (asagidaki application/json). Ag istegi YOK,
        canli model cagrisi YOK. Gosterilen her sey 21 gercek calistirmadan. -->
   <section id="deneyin">
+    <div class="uyg-bar">
+      <span class="uyg-ad">Deniz Yıldızı Asistanı</span>
+      <span class="uyg-alt">yerel · çevrimdışı</span>
+    </div>
     <div class="stack-lg">
       <div class="stack col">
         <div class="dny-ust">
           <span class="label">Deneyin</span>
           <span class="dny-rozet" id="dnyRozet">kayıtlı gerçek çalıştırma</span>
         </div>
-        <h2>Kayıttan sorun.</h2>
-        <p>
+        <h2 class="sadece-site">Kayıttan sorun.</h2>
+        <p class="sadece-site">
           Aşağıdaki 21 soru bu bilgisayarda gerçekten çalıştırıldı; cevaplar, kaynak
           dosyalar, benzerlik skorları ve süreler o çalıştırmalardan olduğu gibi alındı.
           <span id="dnyModNot">Bu sayfada <em>canlı model çalışmıyor</em>: kayıtta olmayan
@@ -1344,7 +1380,7 @@ belirtmeniz önerilir.
 
       <div class="dny-sonuc" id="dnySonuc" aria-live="polite"></div>
 
-      <figure class="fig">
+      <figure class="fig sadece-site">
   <div class="fig-ust"><span class="fig-ad">Benzerlik skorlarının dağılımı</span><span class="fig-kaynak">21 çalıştırma · 63 skor</span></div>
   <svg viewBox="0 0 560 190" role="img" aria-label="Histogram: 63 benzerlik skorunun tamamı 0,77 ile 0,87 arasında toplanıyor; en yoğun kova 0,81.">
     <defs><pattern id="taramaRed" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line class="g-tarama" x1="0" y1="0" x2="0" y2="7"/></pattern></defs>
@@ -1711,6 +1747,28 @@ belirtmeniz önerilir.
 
     var canli = false;   // /saglik tutarsa true olur
 
+    /* Uygulama kipi: sunucu.py bu sayfayi /uygulama yolundan da veriyor.
+       Ayni dosya, farkli kabuk — tanitim bolumleri CSS ile gizleniyor. */
+    var uygulamaKipi = /^\/uygulama\/?$/.test(location.pathname);
+    if (uygulamaKipi) {
+      document.documentElement.classList.add("uyg");
+      document.title = "Deniz Yıldızı Asistanı";
+      /* Manifesto ve tema rengi YALNIZCA burada, JS ile ekleniyor. Sabit
+         etiket olarak yazsaydik GitHub Pages'te ve Artifact'te
+         /manifest.webmanifest 404 verirdi; orada onu servis eden bir sunucu
+         yok. Telefonda "Ana ekrana ekle" bunlarla uygulama gibi aciliyor. */
+      var mf = document.createElement("link");
+      mf.rel = "manifest"; mf.href = "/manifest.webmanifest";
+      document.head.appendChild(mf);
+      var tr = document.createElement("meta");
+      tr.name = "theme-color";
+      tr.content = matchMedia("(prefers-color-scheme: dark)").matches ? "#0A1922" : "#E9EDEE";
+      document.head.appendChild(tr);
+      var ios = document.createElement("meta");
+      ios.name = "apple-mobile-web-app-capable"; ios.content = "yes";
+      document.head.appendChild(ios);
+    }
+
     function sadelestir(t) {
       return String(t).toLocaleLowerCase("tr")
         .replace(/\u0131/g, "i").replace(/\u011f/g, "g").replace(/\u00fc/g, "u")
@@ -1951,7 +2009,12 @@ belirtmeniz önerilir.
       ac(false); giris.focus();
     });
 
-    sec(kayitlar[0]);   // acilista bicimi goster
+    if (uygulamaKipi) {
+      // Uygulamada bos ve odakli acilir: kullanici dogrudan yazmaya baslasin.
+      try { giris.focus(); } catch (e) {}
+    } else {
+      sec(kayitlar[0]);   // sitede acilista bicimi goster
+    }
 
     /* /saglik yoklamasi. Ayni koken oldugu icin Artifact'te de guvenli:
        orada 404 doner, yoklama duser, kayitli mod aynen kalir. */
