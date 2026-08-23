@@ -439,6 +439,11 @@ sızıntı bitti.
 - **Değerlendirme seti küçük** (17 soru) ve elle hazırlandı. İstatistiksel güven
   aralığı iddia etmiyor, yön gösteriyor.
 - **Oturum hafızası yok.** Her soru bağımsız, çok turlu diyalog kurulmadı.
+- **İptal yalnızca istemci tarafında.** Uygulamadaki "iptal" düğmesi ve 60
+  saniyelik zaman aşımı isteği bırakır, arayüzü kurtarır; ama sunucudaki üretimi
+  durdurmaz. Model o soruyu bitirene kadar `_kilit`'i tuttuğu için bir sonraki
+  soru gecikebilir. Gerçek iptal, üretimi parça parça kesebilen bir akış
+  arayüzü gerektirir.
 
 ## Sonraki adımlar
 

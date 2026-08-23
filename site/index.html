@@ -816,6 +816,21 @@
     background: var(--surface); border: 1px dashed var(--line);
     border-radius: 3px; padding: 1rem 1.1rem;
   }
+  /* Bekleme kutusu artik bir iptal dugmesi tasiyor; yazi solda kalsin. */
+  .dny-bekle span.mono { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .dny-iptal {
+    flex: none; cursor: pointer; border-radius: 2px; background: transparent;
+    border: 1px solid var(--line); color: var(--muted);
+    font-family: Archivo, sans-serif; font-size: .7rem; padding: .2rem .55rem;
+    transition: color .2s ease, border-color .2s ease;
+  }
+  .dny-iptal:hover { color: var(--signal); border-color: var(--signal); }
+  .dny-iptal:active { background: var(--accent-dim); }
+  .dny-iptal:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) { .dny-iptal { transition: none; } }
+  /* Beklerken giris kilitli: sunucu istekleri siraya diziyor, ust uste soru
+     sormak takilmayi buyutmekten baska ise yaramiyor. */
+  #dnyGiris:disabled { opacity: .55; cursor: not-allowed; }
   .dny-hata {
     background: var(--surface); border: 1px solid var(--signal);
     border-radius: 3px; padding: 1.05rem 1.1rem; font-size: .92rem;
@@ -2266,6 +2281,7 @@ belirtmeniz önerilir.
       gecmisKutu.innerHTML = '<span class="gecmis-bas">Bu oturumda sorulanlar</span>' + satir;
       Array.prototype.forEach.call(gecmisKutu.querySelectorAll(".gecmis-oge"), function (d) {
         d.addEventListener("click", function () {
+          if (mesgul) return;          // havada bir soru varken sonucu ezme
           var g = gecmis[parseInt(d.getAttribute("data-i"), 10)];
           if (!g) return;
           giris.value = g.soru;
@@ -2383,31 +2399,91 @@ belirtmeniz önerilir.
     }
 
     /* ---- canli mod ---- */
+    /* Bir soru havadayken ikincisi baslatilmaz. Sunucu istekleri _kilit ile
+       siraya diziyor; ust uste sormak yalnizca kuyrugu uzatiyor. */
+    var mesgul = false;
+
+    /* Zaman asimi 60 sn. Olculen normal sure ortalama 1,33 sn, en yavas kayit
+       3,42 sn; yani 60 sn saglikli bir calistirmayi asla kesmez. Ama modelin
+       takildigi durum bu projede yasandi: README'de VRAM tasmasi altinda
+       cevap basina ~115 sn olculmustu. Sinir onun altinda ki arayuz sonsuza
+       kadar beklemesin. */
+    var SURE_SINIRI = 60000;
+
     function canliSor(soru) {
+      if (mesgul) return;
+      mesgul = true;
       giris.value = soru;
       temizle.hidden = false;
       ac(false);
-      sonuc.innerHTML = '<div class="dny-bekle">model \u00e7al\u0131\u015f\u0131yor\u2026 ' +
-                        '<span class="mono">' + kacir(soru) + '</span></div>';
+
+      var iptalci = null, sayac = null, kullaniciIptali = false;
+      try { iptalci = new AbortController(); } catch (e) { iptalci = null; }
+
+      sonuc.innerHTML =
+        '<div class="dny-bekle" aria-busy="true">' +
+          'model \u00e7al\u0131\u015f\u0131yor\u2026 ' +
+          '<span class="mono">' + kacir(soru) + '</span>' +
+          (iptalci ? '<button class="dny-iptal" type="button" id="dnyIptal">iptal</button>' : '') +
+        '</div>';
+
+      // Beklerken giris kilitli kalir; bitince geri acilir ve odak doner.
+      giris.disabled = true;
+      function serbestBirak() {
+        mesgul = false;
+        giris.disabled = false;
+        if (sayac) window.clearTimeout(sayac);
+      }
+
+      if (iptalci) {
+        var dugme = document.getElementById("dnyIptal");
+        if (dugme) dugme.addEventListener("click", function () {
+          kullaniciIptali = true;
+          iptalci.abort();
+        });
+        sayac = window.setTimeout(function () { iptalci.abort(); }, SURE_SINIRI);
+      }
+
       fetch("/sor", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ soru: soru })
+        body: JSON.stringify({ soru: soru }),
+        signal: iptalci ? iptalci.signal : undefined
       }).then(function (y) {
         if (!y.ok) throw new Error("sunucu " + y.status);
         return y.json();
       }).then(function (d) {
         if (d.hata) throw new Error(d.hata);
+        serbestBirak();
         kartCiz("Canl\u0131 \u00e7al\u0131\u015ft\u0131rma", d.soru || soru, d.cevap, d.kaynaklar, d.sure);
+        giris.focus();
       }).catch(function (e) {
-        /* Hata yutulmaz ve cevap UYDURULMAZ: ne oldugu yazilir. */
-        sonuc.innerHTML =
-          '<div class="dny-hata">' +
-            '<p><strong>Cevap al\u0131namad\u0131.</strong></p>' +
-            '<p class="mono">' + kacir(String(e.message || e)) + '</p>' +
-            '<p>Yerel sunucu durmu\u015f olabilir. Terminalde ' +
-              '<span class="mono">python site/sunucu.py</span> h\u00e2l\u00e2 \u00e7al\u0131\u015f\u0131yor mu?</p>' +
-          '</div>';
+        serbestBirak();
+        var kesildi = e && e.name === "AbortError";
+        if (kesildi) {
+          /* Durust olalim: fetch'i birakmak sunucudaki uretimi durdurmuyor.
+             Model o soruyu bitirene kadar _kilit'i tutuyor, dolayisiyla bir
+             sonraki soru bekleyebilir. Kullaniciya bunu soylemezsek iptal
+             bozuk gorunur. */
+          sonuc.innerHTML =
+            '<div class="dny-bekle">' +
+              (kullaniciIptali
+                ? 'Soru iptal edildi.'
+                : 'Cevap ' + (SURE_SINIRI / 1000) + ' saniyede gelmedi, bekleme kesildi.') +
+              ' Model bu soruyu arka planda bitirene kadar bir sonraki soru' +
+              ' ge\u00e7 yan\u0131tlanabilir.' +
+            '</div>';
+        } else {
+          /* Hata yutulmaz ve cevap UYDURULMAZ: ne oldugu yazilir. */
+          sonuc.innerHTML =
+            '<div class="dny-hata">' +
+              '<p><strong>Cevap al\u0131namad\u0131.</strong></p>' +
+              '<p class="mono">' + kacir(String(e.message || e)) + '</p>' +
+              '<p>Yerel sunucu durmu\u015f olabilir. Terminalde ' +
+                '<span class="mono">python site/sunucu.py</span> h\u00e2l\u00e2 \u00e7al\u0131\u015f\u0131yor mu?</p>' +
+            '</div>';
+        }
+        giris.focus();
       });
     }
 
