@@ -199,9 +199,13 @@ olur.
 
 ### Foundry'nin embedding modeline geçilmedi
 
-Proje başladığında Foundry Local kataloğunda embedding modeli yoktu; retrieval bu
-yüzden Python tarafında kuruldu. Temmuz sonunda katalog yeniden kontrol
-edildiğinde `qwen3-embedding-0.6b` (495 MB) ve `qwen3-embedding-8b` çıkmıştı.
+Proje başlarken Foundry Local tarafında kullanılabilecek bir embedding modeli
+bulunamadı ve retrieval Python tarafında kuruldu. Bunun bir sebebi de arama
+biçimiydi: SDK'da modeller takma adla çekiliyor (`catalog.get_model(alias)`), yani
+takma adını bilmediğin bir model senin için görünmez oluyor. Temmuz sonunda
+SDK üzerinden yeniden bakıldığında `qwen3-embedding-0.6b` (495 MB) ve
+`qwen3-embedding-8b` erişilebilir çıktı.
+
 Yani mevcut kurulum artık zorunluluk değil, tercih. Tercih üç ölçümle verildi.
 
 **Birinci ölçüm** (31 parça, e5 için optimize edilmiş ayar) e5'i açık ara önde
@@ -311,6 +315,19 @@ anlamsız) ve model bu rastgele bağlamla bir şeyler yazıyordu. Artık
 `assistant.py`'de boş Enter oturumu kapatmıyor; kazara basılan bir tuş GPU'da
 yüklü modeli düşürmesin diye çıkış yalnızca `q` ile.
 
+### Kapanmamış düşünme bloğu
+
+Qwen3 düşünme modunda çalışıyor ve `/no_think` her zaman tutmuyor. `_run()`
+başlangıçta yalnızca `</think>` varsa bloğu ayıklıyordu. Model bloğu açıp
+`max_tokens` sınırına takılarak kapatamadığında blok olduğu gibi kullanıcıya
+gidiyordu: "Otelde aquapark var mı?" sorusuna cevap olarak modelin İngilizce iç
+sesi döndü.
+
+Hata site için gerçek çalıştırma kayıtları üretilirken çıktı ama üretim kodunu
+etkiliyordu, CLI asistanında da olabilirdi. Artık blok açılmış ama kapanmamışsa
+cevap boş döndürülüyor, `generate()` bunu kötü cevap sayıp bir kez yeniden
+deniyor.
+
 ### Güvenli başarısızlık
 
 Kalan hatalar bilerek güvenli tarafta bırakıldı: sistem bilmediğinde uydurmuyor,
@@ -328,11 +345,16 @@ sızıntı bitti.
 
 ## Bilinen sınırlamalar
 
-- **Retrieval metriği fazla katı, %94 olduğundan kötümser.** Her soru için tek
-  bir doğru kaynak bekliyor. "Otelde casino var mı" sorusunda beklenen
-  `aktiviteler.txt` yerine `otel_genel.txt` geliyor; o belge de casino'dan
-  bahsettiği için cevap doğru çıkıyor ama metrik ıska sayıyor. Doğru çözüm soru
-  başına birden çok kabul edilebilir kaynak tanımlamak.
+- **Retrieval'da kalan tek ıska gerçek bir ıska.** Metrik başta her soru için tek
+  bir doğru kaynak bekliyordu ve bazı bilgiler birden çok belgede geçtiği için
+  asistan doğru cevap verdiği hâlde ıska sayılıyordu. Bu düzeltildi: iki soru
+  artık birden çok kabul edilebilir kaynak tanımlıyor (casino sorusu
+  `aktiviteler.txt` ya da `otel_genel.txt`, balayı sorusu `balayi.pdf` ya da
+  `politikalar.txt`). Ölçülen fark 14/16'dan 15/16'ya. Geriye kalan tek ıska
+  metrik sorunu değil: "Denize karşı bir şeyler içebileceğim sahil barı var mı?"
+  sorusunda `yeme_icme.txt` yerine `balayi.pdf`, `havuz_plaj.txt` ve
+  `ulasim.txt` geliyor. Dolaylı sorularda embedding'in gerçekten şaşırdığı yer
+  burası.
 - **Benzerlik skorları birbirine çok yakın.** 21 çalıştırmanın 63 skorunun hepsi
   0.77-0.87 aralığına sıkışıyor, yani yüksek skor tek başına "doğru parça geldi"
   demek değil. 31 parçalı eski yapılandırmada ilk beş parça arasındaki ortalama
