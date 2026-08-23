@@ -24,6 +24,17 @@ from eval import TESTLER  # ayni test setini kullan
 OLCULEN = [t for t in TESTLER if t["kaynak"] is not None]
 
 
+def beklenen_kaynaklar(t) -> set:
+    """Test maddesinin kabul edilebilir kaynaklarini KUME olarak dondurur.
+
+    Bazi bilgiler birden cok belgede geciyor, bu yuzden 'kaynak' alani bir
+    dize ya da liste olabilir (bkz. eval.py). Ikisini de ayni sekilde ele
+    almazsak liste gelen maddede karsilastirma coker.
+    """
+    k = t["kaynak"]
+    return {k} if isinstance(k, str) else set(k)
+
+
 def main() -> None:
     if not config.DB_PATH.exists():
         raise SystemExit("Once calistir:  python ingest.py")
@@ -41,7 +52,7 @@ def main() -> None:
         for t in OLCULEN:
             hits = db.search(conn, t["soru"], top_k=k)
             kaynaklar = {src for _, _, _, src in hits}
-            if t["kaynak"] in kaynaklar:
+            if beklenen_kaynaklar(t) & kaynaklar:
                 isabet += 1
         oran = isabet / len(OLCULEN)
         print(f"{k:>6}{isabet:>7}/{len(OLCULEN)}{oran:>7.0%}")
@@ -62,8 +73,8 @@ def main() -> None:
     kalan = []
     for t in OLCULEN:
         hits = db.search(conn2, t["soru"], top_k=kmax)
-        if t["kaynak"] not in {src for _, _, _, src in hits}:
-            kalan.append((t["soru"], t["kaynak"]))
+        if not (beklenen_kaynaklar(t) & {src for _, _, _, src in hits}):
+            kalan.append((t["soru"], " / ".join(sorted(beklenen_kaynaklar(t)))))
     conn2.close()
     if kalan:
         print(f"\nTOP_K={kmax}'da hala iskalanan sorular:")
