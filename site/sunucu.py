@@ -120,7 +120,8 @@ class Islem(BaseHTTPRequestHandler):
             return
 
         # /telefon: uygulamayi telefon boyutunda bir cerceve icinde gosterir.
-        # Kayit/sunum icin; icerideki sey taklit degil, ayni /uygulama.
+        # Mobil yerlesimi cihazsiz denetlemek icin; icerideki sey bir
+        # kopya degil, dogrudan /uygulama.
         if yol in ("/telefon", "/telefon/"):
             tel = INDEX.parent / "telefon.html"
             try:

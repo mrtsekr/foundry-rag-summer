@@ -135,12 +135,13 @@ ekrana ekle" dersen simgesiyle ve tam ekran açılır.
 ağdaki herkese açar. İnternet yine devrede değil, belgeler makineden çıkmıyor;
 yalnızca soru ve cevap yerel ağda dolaşıyor.
 
-**Telefon görünümünü bilgisayarda göstermek.** Sunum ya da ekran kaydı için
-elinde telefon olmayabilir. `http://127.0.0.1:8000/telefon` adresi uygulamayı
-telefon boyutunda bir çerçevenin içinde açar (`site/telefon.html`). Çerçeve
-tamamen CSS, içerideki sayfa taklit değil: aynı sunucu, aynı `/uygulama`, aynı
-model. Yalnızca görünüm alanı 393×852 gibi bir telefon ölçüsüne sabitleniyor,
-böylece mobil yerleşim kayıtta düzgün görünüyor.
+**Mobil yerleşimi cihazsız doğrulamak.** `http://127.0.0.1:8000/telefon`
+uygulamayı sabit telefon ölçülerinde bir çerçeve içinde açar
+(`site/telefon.html`); 393×852, 412×915 ve 375×667 arasında geçilebilir.
+İçerideki sayfa bir kopya değil, iframe doğrudan `/uygulama`'yı yükler: aynı
+sunucu, aynı model, çalışan bir asistan. Çerçeve tamamen CSS, görsel dosyası
+yok. Duyarlı yerleşimin dar ekranda bozulmadığı elde cihaz olmadan böyle
+denetlenebiliyor.
 
 **Sunucunun verdiği adresler.** `python site/sunucu.py` çalışırken:
 
@@ -148,7 +149,7 @@ böylece mobil yerleşim kayıtta düzgün görünüyor.
 |-------|-------------|
 | `/` | Tanıtım sayfasının tamamı — ölçümler, kararlar, canlı deneme |
 | `/uygulama` | Yalnız asistan: tanıtım bölümleri gizli, soru kutusu ve cevap kalır |
-| `/telefon` | `/uygulama`'yı telefon çerçevesi içinde gösterir (sunum/kayıt için) |
+| `/telefon` | `/uygulama`'yı sabit telefon ölçülerinde çerçeveler; mobil yerleşimi cihazsız denetlemek için |
 | `/saglik` | JSON: sunucu ayakta mı, model yüklendi mi, hangi modeller |
 | `/sor` | POST, JSON `{"soru": "..."}` — cevap, kaynaklar ve süre döner |
 
