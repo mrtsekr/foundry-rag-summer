@@ -1,4 +1,4 @@
-# Deniz Yıldızı Resort — Offline Türkçe RAG Asistanı
+# Deniz Yıldızı Resort - Offline Türkçe RAG Asistanı
 
 Tamamen yerel çalışan Türkçe bir soru-cevap (RAG) asistanı. Bir otelin
 belgelerini okur ve misafir sorularını yalnızca o belgelere dayanarak yanıtlar.
