@@ -172,8 +172,11 @@ class Islem(BaseHTTPRequestHandler):
         self.send_error(404, "yok")
 
     # ---------------- Belge yukleme ----------------
-    def _yukle(self):
+    def _belge_yukle(self):
         """Kullanicinin gonderdigi belgeyi parcalayip bilgi tabanina ekler.
+
+        Ad bilerek _belge_yukle: main() icinde MODELI yukleyen ayri bir _yukle
+        var, ikisi karisiyordu.
 
         Govde ham dosya baytlari; ad "X-Dosya-Adi" basliginda (yuzde kodlu)
         geliyor. Coklu-parca (multipart) cozmuyoruz: tek dosya icin gereksiz
@@ -276,7 +279,7 @@ class Islem(BaseHTTPRequestHandler):
     def do_POST(self):
         yol = self.path.split("?", 1)[0]
         if yol == "/yukle":
-            self._yukle()
+            self._belge_yukle()
             return
         if yol == "/sifirla":
             self._sifirla()

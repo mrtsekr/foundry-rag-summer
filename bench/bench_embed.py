@@ -54,6 +54,10 @@ SORULAR = [
 ]
 
 
+# NOT: Ayni islev eval.py icinde de var. Bilerek kopyalandi:
+# oradan almak, LLM yigini yuklemeyen bir olcum betigini eval.py
+# uzerinden llm/foundry'ye baglardi. Ikisi AYNI kalmali, yoksa iki
+# olcumun sayilari kiyaslanamaz hale gelir.
 def sadelestir(s: str) -> str:
     """Turkce'ye uygun kucuk harfe cevir (I/i sorunu dahil) ve normalize et."""
     s = s.replace("I", "ı").replace("İ", "i")

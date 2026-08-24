@@ -192,13 +192,21 @@ def search(conn, query: str, top_k: int = config.TOP_K) -> list[tuple[float, int
 # Gosterim: Adim 1 + 2 + 3 birlikte
 # --------------------------------------------------------------------------
 def _demo() -> None:
+    """`python db.py` ile calisan gosterim: parca + embedding saklanip geri
+    okunabiliyor mu.
+
+    URETIM VERITABANINA DOKUNMAZ. Onceden config.DB_PATH'i silip ustune
+    yaziyordu; dosyayi merakla calistiran biri bilgi tabanini kaybediyor ve
+    `python ingest.py` calistirmak zorunda kaliyordu. Demo artik kendi ayri
+    dosyasinda calisiyor ve bitince onu siliyor.
+    """
     import os
 
-    # Temiz baslamak icin varsa eski demo veritabanini silelim.
-    if config.DB_PATH.exists():
-        os.remove(config.DB_PATH)
+    demo_yolu = config.PROJECT_DIR / "rag_store_demo.db"
+    if demo_yolu.exists():
+        os.remove(demo_yolu)
 
-    conn = connect()
+    conn = connect(demo_yolu)
     init_db(conn)
 
     # Kucuk bir "otel SSS" belgesi (3 parca).
@@ -232,6 +240,8 @@ def _demo() -> None:
     print("bir soruya en yakin parca bulunabiliyor. Retrieval'in iskeleti hazir. ✅")
 
     conn.close()
+    os.remove(demo_yolu)          # gosterim bitti, artigini birakma
+    print(f"\n({demo_yolu.name} silindi; {config.DB_PATH.name} dokunulmadi.)")
 
 
 if __name__ == "__main__":
